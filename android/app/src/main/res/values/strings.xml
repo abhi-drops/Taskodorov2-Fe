@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Taskodoro</string>
+    <string name="title_activity_main">Taskodoro</string>
+    <string name="package_name">com.taskodoro.app</string>
+    <string name="custom_url_scheme">com.taskodoro.app</string>
+</resources>
