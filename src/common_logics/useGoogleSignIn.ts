@@ -10,17 +10,19 @@ export function useGoogleSignIn() {
   const { isNative } = usePlatform()
   const navigate = useNavigate()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const isReady = isNative ? isGoogleNativeConfigured() : isGoogleWebConfigured()
 
   async function handleNativeSignIn() {
     setIsSubmitting(true)
+    setError(null)
     try {
       const idToken = await signInNative()
       await loginWithGoogle(idToken)
       navigate('/', { replace: true })
-    } catch {
-      // loginWithGoogle already set AuthContext's error state
+    } catch (e) {
+      setError((e as Error).message)
     } finally {
       setIsSubmitting(false)
     }
@@ -28,15 +30,16 @@ export function useGoogleSignIn() {
 
   async function handleWebCredential(idToken: string) {
     setIsSubmitting(true)
+    setError(null)
     try {
       await loginWithGoogle(idToken)
       navigate('/', { replace: true })
-    } catch {
-      // loginWithGoogle already set AuthContext's error state
+    } catch (e) {
+      setError((e as Error).message)
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  return { isReady, isSubmitting, handleNativeSignIn, handleWebCredential }
+  return { isReady, isSubmitting, error, handleNativeSignIn, handleWebCredential }
 }
