@@ -1,0 +1,76 @@
+# Feature: Notes
+
+The core CRUD surface — 3 note types, create/edit/delete, rendered on the board and in
+search results by the same card components.
+
+## Types & payload shapes (`src/types/note.ts`)
+
+- **`basic`** (labeled "Task" in the UI, matching the mockup's exact wording — the
+  internal type value stays `'basic'`) — `payload: {}`. Has the checkmark-circle
+  complete-toggle.
+- **`counter`** — `payload: { value: number; step: number; target?: number | null }`.
+  Has the checkmark-circle **and** +/- controls. Counters were originally proposed
+  (in an early planning doc) to have no complete state at all, since the mockups show
+  no checkmark on the counter card — that was overridden: counters get the checkmark
+  *and* an optional `target`. When `value` reaches `target` via the +/- controls, the
+  note auto-completes. **Auto-complete only ever sets `completed: true` forward, never
+  auto-unsets** — a manual checkmark toggle always wins after that, and is a completely
+  separate action from the target logic (`src/lib/notes/counterLogic.ts`:
+  `adjustCounterValue`, `shouldAutoComplete`). Value is clamped at a floor of 0.
+- **`list`** — `payload: { items: { id, text, completed, position }[] }`. **No
+  card-level checkmark** — confirmed by comparing the mockups closely: the list
+  (green) card only ever shows per-item checkboxes, unlike basic/counter which both
+  have one in the card header. The note's own `completed` field stays unused for this
+  type — nothing renders it. No drag-reorder of items (`position` exists for future
+  use, not wired to any UI).
+
+## Color resolution (`src/lib/notes/resolveNoteColor.ts`)
+
+A note's *displayed* color depends on its owning group's `noteColorMode`:
+
+- **`manual`** — the picker-set `note.color`, editable.
+- **`random`** — also just `note.color`, but assigned **once at creation time** and
+  frozen — doesn't reshuffle on reload. Picker is disabled in the editor.
+- **`priority`** — **ignores `note.color` entirely**, derived live from `note.priority`
+  via a fixed map (`PRIORITY_COLOR_MAP`: high→coral, medium→yellow, normal→blue,
+  low→green — no mockup dictates this exact mapping, chosen as a reasonable default).
+  If the note's priority changes later, its color updates automatically. Picker
+  disabled in the editor.
+
+Every consumer of a note's color (board cards, search results, the editor's preview)
+calls `resolveNoteColor(note, group)` — never reads `note.color` directly, since that
+would be wrong under `priority` mode.
+
+## Create/edit (`NoteEditorPage.tsx` + `common_logics/useNoteForm.ts`)
+
+One page/hook drives both `/notes/new?group=<id>` and `/notes/:id/edit`. **No Save
+button** — title and description are edited inline directly on the colored card
+preview and auto-save on blur; Note Type/Color/Priority/payload fields auto-save
+immediately on change. This matches every other settings-style screen in the app (see
+`feat-power-tools.md`).
+
+**A new note is not written to the database until its title is non-empty.** Type,
+color, priority, and payload edits made before that just update local component state;
+the first non-empty title blur fires the actual `createNote(...)` call with whatever
+state has accumulated by then, then the page navigates to `/notes/:id/edit` (replacing
+history, so a refresh doesn't re-enter create mode). This means there's no
+orphaned-draft cleanup to worry about — nothing exists in the DB to clean up.
+
+Switching Note Type resets `payload` to that type's default shape
+(`lib/db/notes.ts`'s `defaultPayload`). Delete is present in the editor (a `danger`
+button → `ConfirmDialog`) despite not being visible in the specific mockup crop this
+was built from — `docs/phase2-offline-first-plan.md`'s scope for Phase 2 explicitly
+includes note delete, so it was added anyway.
+
+## Board rendering (`components/ui/{Basic,Counter,List}NoteCard.tsx`)
+
+Each card: clicking anywhere navigates to the editor **except** its interactive
+controls (checkmark, +/-, item checkboxes), which call `stopPropagation()`. All three
+mutate directly via `lib/db/notes.ts`'s `updateNote` and call an `onChange` callback to
+refresh the caller's list — no editor round-trip needed for a quick toggle.
+
+`useBoard.ts` sorts each group's notes per its `sortedBy` setting: `manual` → existing
+`position`; `alphabetical` → title A-Z; `date` → `createdAt` descending (newest first);
+`priority` → high→low. The group's `ProgressBar` is a simple complete/total count over
+its notes (`note.completed`) — the mockups' "excluding notes with an active on-check-
+move-to rule" variant is deferred to Phase 3 along with that feature itself.
