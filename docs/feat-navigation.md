@@ -27,7 +27,7 @@ again.
 
 Every page wraps in `AppShell` (`src/components/AppShell.tsx`), which applies the
 `.bg-grid` background and renders `TopNav` (web) or `BottomNav` (mobile) based on
-`usePlatform().isNative` — see `feat-design-system.md` for why this is never a
+`usePlatform().isNative` — see `style-guide.md` for why this is never a
 viewport check. The two navs are intentionally not 1:1: web's pill only has
 Home/Power Tools (2 items), mobile's bar has Home/+/Power Tools (3 items) — matches
 what the actual Penpot mockups show for each platform rather than forcing parity.

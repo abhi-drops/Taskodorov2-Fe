@@ -8,7 +8,7 @@ from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
 - Added per-feature docs: `feat-auth.md`, `feat-offline-data-layer.md`,
   `feat-navigation.md`, `feat-workspaces.md`, `feat-groups.md`, `feat-power-tools.md`,
-  `feat-notes.md`, `feat-search-filter.md`, `feat-design-system.md`.
+  `feat-notes.md`, `feat-search-filter.md`, `style-guide.md`.
 - Added this changelog.
 - Updated `CLAUDE.md`: refreshed the architecture section for Phase 2 (it previously
   only described Phase 1's auth-only app), added the changelog-maintenance rule.
@@ -62,7 +62,7 @@ Bundled together: the SQLite local data layer (`lib/db/{sqlite,workspaces,groups
 notes}.ts`, schema + CRUD + first-run seed) and the design system foundation
 (self-hosted fonts, grid background, the `components/ui/*` primitive set:
 `Select`/`Modal`/`CheckCircle`/`Tabs`/`SwatchPicker`/`ProgressBar`/`Icon`/`TopNav`/
-`BottomNav`). See `feat-offline-data-layer.md`, `feat-design-system.md`.
+`BottomNav`). See `feat-offline-data-layer.md`, `style-guide.md`.
 
 ## 2026-08-26 — Consolidated reference doc (`33b7349`)
 

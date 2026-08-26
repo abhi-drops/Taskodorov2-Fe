@@ -89,5 +89,5 @@ with clean `adb logcat` output (`CapacitorSQLite` query/run traffic, zero crashe
 was the one item flagged since the 2.1 plan as needing real-device testing, not just
 browser testing — browsers can never actually exercise the native code path in
 `sqlite.ts` (`Capacitor.getPlatform() === 'web'` is always true in a browser, by
-design — see `feat-design-system.md`'s platform-detection note), so this was the first
+design — see `style-guide.md`'s platform-detection note), so this was the first
 time the native branch of this file had ever actually run.
