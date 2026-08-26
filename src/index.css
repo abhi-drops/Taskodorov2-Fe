@@ -19,7 +19,13 @@ body {
 }
 
 .bg-grid {
-  background-image: url('./assets/background.jpeg');
+  /* background-image doesn't have its own opacity, and a plain `opacity` on this
+     element would dim the nav/content sitting inside it too — so the image is faded
+     to 15% by layering a translucent surface-color wash on top of it instead. */
+  background-image: linear-gradient(
+      color-mix(in srgb, var(--color-surface) 85%, transparent),
+      color-mix(in srgb, var(--color-surface) 85%, transparent)
+    ), url('./assets/background.jpeg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
