@@ -9,9 +9,18 @@
   --color-nav-dark: #1e1e2a;
   --color-surface: #f4f5f7;
   --radius-card: 1rem;
+  --font-display: 'Geomini', sans-serif;
+  --font-sans: 'Google Sans Flex Variable', sans-serif;
 }
 
 body {
-  @apply bg-surface text-slate-900 antialiased;
+  @apply bg-surface text-slate-900 antialiased font-sans;
   margin: 0;
+}
+
+.bg-grid {
+  background-image: url('./assets/background.jpeg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
