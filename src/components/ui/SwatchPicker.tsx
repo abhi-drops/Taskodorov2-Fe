@@ -1,13 +1,5 @@
-export type SwatchColor = 'yellow' | 'coral' | 'blue' | 'green'
-
-const SWATCH_OPTIONS: SwatchColor[] = ['yellow', 'coral', 'blue', 'green']
-
-const SWATCH_CLASSES: Record<SwatchColor, string> = {
-  yellow: 'bg-sticky-yellow',
-  coral: 'bg-sticky-coral',
-  blue: 'bg-sticky-blue',
-  green: 'bg-sticky-green',
-}
+import { SWATCH_OPTIONS, SWATCH_CLASSES } from './swatchColors'
+import type { SwatchColor } from './swatchColors'
 
 interface SwatchPickerProps {
   value: SwatchColor | null

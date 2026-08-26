@@ -37,10 +37,18 @@ function rowToNote(row: NoteRow): Note {
   }
 }
 
-function defaultPayload(type: NoteType): NotePayload {
+export function defaultPayload(type: NoteType): NotePayload {
   if (type === 'counter') return { value: 0, step: 1, target: null }
   if (type === 'list') return { items: [] }
   return {}
+}
+
+export function getNoteById(id: string): Promise<Note | null> {
+  return withDb(async (db) => {
+    const result = await db.query('SELECT * FROM notes WHERE id = ? AND deleted_at IS NULL', [id])
+    const row = (result.values ?? [])[0] as NoteRow | undefined
+    return row ? rowToNote(row) : null
+  })
 }
 
 export function listNotesByGroup(groupId: string): Promise<Note[]> {
@@ -129,7 +137,10 @@ export function createNote(input: {
 export function updateNote(
   id: string,
   patch: Partial<
-    Pick<Note, 'title' | 'description' | 'color' | 'priority' | 'position' | 'completed' | 'payload' | 'groupId'>
+    Pick<
+      Note,
+      'title' | 'description' | 'color' | 'priority' | 'position' | 'completed' | 'payload' | 'groupId' | 'type'
+    >
   >,
 ): Promise<void> {
   return withDb(async (db) => {
@@ -139,6 +150,10 @@ export function updateNote(
     if ('title' in patch) {
       setClauses.push('title = ?')
       params.push(patch.title)
+    }
+    if ('type' in patch) {
+      setClauses.push('type = ?')
+      params.push(patch.type)
     }
     if ('description' in patch) {
       setClauses.push('description = ?')
