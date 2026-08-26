@@ -39,6 +39,14 @@ export function listGroups(workspaceId: string): Promise<Group[]> {
   })
 }
 
+export function getGroupById(id: string): Promise<Group | null> {
+  return withDb(async (db) => {
+    const result = await db.query('SELECT * FROM groups WHERE id = ? AND deleted_at IS NULL', [id])
+    const row = (result.values ?? [])[0] as GroupRow | undefined
+    return row ? rowToGroup(row) : null
+  })
+}
+
 export function createGroup(input: { workspaceId: string; name: string }): Promise<Group> {
   return withDb(async (db) => {
     const { values } = await db.query(

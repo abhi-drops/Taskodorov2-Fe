@@ -79,7 +79,7 @@ async function openConnection(): Promise<SQLiteDBConnection> {
   return db
 }
 
-async function seedIfEmpty(db: SQLiteDBConnection): Promise<void> {
+export async function seedIfEmpty(db: SQLiteDBConnection): Promise<void> {
   const existing = await db.query('SELECT id FROM workspaces WHERE deleted_at IS NULL LIMIT 1')
   if (existing.values && existing.values.length > 0) return
 
@@ -123,7 +123,24 @@ export function getDb(): Promise<SQLiteDBConnection> {
 let queue: Promise<unknown> = Promise.resolve()
 
 export function withDb<T>(fn: (db: SQLiteDBConnection) => Promise<T>): Promise<T> {
-  const result = queue.then(async () => fn(await getDb()))
+  const result = queue.then(async () => {
+    const value = await fn(await getDb())
+    // jeep-sqlite (web) only flushes its in-memory sql.js database to
+    // IndexedDB on saveToStore()/close()/closeConnection() — the <jeep-sqlite>
+    // element's `autoSave` prop is an alternative but its save-on-COMMIT
+    // timing is unverified here, so this flushes explicitly and
+    // deterministically after every call instead (confirmed via a real
+    // same-tab reload during 2.4 verification: writes survive correctly).
+    // No-ops on native, where writes are already durable immediately.
+    if (Capacitor.getPlatform() === 'web') {
+      try {
+        await sqlite.saveToStore(DB_NAME)
+      } catch (err) {
+        console.error('Failed to flush SQLite database to IndexedDB:', err)
+      }
+    }
+    return value
+  })
   queue = result.then(
     () => undefined,
     () => undefined,
