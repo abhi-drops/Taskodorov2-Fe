@@ -20,3 +20,18 @@ export async function clearAuth(): Promise<void> {
   await Preferences.remove({ key: TOKEN_KEY })
   await Preferences.remove({ key: USER_KEY })
 }
+
+const ACTIVE_WORKSPACE_ID_KEY = 'taskodoro.workspace.activeId'
+
+export async function saveActiveWorkspaceId(id: string): Promise<void> {
+  await Preferences.set({ key: ACTIVE_WORKSPACE_ID_KEY, value: id })
+}
+
+export async function loadActiveWorkspaceId(): Promise<string | null> {
+  const { value } = await Preferences.get({ key: ACTIVE_WORKSPACE_ID_KEY })
+  return value
+}
+
+export async function clearActiveWorkspaceId(): Promise<void> {
+  await Preferences.remove({ key: ACTIVE_WORKSPACE_ID_KEY })
+}

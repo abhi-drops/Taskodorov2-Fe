@@ -1,41 +1,36 @@
 import { useEffect, useState } from 'react'
 import { AppShell } from '../components/AppShell'
-import { listWorkspaces } from '../lib/db/workspaces'
+import { WorkspaceSwitcher } from '../components/WorkspaceSwitcher'
+import { useWorkspace } from '../lib/workspace/useWorkspace'
 import { listGroups } from '../lib/db/groups'
-import type { Workspace } from '../types/workspace'
 import type { Group } from '../types/group'
 
 export default function HomePage() {
-  const [workspace, setWorkspace] = useState<Workspace | null>(null)
+  const { activeWorkspaceId } = useWorkspace()
   const [groups, setGroups] = useState<Group[]>([])
 
   useEffect(() => {
     let cancelled = false
 
     async function load() {
-      const workspaces = await listWorkspaces()
-      const active = workspaces[0] ?? null
-      if (cancelled) return
-      setWorkspace(active)
-
-      if (active) {
-        const activeGroups = await listGroups(active.id)
-        if (!cancelled) setGroups(activeGroups)
+      if (!activeWorkspaceId) {
+        setGroups([])
+        return
       }
+      const activeGroups = await listGroups(activeWorkspaceId)
+      if (!cancelled) setGroups(activeGroups)
     }
 
     load()
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [activeWorkspaceId])
 
   return (
     <AppShell>
       <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-        <h1 className="font-display text-2xl font-bold text-nav-dark">
-          {workspace?.name ?? 'Loading workspace…'}
-        </h1>
+        <WorkspaceSwitcher />
         <p className="text-slate-600">
           Board UI lands in phase 2.4/2.5 — for now, here's what's in local storage:
         </p>

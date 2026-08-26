@@ -1,0 +1,69 @@
+import { useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
+import {
+  listWorkspaces,
+  createWorkspace as dbCreateWorkspace,
+  renameWorkspace as dbRenameWorkspace,
+  deleteWorkspace as dbDeleteWorkspace,
+} from '../db/workspaces'
+import { saveActiveWorkspaceId, loadActiveWorkspaceId, clearActiveWorkspaceId } from '../storage/preferences'
+import { WorkspaceContext } from './workspaceContext'
+import type { WorkspaceState } from './workspaceContext'
+
+export function WorkspaceProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<WorkspaceState>({
+    workspaces: [],
+    activeWorkspaceId: null,
+    status: 'loading',
+  })
+
+  useEffect(() => {
+    async function hydrate() {
+      const [workspaces, persistedId] = await Promise.all([listWorkspaces(), loadActiveWorkspaceId()])
+      const activeWorkspaceId =
+        (persistedId && workspaces.some((w) => w.id === persistedId) ? persistedId : workspaces[0]?.id) ?? null
+      setState({ workspaces, activeWorkspaceId, status: 'ready' })
+    }
+    hydrate()
+  }, [])
+
+  async function createWorkspace(name: string) {
+    const created = await dbCreateWorkspace({ name })
+    const workspaces = await listWorkspaces()
+    await saveActiveWorkspaceId(created.id)
+    setState({ workspaces, activeWorkspaceId: created.id, status: 'ready' })
+  }
+
+  async function renameWorkspace(id: string, name: string) {
+    await dbRenameWorkspace(id, name)
+    const workspaces = await listWorkspaces()
+    setState((s) => ({ ...s, workspaces }))
+  }
+
+  async function deleteWorkspace(id: string) {
+    await dbDeleteWorkspace(id)
+    const workspaces = await listWorkspaces()
+    const activeWorkspaceId =
+      state.activeWorkspaceId === id ? (workspaces[0]?.id ?? null) : state.activeWorkspaceId
+
+    if (activeWorkspaceId !== state.activeWorkspaceId) {
+      if (activeWorkspaceId) await saveActiveWorkspaceId(activeWorkspaceId)
+      else await clearActiveWorkspaceId()
+    }
+
+    setState({ workspaces, activeWorkspaceId, status: 'ready' })
+  }
+
+  function switchWorkspace(id: string) {
+    saveActiveWorkspaceId(id)
+    setState((s) => ({ ...s, activeWorkspaceId: id }))
+  }
+
+  return (
+    <WorkspaceContext.Provider
+      value={{ ...state, createWorkspace, renameWorkspace, deleteWorkspace, switchWorkspace }}
+    >
+      {children}
+    </WorkspaceContext.Provider>
+  )
+}
