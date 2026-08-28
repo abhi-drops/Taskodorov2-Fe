@@ -1,7 +1,9 @@
 # Feature: Design System
 
 Fonts, the grid background, and the shared `components/ui/*` primitives every screen is
-built from. Established in Phase 2.0; nothing here changed since.
+built from. Established in Phase 2.0; the board/note-card visual system (colors, borders,
+shadows, the group column layout) was reworked in 2.7 against a Penpot reference export —
+see "Board & note-card system" below for what changed and why.
 
 ## Fonts
 
@@ -37,28 +39,120 @@ don't fit the PNG set (`Select`'s dropdown chevron, `WorkspaceSwitcher`'s trigge
 chevron, `PowerToolsPage`'s gear) are small inline SVGs or Unicode characters instead
 of pulling in an icon library for a single glyph.
 
+## Board & note-card system
+
+Reworked in 2.7 to match a Penpot design export (`docs/design-references/`) pixel-for-pixel
+instead of the earlier generic Tailwind-defaults look. The 4 `--color-sticky-*` note colors
+were also repointed to the exact hex values from that export (yellow `#fbe05d`, coral
+`#ff7c8f`, blue `#96c3f7`, green `#c0ff91`) — treat the Penpot export as the source of truth
+if these ever look like they've drifted. Two more tokens drive the rest of the board's look,
+both in `src/index.css`'s `@theme` block:
+
+- `--color-ink: #3c3c3c` — the dark border/label color for the neo-brutalist chrome (chips,
+  the add-note button, checkbox rings, the counter control). **Not** the same token as
+  `--color-nav-dark` (`#1e1e2a`) — `nav-dark` is reserved for `TopNav`/`BottomNav` chrome and
+  is deliberately not matched 1:1 to the mockups (see Platform detection section below);
+  `ink` is the new, separate token for the board's border/shadow system.
+- `--shadow-card: 1px 3px 0px 0px rgba(0,0,0,0.2)` — a crisp, hard-edged offset shadow (no
+  blur), replacing `shadow-lg` on note cards, the group chip, the add-note button, and the
+  TopNav/group backdrop cards. **`shadow-lg` is still used** on `Modal.tsx`, `AuthCard.tsx`,
+  and the white panels in `PowerToolsPage`/`SearchPage` — that's not an oversight, it's an
+  unfinished migration. `SearchPage` is next in line to move to `shadow-card`; treat any
+  other remaining `shadow-lg` usage as a candidate for the same migration rather than an
+  intentional permanent split.
+
+`--radius-card` is now `0px` (was `1rem`) — square corners everywhere, still the *same*
+single radius token (`rounded-card`) the rest of the app uses, just repointed to 0. Don't
+introduce a second radius token for the board; reuse `rounded-card`.
+
+Two border colors, two purposes — don't mix them up:
+- `border-ink` (`border-[3px] border-ink` on chips/buttons, `border-2 border-ink` on the
+  counter control) — thick, dark, used on interactive/decorative chrome sitting *on top of*
+  a colored card.
+- `border-neutral-300` (thin, 1px) — used only on the light backdrop cards behind a group's
+  notes and behind the TopNav pill. Tailwind's `neutral-*` scale was picked over `slate-*`
+  deliberately: the reference's `#c1c2c2` border is true neutral gray with no blue tint,
+  which `neutral-300` matches and `slate-300` doesn't.
+
+Note-card text is `text-black` (pure black, matches the reference exactly), **not**
+`text-nav-dark` — that's reserved for chip/button labels (`text-ink`) and nav chrome.
+
+### Group column: backdrop card + overlapping chip
+
+`src/components/GroupColumn.tsx` (not `components/ui/` — see below) renders each board
+column as two visually-overlapping layers, matching the Penpot reference exactly:
+
+1. The header row (chip + square add-note button) is `relative z-10`.
+2. Directly below it, a backdrop card (`border border-neutral-300 bg-surface p-4 shadow-card`)
+   wraps the note list (and the `No notes yet.` empty state — the backdrop always renders,
+   even for empty groups). It's pulled *up* under the header with a negative margin
+   (`-mt-7 -ml-4` currently) so the header visually pokes out above/left of the backdrop's
+   top edge instead of sitting flush inside it.
+
+**This is intentional, not a layout bug.** If you're touching this file and the negative
+margin looks like it's "fighting" the header, don't remove it — that overlap is the actual
+design (verified against the Penpot export's raw coordinates: the chip's own box starts
+above the backdrop's top edge by design). Re-tune the exact `-mt-*`/`-ml-*`/`pt-*` values by
+eye against a reference screenshot if the overlap proportion needs adjusting, don't delete it.
+
+### List notes: two-piece "notch" shape, not one card
+
+`ListNoteCard.tsx` is **not** a single padded `<div>` like `BasicNoteCard`/`CounterNoteCard`.
+It's two separate same-color rectangles stacked with zero gap: a full-width title strip, then
+a checklist body indented `ml-4` from the left — each with its own `shadow-card`. Stacked
+flush, same color, this reads as one shape with a step/notch cut into the left edge (matching
+the reference exactly, including a subtle shadow sliver visible at the notch corner, which
+comes for free from the two independent shadows). Don't collapse this back into one div —
+the notch is the point.
+
+### TopNav backdrop
+
+`TopNav.tsx` wraps its two-pill `<nav>` in a `border border-neutral-300 bg-surface p-2.5
+shadow-card` backdrop, matching the group column's backdrop treatment. Unlike the group
+chip, the nav pill sits fully *inside* this backdrop — no overlap effect here, just a padded
+card.
+
+### `AppShell`'s `headerStart`/`headerEnd` slots
+
+`AppShell` takes optional `headerStart`/`headerEnd` `ReactNode` props, rendered either side of
+`TopNav` in the same row (each wrapped in a `flex-1` div, so `TopNav` stays centered whether
+or not the slots are used — every page except `HomePage` leaves them empty and gets the exact
+same centered-nav row as before). `HomePage` is the only current consumer: it feeds
+`WorkspaceSwitcher` (left) and the search icon link (right) into these slots on web, merging
+what used to be two stacked header rows into one — but **only when `!isNative`**. On native,
+`AppShell` doesn't render a top bar at all (there's `BottomNav` instead), so `HomePage` still
+renders its own `WorkspaceSwitcher` + search row inline as page content for that platform,
+unchanged from before. If you add a new page that needs left/right header content on web,
+reuse this prop pair rather than inventing a page-local header row.
+
 ## Shared primitives (`src/components/ui/`)
 
 All follow the same shape: extend the matching native HTML element's attributes
 interface, accept an optional `className` for override, `rounded-card` everywhere (the
-only radius value used anywhere in the app).
+only radius token used anywhere in the app — currently `0px`, see "Board & note-card
+system" above).
 
 | Component | Purpose |
 |---|---|
 | `Button.tsx` | `primary`/`secondary`/`ghost`/`danger` variants. `danger` (coral) was added in 2.4 once destructive actions crossed 3 call sites. |
 | `TextField.tsx`, `Select.tsx` | Labeled form inputs, label-above-control shape. |
-| `Modal.tsx` | `variant: 'center' \| 'bottom-sheet'`. Portal-rendered, closes on Escape/backdrop click. |
+| `Modal.tsx` | `variant: 'center' \| 'bottom-sheet'`. Portal-rendered, closes on Escape/backdrop click. Still `shadow-lg`, not yet migrated to `shadow-card`. |
 | `ConfirmDialog.tsx` | Wraps `Modal` — message + Cancel/danger-confirm button pair. Added in 2.4 once destructive confirmations (group delete, note delete, Reset to Default) crossed 3 uses. |
-| `CheckCircle.tsx` | The note-complete toggle affordance — composites `check-circle.png` (ring, always shown) + `check-tick.png` (overlaid when checked). |
+| `CheckCircle.tsx` | The note-complete/list-item toggle. Composites `check-circle.png` (ring, always shown) + `check-tick.png` (overlaid when checked) — **not** two same-size icons: the tick is deliberately oversized (`size * 1.4`) and offset with proportional inline styles (`marginLeft`, tick `left`/`top` all computed as a fraction of `size`, not fixed px/rem) so the same "bold stamp" look holds at every call-site size (18 in list items, 20-22 elsewhere) instead of only looking right at whichever size it was last eyeballed against. Also carries `max-w-none` on the tick `<img>` — **required**, not decorative: Tailwind's preflight sets `img { max-width: 100% }`, and since the tick is absolutely positioned inside the small `size`×`size` button (its containing block for percentage resolution), `max-width: 100%` silently resolves to the *button's* small size and clamps the oversized tick's width back down — height isn't affected (no `max-height` rule), so the symptom is a squashed/stretched icon, not a missing one. Any future absolutely-positioned icon that needs to render larger than its positioned-ancestor box will hit this exact clamp; add `max-w-none` again if so. |
 | `Tabs.tsx` | Single-select segmented control (Todo/In Progress/Completed style, also reused for the board's group tabs and search's group-scope tabs). |
 | `SwatchPicker.tsx` | Single-select 4-color note-color picker. Colors/classes live in `swatchColors.ts` (split out from `SwatchPicker.tsx` itself — the component and the constants can't share a file without breaking React Fast Refresh, which requires component-only files). |
-| `ProgressBar.tsx` | Simple track + fill, optional `%` label. |
-| `TopNav.tsx` (web) / `BottomNav.tsx` (mobile) | Home/Power Tools (web, 2 items) vs Home/+/Power Tools (mobile, 3 items) — deliberately not matched 1:1, since the mockups themselves differ here. |
+| `ProgressBar.tsx` | Simple track + fill, optional `%` label. No longer used on the board (removed from `GroupColumn` in 2.7 — the reference design never shows it on the default view); still a generic primitive, may be reused elsewhere. |
+| `BasicNoteCard.tsx`, `CounterNoteCard.tsx`, `ListNoteCard.tsx` | The three note-type cards rendered by `GroupColumn`. Share the `shadow-card`/`text-black`/`SWATCH_CLASSES[color]` treatment (see above); `CounterNoteCard`'s `+`/`−` row order matters — `+` left, `−` right, matching the reference (easy to get backwards). `ListNoteCard` has its own two-piece shape, see above. |
+| `TopNav.tsx` (web) / `BottomNav.tsx` (mobile) | Home/Power Tools (web, 2 items) vs Home/+/Power Tools (mobile, 3 items) — deliberately not matched 1:1, since the mockups themselves differ here. `TopNav` has the backdrop card treatment described above; `BottomNav` doesn't (out of scope for the 2.7 rework — mobile board polish wasn't part of that pass). |
 | `Icon.tsx` | Thin `<img>` wrapper used by everything above. |
 
-`AppShell.tsx` (`src/components/`, not `components/ui/` — it's a layout composite, not
-a dumb primitive) wraps page content with `.bg-grid` + `TopNav`/`BottomNav` based on
-`usePlatform().isNative`. Every page routes through it.
+`AppShell.tsx` and `GroupColumn.tsx` (`src/components/`, not `components/ui/` — they're
+layout/domain composites, not dumb primitives) follow the same pattern as
+`WorkspaceSwitcher.tsx`: tied to one page's concept, not generic enough to live in `ui/`.
+`AppShell` wraps page content with `.bg-grid` + `TopNav`/`BottomNav` based on
+`usePlatform().isNative` (plus the `headerStart`/`headerEnd` slots above) — every page routes
+through it. `GroupColumn` is the board's column renderer, used by both the web multi-column
+layout and the mobile single-active-tab view in `HomePage.tsx`.
 
 ## Platform detection
 

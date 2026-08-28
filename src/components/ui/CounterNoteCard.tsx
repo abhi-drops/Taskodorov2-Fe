@@ -33,32 +33,32 @@ export function CounterNoteCard({ note, group, onChange }: CounterNoteCardProps)
   return (
     <div
       onClick={() => navigate(`/notes/${note.id}/edit`)}
-      className={`flex cursor-pointer flex-col gap-3 rounded-card p-4 shadow-lg ${SWATCH_CLASSES[color]}`}
+      className={`flex cursor-pointer flex-col gap-3 rounded-card p-4 shadow-card ${SWATCH_CLASSES[color]}`}
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="line-clamp-2 flex-1 text-sm font-medium text-nav-dark">{note.title}</p>
-        <div onClick={(e) => e.stopPropagation()}>
+        <p className="line-clamp-2 min-w-0 flex-1 text-sm font-medium text-black">{note.title}</p>
+        <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
           <CheckCircle checked={note.completed} onChange={toggleCompleted} size={22} />
         </div>
       </div>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex items-center overflow-hidden rounded-card bg-white/40"
+        className="flex items-center rounded-card border-2 border-ink divide-x divide-ink overflow-hidden bg-white/30"
       >
         <button
           type="button"
-          onClick={() => adjust(-payload.step)}
-          className="px-3 py-2 font-bold text-nav-dark hover:bg-white/40"
-        >
-          −
-        </button>
-        <span className="flex-1 text-center text-sm font-semibold text-nav-dark">{payload.value}</span>
-        <button
-          type="button"
           onClick={() => adjust(payload.step)}
-          className="px-3 py-2 font-bold text-nav-dark hover:bg-white/40"
+          className="px-3 py-2 font-display font-bold text-ink hover:bg-white/40"
         >
           +
+        </button>
+        <span className="flex-1 text-center text-sm font-semibold text-ink">{payload.value}</span>
+        <button
+          type="button"
+          onClick={() => adjust(-payload.step)}
+          className="px-3 py-2 font-display font-bold text-ink hover:bg-white/40"
+        >
+          −
         </button>
       </div>
     </div>

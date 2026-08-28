@@ -5,16 +5,20 @@ import { BottomNav } from './ui/BottomNav'
 
 interface AppShellProps {
   children: ReactNode
+  headerStart?: ReactNode
+  headerEnd?: ReactNode
 }
 
-export function AppShell({ children }: AppShellProps) {
+export function AppShell({ children, headerStart, headerEnd }: AppShellProps) {
   const { isNative } = usePlatform()
 
   return (
     <div className="bg-grid flex min-h-svh flex-col">
       {!isNative && (
-        <div className="flex justify-center p-6">
+        <div className="flex items-center gap-4 p-6">
+          <div className="flex flex-1 justify-start">{headerStart}</div>
           <TopNav />
+          <div className="flex flex-1 justify-end">{headerEnd}</div>
         </div>
       )}
       <div className={`flex flex-1 flex-col p-6 ${isNative ? 'pb-24' : ''}`}>{children}</div>

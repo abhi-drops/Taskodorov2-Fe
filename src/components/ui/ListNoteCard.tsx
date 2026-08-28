@@ -26,18 +26,21 @@ export function ListNoteCard({ note, group, onChange }: ListNoteCardProps) {
   }
 
   return (
-    <div
-      onClick={() => navigate(`/notes/${note.id}/edit`)}
-      className={`flex cursor-pointer flex-col gap-2 rounded-card p-4 shadow-lg ${SWATCH_CLASSES[color]}`}
-    >
-      <p className="text-sm font-medium text-nav-dark">{note.title}</p>
-      <ul className="flex flex-col gap-1.5">
+    <div onClick={() => navigate(`/notes/${note.id}/edit`)} className="flex cursor-pointer flex-col">
+      <p
+        className={`rounded-card px-4 pb-3 pt-4 text-sm font-medium text-black shadow-card ${SWATCH_CLASSES[color]}`}
+      >
+        {note.title}
+      </p>
+      <ul
+        className={`ml-4 flex flex-col gap-1.5 rounded-card px-4 pb-4 pt-3 shadow-card ${SWATCH_CLASSES[color]}`}
+      >
         {payload.items.map((item) => (
           <li key={item.id} className="flex items-center gap-2">
-            <div onClick={(e) => e.stopPropagation()}>
+            <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
               <CheckCircle checked={item.completed} onChange={() => toggleItem(item.id)} size={18} />
             </div>
-            <span className={`text-sm text-nav-dark ${item.completed ? 'line-through opacity-70' : ''}`}>
+            <span className={`min-w-0 text-sm text-black ${item.completed ? 'line-through opacity-70' : ''}`}>
               {item.text}
             </span>
           </li>

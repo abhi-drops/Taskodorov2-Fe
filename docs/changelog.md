@@ -4,6 +4,32 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-08-28 — Board & note-card visual rework (2.7)
+
+Restyled the board/home screen to match a Penpot design export pixel-for-pixel, replacing
+the earlier generic Tailwind-defaults look:
+
+- New `--color-ink`/`--shadow-card` tokens and `--radius-card: 0px` (square corners) in
+  `src/index.css`; `--color-sticky-*` repointed to the reference's exact hex values.
+- `GroupPanel` extracted out of `HomePage.tsx` into its own `src/components/GroupColumn.tsx`,
+  which now renders each column as a light backdrop card behind the notes with the header
+  chip intentionally overlapping its top edge, and dropped the always-on progress bar (never
+  shown in the reference's default view).
+- `BasicNoteCard`/`CounterNoteCard`/`ListNoteCard` moved to the new hard-edged `shadow-card`
+  treatment; `ListNoteCard` is now two stacked rectangles (title strip + indented checklist
+  body) to match the reference's notched shape; `CounterNoteCard`'s `+`/`−` control reordered
+  to match the reference.
+- `TopNav` gained a matching backdrop card; `AppShell` gained `headerStart`/`headerEnd` slots
+  so `HomePage` can merge the workspace switcher + search icon into the same row as the nav
+  pill on web.
+- `CheckCircle`'s checked-tick overlay reworked to a deliberately oversized, proportionally-
+  positioned "stamp" (scales correctly at every call-site size); fixed a Tailwind preflight
+  `max-width: 100%` clamp that was silently squashing the enlarged tick.
+
+Full details, including two things that look like bugs but aren't (the group column's
+negative-margin overlap, and the list note's two-piece shape) and the one real gotcha
+(`max-w-none` needed on any oversized absolutely-positioned icon): `style-guide.md`.
+
 ## 2026-08-26 — Documentation pass
 
 - Added per-feature docs: `feat-auth.md`, `feat-offline-data-layer.md`,
