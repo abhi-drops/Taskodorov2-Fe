@@ -43,20 +43,22 @@ export function CounterNoteCard({ note, group, onChange }: CounterNoteCardProps)
       </div>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex items-center rounded-card border-2 border-ink divide-x divide-ink overflow-hidden bg-white/30"
+        className="flex items-stretch rounded-card border-[3px] border-ink divide-x-[3px] divide-ink overflow-hidden"
       >
         <button
           type="button"
           onClick={() => adjust(payload.step)}
-          className="px-3 py-2 font-display font-bold text-ink hover:bg-white/40"
+          className="bg-white/50 px-3 py-2 font-display text-3xl font-bold text-ink hover:bg-white/60"
         >
           +
         </button>
-        <span className="flex-1 text-center text-sm font-semibold text-ink">{payload.value}</span>
+        <span className="flex flex-1 items-center justify-center text-center font-display text-xl font-bold text-ink">
+          {payload.target ? `${payload.value}/${payload.target}` : payload.value}
+        </span>
         <button
           type="button"
           onClick={() => adjust(-payload.step)}
-          className="px-3 py-2 font-display font-bold text-ink hover:bg-white/40"
+          className="bg-white/50 px-3 py-2 font-display text-3xl font-bold text-ink hover:bg-white/60"
         >
           −
         </button>

@@ -7,9 +7,10 @@ interface AppShellProps {
   children: ReactNode
   headerStart?: ReactNode
   headerEnd?: ReactNode
+  addNoteGroupId?: string | null
 }
 
-export function AppShell({ children, headerStart, headerEnd }: AppShellProps) {
+export function AppShell({ children, headerStart, headerEnd, addNoteGroupId }: AppShellProps) {
   const { isNative } = usePlatform()
 
   return (
@@ -22,7 +23,7 @@ export function AppShell({ children, headerStart, headerEnd }: AppShellProps) {
         </div>
       )}
       <div className={`flex flex-1 flex-col p-6 ${isNative ? 'pb-24' : ''}`}>{children}</div>
-      {isNative && <BottomNav />}
+      {isNative && <BottomNav addNoteGroupId={addNoteGroupId} />}
     </div>
   )
 }

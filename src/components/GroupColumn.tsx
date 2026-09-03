@@ -11,9 +11,42 @@ interface GroupColumnProps {
   group: Group
   notes: Note[]
   onChange: () => void
+  /**
+   * The chip header, add-note button, and backdrop card are desktop-column chrome —
+   * on mobile the group name/switching is already handled by the Tabs strip above,
+   * so this is off there and only the bare note list renders.
+   */
+  showHeader?: boolean
 }
 
-export function GroupColumn({ group, notes, onChange }: GroupColumnProps) {
+function NoteList({ group, notes, onChange }: { group: Group; notes: Note[]; onChange: () => void }) {
+  if (notes.length === 0) {
+    return <p className="px-1 text-sm text-slate-500">No notes yet.</p>
+  }
+  return (
+    <div className="flex flex-col gap-3">
+      {notes.map((note) => {
+        if (note.type === 'counter') {
+          return <CounterNoteCard key={note.id} note={note} group={group} onChange={onChange} />
+        }
+        if (note.type === 'list') {
+          return <ListNoteCard key={note.id} note={note} group={group} onChange={onChange} />
+        }
+        return <BasicNoteCard key={note.id} note={note} group={group} onChange={onChange} />
+      })}
+    </div>
+  )
+}
+
+export function GroupColumn({ group, notes, onChange, showHeader = true }: GroupColumnProps) {
+  if (!showHeader) {
+    return (
+      <div className="flex flex-1 flex-col gap-3">
+        <NoteList group={group} notes={notes} onChange={onChange} />
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-3">
       <div className="relative z-10 flex items-center gap-3">
@@ -29,22 +62,8 @@ export function GroupColumn({ group, notes, onChange }: GroupColumnProps) {
         </Link>
       </div>
 
-      <div className="-mt-7 -ml-4 border border-neutral-300 bg-surface p-4 pt-8 shadow-card ">
-        {notes.length === 0 ? (
-          <p className="px-1 text-sm text-slate-500">No notes yet.</p>
-        ) : (
-          <div className="flex flex-col gap-3 ">
-            {notes.map((note) => {
-              if (note.type === 'counter') {
-                return <CounterNoteCard key={note.id} note={note} group={group} onChange={onChange} />
-              }
-              if (note.type === 'list') {
-                return <ListNoteCard key={note.id} note={note} group={group} onChange={onChange} />
-              }
-              return <BasicNoteCard key={note.id} note={note} group={group} onChange={onChange} />
-            })}
-          </div>
-        )}
+      <div className="-mt-7 -ml-4 border border-neutral-300 bg-surface p-4 pt-8 shadow-card">
+        <NoteList group={group} notes={notes} onChange={onChange} />
       </div>
     </div>
   )

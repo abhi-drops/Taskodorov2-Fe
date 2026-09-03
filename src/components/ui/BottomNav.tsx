@@ -6,9 +6,10 @@ import powerToolsIcon from '../../assets/power-tools.png'
 
 interface BottomNavProps {
   showAddButton?: boolean
+  addNoteGroupId?: string | null
 }
 
-export function BottomNav({ showAddButton = true }: BottomNavProps) {
+export function BottomNav({ showAddButton = true, addNoteGroupId }: BottomNavProps) {
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-40 flex"
@@ -24,7 +25,7 @@ export function BottomNav({ showAddButton = true }: BottomNavProps) {
       </NavLink>
       {showAddButton && (
         <NavLink
-          to="/notes/new"
+          to={addNoteGroupId ? `/notes/new?group=${addNoteGroupId}` : '/notes/new'}
           className="flex w-16 items-center justify-center bg-accent-purple py-3"
         >
           <Icon src={pluseIcon} alt="Add note" size={20} className="[filter:brightness(0)_invert(1)]" />

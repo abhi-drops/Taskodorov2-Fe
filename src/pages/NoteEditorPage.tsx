@@ -86,7 +86,7 @@ export default function NoteEditorPage() {
 
         {form.type === 'counter' && (
           <div className="flex gap-4">
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <label className="flex flex-col gap-1.5 text-sm font-medium text-slate-700">
                 Step
                 <input
@@ -94,18 +94,18 @@ export default function NoteEditorPage() {
                   min={1}
                   defaultValue={(form.payload as CounterPayload).step}
                   onBlur={(e) => form.handleStepBlur(e.target.value)}
-                  className="rounded-card border border-slate-200 px-3.5 py-2.5 text-slate-900 outline-none focus:ring-2 focus:ring-accent-purple"
+                  className="w-full min-w-0 rounded-card border border-slate-200 px-3.5 py-2.5 text-slate-900 outline-none focus:ring-2 focus:ring-accent-purple"
                 />
               </label>
             </div>
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <label className="flex flex-col gap-1.5 text-sm font-medium text-slate-700">
                 Target (optional)
                 <input
                   type="number"
                   defaultValue={(form.payload as CounterPayload).target ?? ''}
                   onBlur={(e) => form.handleTargetBlur(e.target.value)}
-                  className="rounded-card border border-slate-200 px-3.5 py-2.5 text-slate-900 outline-none focus:ring-2 focus:ring-accent-purple"
+                  className="w-full min-w-0 rounded-card border border-slate-200 px-3.5 py-2.5 text-slate-900 outline-none focus:ring-2 focus:ring-accent-purple"
                 />
               </label>
             </div>

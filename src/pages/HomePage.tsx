@@ -24,6 +24,7 @@ export default function HomePage() {
     <AppShell
       headerStart={!isNative ? workspaceSwitcher : undefined}
       headerEnd={!isNative ? searchLink : undefined}
+      addNoteGroupId={isNative ? activeGroupId : undefined}
     >
       {isNative && (
         <div className="flex items-center justify-between gap-4">
@@ -47,7 +48,12 @@ export default function HomePage() {
             onChange={setActiveGroupId}
           />
           {activeGroup && (
-            <GroupColumn group={activeGroup} notes={notesForGroup(activeGroup)} onChange={refresh} />
+            <GroupColumn
+              group={activeGroup}
+              notes={notesForGroup(activeGroup)}
+              onChange={refresh}
+              showHeader={false}
+            />
           )}
         </div>
       ) : (
