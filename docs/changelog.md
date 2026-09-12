@@ -4,6 +4,59 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-09-12 — Note editor: swatch-colored items + desktop two-column layout
+
+Fixed the note editor (`NoteEditorPage.tsx`) rendering checklist items and the
+"new item" row as plain transparent boxes instead of picking up the note's
+selected swatch color, and made the page use the extra width on desktop
+instead of staying capped at a phone-width single column. See
+`docs/feat-notes.md`'s "Create/edit" section for the current shape.
+
+- The checklist items and the "new item" input are now one continuous
+  swatch-colored block (`SWATCH_CLASSES[color]` background, `border-2
+  border-ink`, `shadow-card`) wrapping all rows, rather than each item/the
+  input having its own separate border and padding — matches the read-only
+  `ListNoteCard.tsx`'s solid-color-block treatment instead of rendering with
+  no background at all. The item remove "×" button moved from a hardcoded
+  `text-sticky-coral` to `text-ink` so it stays legible regardless of which
+  swatch color the note itself uses.
+- `SwatchPicker.tsx`'s disabled state (shown when a group's `noteColorMode`
+  isn't `manual`) no longer dims the swatches to `opacity-50` — the four
+  colors always render at full opacity; disabling is communicated purely by
+  the buttons not responding to input.
+- `NoteEditorPage.tsx`'s outer layout gained an `lg:` breakpoint that splits
+  it into a 40/60 two-column grid on wide/desktop viewports (left: title/
+  description + items/counter-config, right: type/color/priority/delete),
+  capped at `max-w-6xl` rather than the much narrower `max-w-4xl` so it
+  actually uses the available desktop width instead of sitting in a
+  cramped centered column, while still not stretching edge-to-edge on very
+  large monitors. Collapses back to the existing single column below `lg:`
+  — same JSX for every platform, no `isNative` branch, since this is an
+  ordinary responsive reflow rather than a platform difference. The two
+  columns are vertically centered against each other (`lg:items-center`)
+  with a wider `lg:gap-12` between them.
+- Follow-up pass on the same page: the title is now a `textarea` that grows
+  with content with no line cap (was a single-line `<input>` that silently
+  overflowed/clipped long text — see `useAutoGrowHeight` in
+  `NoteEditorPage.tsx`); the description grows the same way but caps at
+  `max-h-[210px]` (~10 lines) and scrolls internally beyond that. The items
+  block dropped its `border-ink` outline (kept `shadow-card`) and got a
+  bigger `gap-4` between rows, with the checkbox now flush against the
+  block's left edge (`pr-4`/no left padding, container `rounded-card` is
+  `0px` per the design system so nothing clips). The "Add" control became a
+  small square `+` icon button (`font-display`) instead of a full-width
+  labeled `Button`. Counter-type notes now get the same swatch-colored
+  config block as list notes, in the same left-column slot (was plain
+  white fields in the right column).
+- Third follow-up: the right column's controls (Note Type/Color/Priority/
+  Delete) no longer stretch to fill the full 60% grid track — wrapped in a
+  `mx-auto max-w-xs` inner block so they're horizontally centered within the
+  track instead of spanning it edge to edge. The counter Step/Target inputs
+  switched from a transparent background to `bg-white` (previously blended
+  into the swatch-colored block behind them). The "new item" input gained
+  `pl-3` so its text/placeholder isn't flush against the block's left edge
+  the way the checkbox rows intentionally are.
+
 ## 2026-09-03 — Kanban drag-and-drop for the board
 
 Added drag-and-drop to the board, native to each platform's interaction model rather

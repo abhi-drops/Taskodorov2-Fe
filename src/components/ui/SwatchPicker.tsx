@@ -11,7 +11,7 @@ interface SwatchPickerProps {
 export function SwatchPicker({ value, onChange, disabled = false, className = '' }: SwatchPickerProps) {
   return (
     <div
-      className={`flex items-center gap-3 ${disabled ? 'pointer-events-none opacity-50' : ''} ${className}`}
+      className={`flex items-center gap-3 ${disabled ? 'pointer-events-none' : ''} ${className}`}
       role="radiogroup"
     >
       {SWATCH_OPTIONS.map((color) => {

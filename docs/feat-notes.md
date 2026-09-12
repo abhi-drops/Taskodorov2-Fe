@@ -62,6 +62,43 @@ button → `ConfirmDialog`) despite not being visible in the specific mockup cro
 was built from — `docs/phase2-offline-first-plan.md`'s scope for Phase 2 explicitly
 includes note delete, so it was added anyway.
 
+The title and description auto-grow with content (`useAutoGrowHeight` in
+`NoteEditorPage.tsx`, a small `useLayoutEffect` that resizes a `<textarea>` to its
+`scrollHeight` on every value change) instead of a fixed-size `<input>`/`<textarea>`
+that silently clipped or stayed empty space. Title has no line cap; description caps
+at `max-h-[210px]` (~10 lines at `text-sm`) and scrolls internally past that.
+
+For a list-type note, the checklist items and the "new item" input all live inside one
+continuous container carrying the note's own `SWATCH_CLASSES[color]` background and
+`shadow-card` (no border — the block deliberately doesn't use `border-ink` here, unlike
+most other chrome-on-a-colored-card cases) — the same solid-color-block treatment
+`ListNoteCard.tsx` uses on the board, rather than each row/the input having its own
+separate border. Individual item rows are plain `flex items-center gap-2` with a
+`gap-4` between rows, and the checkbox sits flush against the block's left edge (no
+left padding — safe because `rounded-card` is `0px`, so there's no corner to clip
+into). The "new item" input, unlike the checkbox rows, does get a small `pl-3` so its
+text/placeholder isn't flush against that same edge. The item remove "×" uses
+`text-ink` (not a hardcoded swatch color) so it stays legible against any of the four
+note colors. The "Add" control is a small square `+` icon button (`font-display`,
+bordered `border-ink`) rather than a full labeled `Button`, since it sits inline with
+the input instead of needing its own row.
+
+Counter-type notes get an equivalent swatch-colored config block (the Step/Target
+inputs, `border-2 border-ink` with an explicit `bg-white` — unlike the items block,
+these stay opaque white rather than blending into the swatch color) in the same
+left-column slot the items block uses for list notes — previously these were plain
+white-bordered fields in the right-hand config column.
+
+On `lg:` viewports and wider, the page splits into a 40/60 two-column grid instead of
+one column: title/description + items/counter-config on the left (40%), Note Type/
+Color/Priority/Delete ("config for note") on the right (60%), capped at `max-w-6xl`,
+vertically centered against each other (`lg:items-center`) with `lg:gap-12` between
+them. The right column's controls are further wrapped in a `mx-auto max-w-xs` block so
+they're horizontally centered within that 60% track rather than stretched to fill it.
+Below that breakpoint it's the same single column as before — this is a plain CSS
+breakpoint, not an `isNative` branch, since both platforms should reflow the same way
+at the same width.
+
 ## Board rendering (`components/ui/{Basic,Counter,List}NoteCard.tsx`)
 
 Each card: clicking anywhere navigates to the editor **except** its interactive
