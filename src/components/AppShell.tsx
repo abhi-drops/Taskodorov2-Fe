@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react'
 import { usePlatform } from '../lib/platform/usePlatform'
+import { useAndroidBackButton } from '../lib/platform/useAndroidBackButton'
 import { TopNav } from './ui/TopNav'
 import { BottomNav } from './ui/BottomNav'
+import { ExitToast } from './ui/ExitToast'
 
 interface AppShellProps {
   children: ReactNode
@@ -12,6 +14,7 @@ interface AppShellProps {
 
 export function AppShell({ children, headerStart, headerEnd, addNoteGroupId }: AppShellProps) {
   const { isNative } = usePlatform()
+  const { showExitToast } = useAndroidBackButton()
 
   return (
     <div className="bg-grid flex min-h-svh flex-col">
@@ -24,6 +27,7 @@ export function AppShell({ children, headerStart, headerEnd, addNoteGroupId }: A
       )}
       <div className={`flex flex-1 flex-col p-6 ${isNative ? 'pb-24' : ''}`}>{children}</div>
       {isNative && <BottomNav addNoteGroupId={addNoteGroupId} />}
+      {showExitToast && <ExitToast />}
     </div>
   )
 }
