@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useWorkspace } from '../lib/workspace/useWorkspace'
-import { listGroups } from '../lib/db/groups'
-import { listNotesByWorkspace } from '../lib/db/notes'
+import { listGroups, reorderGroups as reorderGroupsInDb } from '../lib/db/groups'
+import { listNotesByWorkspace, reorderNotes } from '../lib/db/notes'
 import type { Group } from '../types/group'
 import type { Note } from '../types/note'
 
@@ -67,5 +67,84 @@ export function useBoard() {
     setNotes(await listNotesByWorkspace(activeWorkspaceId))
   }
 
-  return { groups, activeGroupId, setActiveGroupId, notesForGroup, refresh }
+  /**
+   * Drag-and-drop move: relocates `noteId` into `toGroupId`, at `destIndex` when the
+   * destination is sorted 'manual' (destIndex is ignored otherwise — the note is just
+   * appended and the group's own sort rule places it visually, per feat-groups.md).
+   * Also used for a same-group manual reorder (toGroupId === the note's current group).
+   */
+  async function moveNote(noteId: string, toGroupId: string, destIndex: number) {
+    const note = notes.find((n) => n.id === noteId)
+    const destGroup = groups.find((g) => g.id === toGroupId)
+    if (!note || !destGroup) return
+    const fromGroupId = note.groupId
+
+    const destSiblings = notes
+      .filter((n) => n.groupId === toGroupId && n.id !== noteId)
+      .sort((a, b) => a.position - b.position)
+
+    const updates: { id: string; groupId: string; position: number }[] = []
+
+    if (destGroup.sortedBy === 'manual') {
+      const ordered = [...destSiblings]
+      ordered.splice(Math.max(0, Math.min(destIndex, ordered.length)), 0, note)
+      ordered.forEach((n, i) => updates.push({ id: n.id, groupId: toGroupId, position: i }))
+    } else {
+      updates.push({ id: noteId, groupId: toGroupId, position: destSiblings.length })
+    }
+
+    if (fromGroupId !== toGroupId) {
+      const sourceGroup = groups.find((g) => g.id === fromGroupId)
+      if (sourceGroup?.sortedBy === 'manual') {
+        notes
+          .filter((n) => n.groupId === fromGroupId && n.id !== noteId)
+          .sort((a, b) => a.position - b.position)
+          .forEach((n, i) => updates.push({ id: n.id, groupId: fromGroupId, position: i }))
+      }
+    }
+
+    const byId = new Map(updates.map((u) => [u.id, u]))
+    setNotes((current) =>
+      current.map((n) => {
+        const update = byId.get(n.id)
+        return update ? { ...n, groupId: update.groupId, position: update.position } : n
+      }),
+    )
+
+    try {
+      await reorderNotes(updates)
+    } catch (err) {
+      console.error('Failed to persist note reorder:', err)
+      await refresh()
+    }
+  }
+
+  /** Drag-and-drop column/tab reorder — `orderedGroupIds` is the board's full new group order. */
+  async function reorderGroups(orderedGroupIds: string[]) {
+    const updates = orderedGroupIds.map((id, position) => ({ id, position }))
+    const byId = new Map(updates.map((u) => [u.id, u.position]))
+    setGroups((current) =>
+      [...current]
+        .map((g) => (byId.has(g.id) ? { ...g, position: byId.get(g.id)! } : g))
+        .sort((a, b) => a.position - b.position),
+    )
+
+    try {
+      await reorderGroupsInDb(updates)
+    } catch (err) {
+      console.error('Failed to persist group reorder:', err)
+      if (activeWorkspaceId) setGroups(await listGroups(activeWorkspaceId))
+    }
+  }
+
+  return {
+    groups,
+    notes,
+    activeGroupId,
+    setActiveGroupId,
+    notesForGroup,
+    refresh,
+    moveNote,
+    reorderGroups,
+  }
 }

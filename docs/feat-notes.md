@@ -74,3 +74,7 @@ refresh the caller's list — no editor round-trip needed for a quick toggle.
 `priority` → high→low. The group's `ProgressBar` is a simple complete/total count over
 its notes (`note.completed`) — the mockups' "excluding notes with an active on-check-
 move-to rule" variant is deferred to Phase 3 along with that feature itself.
+
+Cards are drag-and-drop sources (reorder within a `manual` group, move to any group) —
+see `feat-groups.md`'s "Drag-and-drop" section. This is unrelated to a list note's
+per-item `position` mentioned above, which still has no reorder UI.

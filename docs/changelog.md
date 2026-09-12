@@ -4,6 +4,28 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-09-03 — Kanban drag-and-drop for the board
+
+Added drag-and-drop to the board, native to each platform's interaction model rather
+than one shared widget — see `docs/feat-groups.md`'s "Drag-and-drop" section for the
+full behavior:
+
+- New dependency: `@dnd-kit/core` + `@dnd-kit/sortable` + `@dnd-kit/utilities`.
+- `lib/db/notes.ts`/`lib/db/groups.ts` gained `reorderNotes`/`reorderGroups` bulk
+  position-reindex helpers (same `withDb` pattern as the existing CRUD functions);
+  `common_logics/useBoard.ts` gained `moveNote`/`reorderGroups` actions that optimistic-
+  update local state then persist.
+- New `common_logics/useBoardDnd.ts` (sensors + `onDragEnd` routing, shared by both
+  platforms) and `components/BoardTabStrip.tsx` (mobile-only tab strip: doubles as a
+  sortable chip for group reordering and a dwell-to-switch drop target for notes).
+- `GroupColumn.tsx` notes are now drag-sortable when their group is `sortedBy: 'manual'`
+  and always droppable (a note dropped into a non-manual group is appended, positioned
+  by that group's own sort rule, not the drop point); web's column header chip is now
+  itself draggable for column reordering.
+- Note: mobile's dwell-to-switch and touch drag-activation behavior needs a real
+  device/emulator to verify (`npm run android`) — not exercisable from a resized browser
+  window, per this repo's native-vs-web platform-detection rule.
+
 ## 2026-08-28 — Board & note-card visual rework (2.7)
 
 Restyled the board/home screen to match a Penpot design export pixel-for-pixel, replacing

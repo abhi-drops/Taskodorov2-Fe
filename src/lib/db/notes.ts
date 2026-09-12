@@ -199,3 +199,22 @@ export function deleteNote(id: string): Promise<void> {
     await db.run('UPDATE notes SET deleted_at = ?, updated_at = ? WHERE id = ?', [now, now, id])
   })
 }
+
+/**
+ * Bulk position/group reindex for drag-and-drop drops — see docs/feat-groups.md's
+ * manual sort mode. Callers pass the full new `{ id, groupId, position }` for every
+ * note whose position or group actually changed (not the whole board).
+ */
+export function reorderNotes(updates: { id: string; groupId: string; position: number }[]): Promise<void> {
+  return withDb(async (db) => {
+    const now = Date.now()
+    for (const update of updates) {
+      await db.run('UPDATE notes SET group_id = ?, position = ?, updated_at = ? WHERE id = ?', [
+        update.groupId,
+        update.position,
+        now,
+        update.id,
+      ])
+    }
+  })
+}

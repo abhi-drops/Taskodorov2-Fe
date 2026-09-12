@@ -1,16 +1,41 @@
 import { Link } from 'react-router'
+import { DndContext, DragOverlay } from '@dnd-kit/core'
+import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
 import { AppShell } from '../components/AppShell'
 import { WorkspaceSwitcher } from '../components/WorkspaceSwitcher'
 import { GroupColumn } from '../components/GroupColumn'
+import { BoardTabStrip } from '../components/BoardTabStrip'
 import { Icon } from '../components/ui/Icon'
-import { Tabs } from '../components/ui/Tabs'
+import { SWATCH_CLASSES } from '../components/ui/swatchColors'
 import { usePlatform } from '../lib/platform/usePlatform'
 import { useBoard } from '../common_logics/useBoard'
+import { useBoardDnd, groupChipDragId } from '../common_logics/useBoardDnd'
+import { resolveNoteColor } from '../lib/notes/resolveNoteColor'
 import searchIcon from '../assets/search.png'
+
+/** Lightweight drag ghost — not the full interactive card, just enough to track the cursor. */
+function DragGhost({ item, groups }: { item: NonNullable<ReturnType<typeof useBoardDnd>['activeDragItem']>; groups: ReturnType<typeof useBoard>['groups'] }) {
+  if (item.type === 'group-chip') {
+    return (
+      <div className="inline-flex items-center rounded-card border-[3px] border-ink bg-slate-300 px-3 py-1 font-display text-sm font-medium text-ink shadow-card">
+        {item.group.name}
+      </div>
+    )
+  }
+  const group = groups.find((g) => g.id === item.note.groupId)
+  const color = group ? resolveNoteColor(item.note, group) : 'blue'
+  return (
+    <div className={`w-72 rounded-card p-4 shadow-card ${SWATCH_CLASSES[color]}`}>
+      <p className="line-clamp-2 text-sm font-medium text-black">{item.note.title}</p>
+    </div>
+  )
+}
 
 export default function HomePage() {
   const { isNative } = usePlatform()
-  const { groups, activeGroupId, setActiveGroupId, notesForGroup, refresh } = useBoard()
+  const board = useBoard()
+  const { groups, activeGroupId, setActiveGroupId, notesForGroup, refresh } = board
+  const { sensors, activeDragItem, handleDragStart, handleDragEnd, handleDragCancel } = useBoardDnd(board)
   const activeGroup = groups.find((g) => g.id === activeGroupId)
 
   const workspaceSwitcher = <WorkspaceSwitcher />
@@ -40,30 +65,36 @@ export default function HomePage() {
             Go to Power Tools
           </Link>
         </div>
-      ) : isNative ? (
-        <div className="mt-6 flex flex-1 flex-col gap-4">
-          <Tabs
-            options={groups.map((g) => ({ label: g.name, value: g.id }))}
-            value={activeGroupId ?? ''}
-            onChange={setActiveGroupId}
-          />
-          {activeGroup && (
-            <GroupColumn
-              group={activeGroup}
-              notes={notesForGroup(activeGroup)}
-              onChange={refresh}
-              showHeader={false}
-            />
-          )}
-        </div>
       ) : (
-        <div className="mt-6 flex flex-1 gap-10 overflow-x-auto">
-          {groups.map((group) => (
-            <div key={group.id} className="w-[22rem] shrink-0 pl-5">
-              <GroupColumn group={group} notes={notesForGroup(group)} onChange={refresh} />
+        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
+          {isNative ? (
+            <div className="mt-6 flex flex-1 flex-col gap-4">
+              <BoardTabStrip groups={groups} activeGroupId={activeGroupId ?? ''} onSelect={setActiveGroupId} />
+              {activeGroup && (
+                <GroupColumn
+                  group={activeGroup}
+                  notes={notesForGroup(activeGroup)}
+                  onChange={refresh}
+                  showHeader={false}
+                />
+              )}
             </div>
-          ))}
-        </div>
+          ) : (
+            <SortableContext
+              items={groups.map((g) => groupChipDragId(g.id))}
+              strategy={horizontalListSortingStrategy}
+            >
+              <div className="mt-6 flex flex-1 gap-10 overflow-x-auto">
+                {groups.map((group) => (
+                  <div key={group.id} className="w-[22rem] shrink-0 pl-5">
+                    <GroupColumn group={group} notes={notesForGroup(group)} onChange={refresh} />
+                  </div>
+                ))}
+              </div>
+            </SortableContext>
+          )}
+          <DragOverlay>{activeDragItem && <DragGhost item={activeDragItem} groups={groups} />}</DragOverlay>
+        </DndContext>
       )}
     </AppShell>
   )

@@ -113,6 +113,16 @@ export function updateGroup(
   })
 }
 
+/** Bulk position reindex for drag-and-drop column/tab reordering. */
+export function reorderGroups(updates: { id: string; position: number }[]): Promise<void> {
+  return withDb(async (db) => {
+    const now = Date.now()
+    for (const update of updates) {
+      await db.run('UPDATE groups SET position = ?, updated_at = ? WHERE id = ?', [update.position, now, update.id])
+    }
+  })
+}
+
 export function deleteGroup(id: string): Promise<void> {
   return withDb(async (db) => {
     const now = Date.now()
