@@ -5,6 +5,7 @@ import { AppShell } from '../components/AppShell'
 import { WorkspaceSwitcher } from '../components/WorkspaceSwitcher'
 import { GroupColumn } from '../components/GroupColumn'
 import { BoardTabStrip } from '../components/BoardTabStrip'
+import { GroupDropTargets } from '../components/GroupDropTargets'
 import { Icon } from '../components/ui/Icon'
 import { SWATCH_CLASSES } from '../components/ui/swatchColors'
 import { usePlatform } from '../lib/platform/usePlatform'
@@ -35,7 +36,12 @@ export default function HomePage() {
   const { isNative } = usePlatform()
   const board = useBoard()
   const { groups, activeGroupId, setActiveGroupId, notesForGroup, refresh } = board
-  const { sensors, activeDragItem, handleDragStart, handleDragEnd, handleDragCancel } = useBoardDnd(board)
+  const { sensors, activeDragItem, handleDragStart, handleDragEnd, handleDragCancel } = useBoardDnd(board, {
+    // Mobile only: after dragging a note into a different group via GroupDropTargets,
+    // switch the tab strip to that group so the user sees where it landed — on web all
+    // columns are visible at once, so there's no "active" column to update.
+    onNoteMovedToGroup: isNative ? setActiveGroupId : undefined,
+  })
   const activeGroup = groups.find((g) => g.id === activeGroupId)
 
   const workspaceSwitcher = <WorkspaceSwitcher />
@@ -69,7 +75,11 @@ export default function HomePage() {
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
           {isNative ? (
             <div className="mt-6 flex flex-1 flex-col gap-4">
-              <BoardTabStrip groups={groups} activeGroupId={activeGroupId ?? ''} onSelect={setActiveGroupId} />
+              {activeDragItem?.type === 'note' ? (
+                <GroupDropTargets groups={groups.filter((g) => g.id !== activeGroupId)} />
+              ) : (
+                <BoardTabStrip groups={groups} activeGroupId={activeGroupId ?? ''} onSelect={setActiveGroupId} />
+              )}
               {activeGroup && (
                 <GroupColumn
                   group={activeGroup}

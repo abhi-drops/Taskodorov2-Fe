@@ -44,6 +44,14 @@ function NoteCard({ note, group, onChange }: { note: Note; group: Group; onChang
  * the editor (see the *NoteCard components) — dnd-kit's activation constraints (a
  * mouse-move distance threshold, a touch long-press delay) keep a plain tap from being
  * swallowed as a drag, so no separate drag handle is needed.
+ *
+ * `touch-action: manipulation`, not `none` — this app uses a *delay*-based touch
+ * activation (long-press), not distance-based, so the touch sensor's own delay+
+ * tolerance already distinguishes a quick scroll swipe from a held press; `none` was
+ * tried first but disables the browser's native scroll for any touch starting on a
+ * card, which is most of a group's list, breaking vertical scrolling entirely.
+ * `manipulation` still blocks double-tap-zoom while leaving panning/scroll to the
+ * browser.
  */
 function SortableNoteCard({ note, group, onChange }: { note: Note; group: Group; onChange: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -54,7 +62,12 @@ function SortableNoteCard({ note, group, onChange }: { note: Note; group: Group;
   return (
     <div
       ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.4 : 1,
+        touchAction: 'manipulation',
+      }}
       {...attributes}
       {...listeners}
     >
@@ -77,7 +90,12 @@ function DraggableNoteCard({ note, group, onChange }: { note: Note; group: Group
   })
 
   return (
-    <div ref={setNodeRef} style={{ opacity: isDragging ? 0.4 : 1 }} {...attributes} {...listeners}>
+    <div
+      ref={setNodeRef}
+      style={{ opacity: isDragging ? 0.4 : 1, touchAction: 'manipulation' }}
+      {...attributes}
+      {...listeners}
+    >
       <NoteCard note={note} group={group} onChange={onChange} />
     </div>
   )

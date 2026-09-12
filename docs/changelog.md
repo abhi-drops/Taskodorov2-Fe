@@ -16,15 +16,32 @@ full behavior:
   `common_logics/useBoard.ts` gained `moveNote`/`reorderGroups` actions that optimistic-
   update local state then persist.
 - New `common_logics/useBoardDnd.ts` (sensors + `onDragEnd` routing, shared by both
-  platforms) and `components/BoardTabStrip.tsx` (mobile-only tab strip: doubles as a
-  sortable chip for group reordering and a dwell-to-switch drop target for notes).
-- `GroupColumn.tsx` notes are now drag-sortable when their group is `sortedBy: 'manual'`
-  and always droppable (a note dropped into a non-manual group is appended, positioned
-  by that group's own sort rule, not the drop point); web's column header chip is now
-  itself draggable for column reordering.
-- Note: mobile's dwell-to-switch and touch drag-activation behavior needs a real
-  device/emulator to verify (`npm run android`) — not exercisable from a resized browser
-  window, per this repo's native-vs-web platform-detection rule.
+  platforms) and `components/BoardTabStrip.tsx` (mobile-only tab strip, doubles as a
+  sortable chip for group reordering).
+- `GroupColumn.tsx` notes are drag-sortable when their group is `sortedBy: 'manual'`,
+  and a plain (non-reordering) drag source in every other group so they can still be
+  moved to a different group regardless of sort mode; always droppable (a note dropped
+  into a non-manual group is appended, positioned by that group's own sort rule, not the
+  drop point). Web's column header chip is itself draggable for column reordering.
+- Mobile cross-group move went through a redesign after the first version (drag a note
+  onto a tab, dwell to auto-switch) proved unreliably fussy on a real Android device —
+  small multi-purpose touch target, custom geometry hit-testing, missing
+  `touch-action: none` racing the WebView's native scroll. Replaced with
+  `components/GroupDropTargets.tsx`: starting a note drag swaps the tab strip for a row
+  of large "drop here" tiles (one per other group) using plain dnd-kit `useDroppable`
+  collision detection — no custom timers or hit-testing. Also widened the touch
+  sensor's activation tolerance (a resting finger drifts more than a mouse).
+- On mobile, a successful cross-group note drop now switches the active tab to the
+  destination group (`useBoardDnd`'s new `onNoteMovedToGroup` option, wired in
+  `HomePage.tsx`) so the note's new location is immediately visible.
+- Fixed vertical scrolling being completely broken on a group's note list on mobile:
+  the note cards' `touch-action: none` (added for reliable touch drag) disabled the
+  browser's native scroll for any touch starting on a card — nearly the whole list.
+  Switched to `touch-action: manipulation`, which was sufficient all along since
+  activation here is delay-based (long-press), not distance-based.
+- Note: mobile's touch drag-activation behavior still needs a real device/emulator to
+  verify (`npm run android`) — not exercisable from a resized browser window, per this
+  repo's native-vs-web platform-detection rule.
 
 ## 2026-08-28 — Board & note-card visual rework (2.7)
 
