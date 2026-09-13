@@ -4,6 +4,26 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-09-13 — Search page: desktop layout with a bento/masonry results grid
+
+`SearchPage.tsx` had no desktop-specific layout at all — capped at `max-w-md` and a
+single vertical list of results regardless of viewport. See
+`docs/feat-search-filter.md`'s new "Desktop layout" section for the full behavior.
+
+- Outer container widens to `lg:max-w-6xl` (matching `NoteEditorPage.tsx`'s
+  convention); the search input, "Filter" toggle, filter panel, and group `Tabs` row
+  keep the collapsible filter-toggle behavior unchanged from mobile. Folded in the
+  filter panel's `shadow-lg` → `shadow-card` migration flagged as pending in
+  `docs/style-guide.md`.
+- Results switch from a single list to a bento/masonry grid at `md:`/`lg:`, since note
+  cards vary a lot in height (list notes especially). Plain CSS `columns-2`/`columns-3`
+  + `break-inside-avoid` per card, no new dependency — the container needed an
+  explicit `md:block` alongside `md:columns-2`, since CSS `columns` has no effect on a
+  `flex` container (the mobile-only base layout) without it.
+- Follow-up: the search/filter cluster was initially constrained to a centered 3/4
+  width, but that looked misaligned against the full-width results grid once seen
+  together — widened it to match the grid's full width instead of narrowing the grid.
+
 ## 2026-09-12 — Android hardware back button / edge-swipe now navigates instead of exiting
 
 Fixed Android's hardware back button and the right-edge swipe-back gesture exiting the
