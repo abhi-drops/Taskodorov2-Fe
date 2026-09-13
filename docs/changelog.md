@@ -4,6 +4,27 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-09-12 — Android hardware back button / edge-swipe now navigates instead of exiting
+
+Fixed Android's hardware back button and the right-edge swipe-back gesture exiting the
+app from every page instead of stepping back through in-app navigation history. See
+`docs/feat-navigation.md`'s new "Android hardware back button / edge-swipe" section for
+the full behavior.
+
+- New dependency: `@capacitor/app`. Its `backButton` event fires for both the hardware
+  button and the Android gesture-nav back swipe (both funnel through the same
+  `Activity.onBackPressed()` → Capacitor bridge event on a `BridgeActivity`), so one
+  listener covers both. Without a JS-side listener, Capacitor's default behavior is to
+  exit the activity outright rather than walk router history — nothing in the app
+  previously registered one.
+- New `src/lib/platform/useAndroidBackButton.ts` hook (native-only, gated on
+  `usePlatform().isNative`): calls `window.history.back()` when the native event
+  reports `canGoBack`, since the router (`createBrowserRouter`) already uses real
+  browser history; otherwise — always Home, since the app boots at `/` — arms a ~2s
+  "press back again to exit" window before calling `App.exitApp()`.
+- New `src/components/ui/ExitToast.tsx`, the "Press back again to exit" confirmation
+  banner, wired into `AppShell.tsx` globally so it's available on every route.
+
 ## 2026-09-12 — Note editor: swatch-colored items + desktop two-column layout
 
 Fixed the note editor (`NoteEditorPage.tsx`) rendering checklist items and the

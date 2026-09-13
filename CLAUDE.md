@@ -90,6 +90,7 @@ Critical gotcha with this specific native plugin version: its `signIn()` call **
 - **CORS origin**: Capacitor's Android WebView serves the app from origin `https://localhost` by default — not the web dev origin (`http://localhost:5173`). The backend's CORS allowlist must include both origins, or native requests will pass preflight (`OPTIONS` returns 204) but the browser will still refuse to send the actual request.
 - **SQLite version pin**: `sql.js` must stay pinned to exactly the version `jeep-sqlite`'s bundled glue was built against (currently `1.11.0`, see `docs/feat-offline-data-layer.md`) — a routine `npm update` here will break web (not native) with an opaque `LinkError` at WASM instantiation.
 - `android/` is a generated Capacitor native project (gitignored build artifacts under `android/app/build/`) and is excluded from ESLint's scope in `eslint.config.js`.
+- **Back button/edge-swipe exits the app by default**: Capacitor's `BridgeActivity` has no built-in "walk the WebView/router history" behavior — without a `@capacitor/app` `backButton` listener, every back press (hardware button or the right-edge gesture-nav swipe) just exits the activity outright. Handled by `src/lib/platform/useAndroidBackButton.ts`; see `docs/feat-navigation.md`'s "Android hardware back button / edge-swipe" section.
 
 ### Local Android device testing
 

@@ -32,6 +32,30 @@ viewport check. The two navs are intentionally not 1:1: web's pill only has
 Home/Power Tools (2 items), mobile's bar has Home/+/Power Tools (3 items) — matches
 what the actual Penpot mockups show for each platform rather than forcing parity.
 
+## Android hardware back button / edge-swipe
+
+Handled by `src/lib/platform/useAndroidBackButton.ts`, mounted once in `AppShell.tsx`
+so it's active on every route regardless of page. Without this, Capacitor's
+`BridgeActivity` exits the app on any back press — hardware button or the right-edge
+gesture-nav swipe, both of which fire the same `@capacitor/app` `backButton` event —
+instead of walking the router's history, since nothing registers a JS-side listener by
+default.
+
+Behavior: the native event's `canGoBack` reflects real `window.history` depth, since
+the router (`createBrowserRouter`) uses actual browser `pushState` history — most
+navigation (`BottomNav`/`TopNav` links, note-card taps) pushes rather than replaces, so
+history accumulates as the user moves around. When `canGoBack` is true, the hook calls
+`window.history.back()`, which the router picks up as a normal `popstate`/`POP`
+navigation — no `useNavigate`/router context needed, since the hook doesn't render
+under `RouterProvider` anyway. When it's false — always Home, since the app boots at
+`/` (see "Guest-first" above) — the first back press arms a ~2s window and shows
+`ExitToast` ("Press back again to exit"); a second press within that window calls
+`App.exitApp()`.
+
+This is native-only (gated on `usePlatform().isNative`) and, per the platform-detection
+rule referenced above (`style-guide.md`), can only be verified on a real device/
+emulator — browser resizing can't exercise it.
+
 ## Responsiveness
 
 Per an explicit product decision (not a mockup requirement): web content should be
