@@ -4,6 +4,32 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-09-13 — Power Tools redesigned: chip aesthetic + desktop 2-panel drill-down
+
+`PowerToolsPage`/`GroupSettingsPage` moved off the original generic white-card
+`shadow-lg` look onto the board's neo-brutalist chip system (`border-ink`,
+`shadow-card`), built against a mobile mockup and a rough desktop wireframe. See
+`docs/style-guide.md`'s "Power Tools: row chips + desktop 2-panel drill-down" and
+`docs/feat-power-tools.md`.
+
+- **Mobile**: unchanged structure (one scrolling page, then a separate full-page Group
+  Settings screen), reskinned to chip rows under plain section headings, matching the
+  two distinct mobile mockups.
+- **Desktop**: gained a real structural change — a persistent left sidebar
+  (new `components/PowerToolsSidebar.tsx`, 3 tabs: Groups/Addons/Account & Sync via
+  `?tab=`) with a right panel that drills down into a selected group's settings, while
+  `/power-tools` and `/power-tools/groups/:id` stay two separate routes underneath so
+  back/forward and deep-linking keep working. No separate "Back" control in the detail
+  view — the sidebar's own persistent "Groups" tab is the way back. Both page files
+  gained a genuine `isNative` branch for this (a real navigation-model difference, not
+  a CSS breakpoint).
+- New `ClockIcon`/`BoxIcon` inline SVGs (Pomodoro / group rows), following the
+  existing one-off-glyph convention rather than adding new PNG assets.
+- Danger actions (Reset to Default, Delete This Group) switched from the shared
+  `Button` `danger` variant to a page-local `DANGER_CHIP` class (adds the `border-ink`/
+  `shadow-card` chip treatment) — `Button.tsx` itself wasn't changed, since it's used
+  well beyond this page's aesthetic.
+
 ## 2026-09-13 — "Reset To Unchecked On Move" is now a per-group toggle (default on)
 
 Follow-up to the entry below: the unchecked-on-arrival reset is now optional, not

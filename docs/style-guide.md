@@ -36,8 +36,8 @@ No icon library. `src/assets/` holds a curated set of flat single-color PNGs
 `Modal`'s close "×" is `pluse.png` rotated 45°; `BottomNav`'s "+" is `pluse.png` with a
 `brightness(0) invert(1)` CSS filter to render white-on-purple. One-off glyphs that
 don't fit the PNG set (`Select`'s dropdown chevron, `WorkspaceSwitcher`'s trigger
-chevron, `PowerToolsPage`'s gear) are small inline SVGs or Unicode characters instead
-of pulling in an icon library for a single glyph.
+chevron, `PowerToolsPage`'s gear/clock/box icons) are small inline SVGs or Unicode
+characters instead of pulling in an icon library for a single glyph.
 
 ## Board & note-card system
 
@@ -54,12 +54,12 @@ both in `src/index.css`'s `@theme` block:
   is deliberately not matched 1:1 to the mockups (see Platform detection section below);
   `ink` is the new, separate token for the board's border/shadow system.
 - `--shadow-card: 1px 3px 0px 0px rgba(0,0,0,0.2)` — a crisp, hard-edged offset shadow (no
-  blur), replacing `shadow-lg` on note cards, the group chip, the add-note button, and the
-  TopNav/group backdrop cards. **`shadow-lg` is still used** on `Modal.tsx`, `AuthCard.tsx`,
-  and the white panels in `PowerToolsPage`/`SearchPage` — that's not an oversight, it's an
-  unfinished migration. `SearchPage` is next in line to move to `shadow-card`; treat any
-  other remaining `shadow-lg` usage as a candidate for the same migration rather than an
-  intentional permanent split.
+  blur), replacing `shadow-lg` on note cards, the group chip, the add-note button, the
+  TopNav/group backdrop cards, and (since the Power Tools redesign, see below)
+  `PowerToolsPage`/`GroupSettingsPage`'s row chips and danger buttons. **`shadow-lg` is
+  still used** on `Modal.tsx`, `AuthCard.tsx`, and `SearchPage`'s white panels — not an
+  oversight, an unfinished migration. Treat any remaining `shadow-lg` usage as a
+  candidate for the same migration rather than an intentional permanent split.
 
 `--radius-card` is now `0px` (was `1rem`) — square corners everywhere, still the *same*
 single radius token (`rounded-card`) the rest of the app uses, just repointed to 0. Don't
@@ -105,6 +105,42 @@ the reference exactly, including a subtle shadow sliver visible at the notch cor
 comes for free from the two independent shadows). Don't collapse this back into one div —
 the notch is the point.
 
+### Power Tools: row chips + desktop 2-panel drill-down
+
+`PowerToolsPage.tsx`/`GroupSettingsPage.tsx` were reworked against a mobile mockup
+(`docs/design-references/mobile/`) and a rough desktop wireframe to move off the
+original generic white-card-with-`shadow-lg` look onto the same chip system as the
+board: every row (a group, Pomodoro, Sync With Google, the "+ New group" input, Reset
+to Default / Delete This Group) is its own `border-[3px] border-ink shadow-card` chip
+(`bg-white`, `rounded-card`) stacked with gaps under a plain small-text section
+heading — not one big enclosing card containing a mini-list, matching the mockup's
+"list of independent chips" reading exactly like `GroupColumn`'s note list. Danger
+actions (Reset to Default, Delete This Group) are the same chip shape with
+`bg-sticky-coral text-white` instead of the shared `Button.tsx` `danger` variant (which
+has no border) — a page-local `DANGER_CHIP` class string in each file, not a change to
+`Button.tsx` itself, since that primitive is used well beyond this page's aesthetic.
+`ClockIcon`/`BoxIcon` (Pomodoro / each group row) are small inline SVGs local to
+`PowerToolsPage.tsx`, following the same one-off-glyph convention as the gear/chevron
+icons above rather than adding new PNG assets.
+
+**Mobile is unchanged in structure** — still the single scrolling page (Addon Tools →
+Groups → Account) and the separate full-page Group Settings screen, just reskinned;
+this matches the two distinct mobile mockups exactly.
+
+**Desktop gained a real structural change**: a persistent left sidebar
+(`components/PowerToolsSidebar.tsx`, 3 tabs — Groups/Addons/Account & Sync, via
+`?tab=` on `/power-tools`) with a right panel that swaps content depending on the
+selected tab, and — when a specific group is opened — "drills down" into that group's
+settings in the same right-panel position, mimicking a single 2-panel app even though
+`/power-tools` and `/power-tools/groups/:id` are still two real routes underneath (kept
+as separate routes deliberately, so browser back/forward and deep-linking still work —
+see `docs/feat-power-tools.md`). No explicit "Back" control in the detail view — the
+persistent sidebar's own "Groups" tab (`<PowerToolsSidebar activeTab="groups" />`,
+rendered by both pages) is the way back, so a separate back link would be redundant.
+This is a genuine `isNative` branch, not a CSS breakpoint (unlike `NoteEditorPage`'s
+`lg:` grid) — the sidebar+drill-down is a real interaction/navigation-model
+difference from mobile's flat page stack, not just a layout reflow at the same width.
+
 ### TopNav backdrop
 
 `TopNav.tsx` wraps its two-pill `<nav>` in a `border border-neutral-300 bg-surface p-2.5
@@ -147,13 +183,16 @@ system" above).
 | `Icon.tsx` | Thin `<img>` wrapper used by everything above. |
 | `ExitToast.tsx` | Small fixed-position "Press back again to exit" pill, shown above `BottomNav` when the Android hardware back button/edge-swipe is pressed on Home with no more history — see `docs/feat-navigation.md`. Native-only in practice (driven by `useAndroidBackButton`), but the component itself has no platform branching of its own. |
 
-`AppShell.tsx` and `GroupColumn.tsx` (`src/components/`, not `components/ui/` — they're
-layout/domain composites, not dumb primitives) follow the same pattern as
-`WorkspaceSwitcher.tsx`: tied to one page's concept, not generic enough to live in `ui/`.
-`AppShell` wraps page content with `.bg-grid` + `TopNav`/`BottomNav` based on
-`usePlatform().isNative` (plus the `headerStart`/`headerEnd` slots above) — every page routes
-through it. `GroupColumn` is the board's column renderer, used by both the web multi-column
-layout and the mobile single-active-tab view in `HomePage.tsx`.
+`AppShell.tsx`, `GroupColumn.tsx`, and `PowerToolsSidebar.tsx` (`src/components/`, not
+`components/ui/` — they're layout/domain composites, not dumb primitives) follow the
+same pattern as `WorkspaceSwitcher.tsx`: tied to one page's concept, not generic enough
+to live in `ui/`. `AppShell` wraps page content with `.bg-grid` + `TopNav`/`BottomNav`
+based on `usePlatform().isNative` (plus the `headerStart`/`headerEnd` slots above) —
+every page routes through it. `GroupColumn` is the board's column renderer, used by
+both the web multi-column layout and the mobile single-active-tab view in
+`HomePage.tsx`. `PowerToolsSidebar` is the desktop-only persistent left panel shared by
+`PowerToolsPage`/`GroupSettingsPage` — see "Power Tools: row chips + desktop 2-panel
+drill-down" above.
 
 ## Platform detection
 
