@@ -68,8 +68,12 @@ plain `SELECT *`.
 - **`workspaces`**: `name`, `position`.
 - **`groups`**: `workspace_id`, `name`, `position`, `sorted_by`
   (`manual|alphabetical|date|priority`), `note_color_mode` (`manual|random|priority`),
-  `on_check_move_to_group_id` (column exists, **non-functional** — see
-  `feat-groups.md`).
+  `on_check_move_to_group_id` (nullable FK to another group in the same workspace —
+  functional, see `feat-groups.md`/`feat-notes.md`'s "On Check Move To"),
+  `reset_on_move` (`INTEGER NOT NULL DEFAULT 1` — whether a note lands unchecked in its
+  destination; only meaningful alongside `on_check_move_to_group_id`. The first column
+  added via the `migrateSchema()`/`ensureColumn()` idempotent-`ALTER TABLE` pattern
+  described above, rather than only in `CREATE TABLE IF NOT EXISTS`).
 - **`notes`**: `workspace_id`, `group_id`, `type` (`basic|counter|list`), `title`,
   `description`, `color`, `priority` (`low|normal|medium|high`), `position`,
   `completed` (`INTEGER` 0/1), `payload` (`TEXT`, JSON — type-specific shape, see

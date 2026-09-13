@@ -183,9 +183,15 @@ refresh the caller's list — no editor round-trip needed for a quick toggle.
 
 `useBoard.ts` sorts each group's notes per its `sortedBy` setting: `manual` → existing
 `position`; `alphabetical` → title A-Z; `date` → `createdAt` descending (newest first);
-`priority` → high→low. The group's `ProgressBar` is a simple complete/total count over
-its notes (`note.completed`) — the mockups' "excluding notes with an active on-check-
-move-to rule" variant is deferred to Phase 3 along with that feature itself.
+`priority` → high→low. **No `ProgressBar` is actually rendered on the board** —
+`components/ui/ProgressBar.tsx` exists as a generic primitive but has no call site
+anywhere in the app (removed from `GroupColumn` in 2.7, see `style-guide.md`); an
+earlier draft of this doc described a per-group complete/total `ProgressBar` and a
+Phase-3-deferred "excluding notes with an active On Check Move To rule" variant of it,
+neither of which reflects the current board — On Check Move To itself is built now
+(see the section above), and there's simply no progress bar on a group to begin with,
+so that exclusion question doesn't currently apply to anything on-screen. Revisit this
+note if a group-level progress indicator is ever added back.
 
 Cards are drag-and-drop sources (reorder within a `manual` group, move to any group) —
 see `feat-groups.md`'s "Drag-and-drop" section. This is unrelated to a list note's

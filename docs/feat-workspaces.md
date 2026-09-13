@@ -83,6 +83,15 @@ style of its own):
 - Delete confirmation switched from a bespoke full-content-swap of the open panel to
   the shared `ConfirmDialog` (same component `GroupSettingsPage`/`PowerToolsPage`
   use for their destructive actions) — a second stacked `Modal` on mobile, where the
-  switcher itself already *is* one; the only visible side effect is two semi-
-  transparent backdrops briefly overlapping (slightly darker), not a functional issue,
-  and was accepted in favor of consistency over the old code path being bespoke.
+  switcher itself already *is* one. `ConfirmDialog` itself later adopted this same
+  frosted-white overlay/deep-shadow treatment (see below), so on mobile this is now two
+  stacked frosted-white overlays rather than one white on top of a dark one — a
+  slightly heavier blur/tint where they overlap, not a functional issue, accepted in
+  favor of consistency over the old code path being bespoke.
+- **`ConfirmDialog.tsx` itself now uses this same overlay/shadow treatment
+  everywhere** — not just for workspace delete. Every destructive confirmation in the
+  app (note delete, group delete, workspace delete, Reset to Default) goes through
+  that one shared component, so they all picked up `bg-white/60 backdrop-blur-sm` +
+  the deeper offset shadow automatically once `ConfirmDialog` passed the same
+  `overlayClassName`/`panelClassName` to its own `Modal` call — see
+  `docs/style-guide.md`'s `ConfirmDialog.tsx` entry.

@@ -4,6 +4,15 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-09-13 — Every confirm dialog in the app gets the frosted-dim + deep-shadow look
+
+`ConfirmDialog.tsx` now passes `Modal`'s `overlayClassName`/`panelClassName` with the
+same `bg-white/60 backdrop-blur-sm` overlay and `shadow-[6px_10px_0px_0px_rgba(0,0,0,0.25)]`
+panel shadow `WorkspaceSwitcher` introduced — since every destructive confirmation
+(note delete, group delete, workspace delete, Reset to Default) goes through this one
+component, they all pick it up automatically. `Modal`'s own defaults are unchanged for
+any future consumer that doesn't opt in. See `docs/style-guide.md`.
+
 ## 2026-09-13 — Fix: workspace switcher trigger's elevated z-index broke stacking everywhere else
 
 Follow-up to the entry below. The `z-[60]` given to the "Workspace ▾" trigger was
