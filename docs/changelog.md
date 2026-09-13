@@ -4,6 +4,31 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-09-13 — Dim the disabled color picker in `priority`-mode notes, add an explanatory callout
+
+Reverses a prior design decision (`style-guide.md` used to say `SwatchPicker`'s
+disabled state was deliberately never dimmed with opacity, only `pointer-events-none`)
+— per updated design feedback, the disabled swatch picker in a `priority`-mode note now
+also gets `opacity-35` so it visually reads as non-interactive. `NoteEditorPage.tsx`
+also gains a small bordered/tinted callout directly under the Color field (`mt-2.5` gap
+above it), shown only when the owning group's `noteColorMode === 'priority'`: "Color is
+set by priority for this group." Its background is tinted to match the note's own
+resolved color via the new `SWATCH_TINT_CLASSES` map in `swatchColors.ts` (each swatch
+at 15% opacity) rather than a fixed accent color. See `docs/style-guide.md` and
+`docs/feat-notes.md` ("Color resolution").
+
+## 2026-09-13 — Fix: note editor showed the raw manual color, not the priority color, in `priority`-mode groups
+
+The color picker on the note detail/editor screen was already correctly disabled for
+`priority`-mode groups, but its highlighted swatch and the card's background color
+still read the raw `note.color` instead of the priority-derived color every other
+surface (board cards, search results, `HomePage`) already shows via
+`resolveNoteColor(note, group)`. `resolveNoteColor`'s parameter type was widened from
+`Note` to `Pick<Note, 'color' | 'priority'>` so `NoteEditorPage.tsx` — which holds
+these as separate form fields rather than an assembled `Note` — could call it too;
+`colorClass` and the `SwatchPicker`'s `value` now both come from it, so they update
+live as the Priority dropdown changes. See `docs/feat-notes.md` ("Color resolution").
+
 ## 2026-09-13 — New groups default to Manual/None/Manual; Note Colors' Random mode folded into Manual
 
 New groups (`createGroup` in `src/lib/db/groups.ts`, and the first-run seed groups in

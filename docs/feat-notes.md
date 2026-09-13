@@ -38,11 +38,17 @@ A note's *displayed* color depends on its owning group's `noteColorMode`:
   via a fixed map (`PRIORITY_COLOR_MAP`: high→coral, medium→yellow, normal→blue,
   low→green — no mockup dictates this exact mapping, chosen as a reasonable default).
   If the note's priority changes later, its color updates automatically. Picker
-  disabled in the editor.
+  disabled (and dimmed, `opacity-35` — see `style-guide.md`) in the editor, which also
+  shows a small callout under it: "Color is set by priority for this group."
 
 Every consumer of a note's color (board cards, search results, the editor's preview)
 calls `resolveNoteColor(note, group)` — never reads `note.color` directly, since that
-would be wrong under `priority` mode.
+would be wrong under `priority` mode. `resolveNoteColor` takes `Pick<Note, 'color' |
+'priority'>` rather than a full `Note` specifically so `NoteEditorPage.tsx` — which
+holds these as separate form fields, not an assembled `Note` — can call it too; there
+its card background and the (disabled, in `priority` mode) swatch picker's highlighted
+color both come from `resolveNoteColor`, so they stay in sync with the Priority
+`<Select>` live, with no save/reload needed.
 
 ## On Check Move To (`src/lib/notes/onCheckMove.ts`)
 

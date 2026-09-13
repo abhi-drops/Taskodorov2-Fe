@@ -11,7 +11,7 @@ export const PRIORITY_COLOR_MAP: Record<Priority, SwatchColor> = {
 
 const DEFAULT_COLOR: SwatchColor = 'yellow'
 
-export function resolveNoteColor(note: Note, group: Group): SwatchColor {
+export function resolveNoteColor(note: Pick<Note, 'color' | 'priority'>, group: Group): SwatchColor {
   if (group.noteColorMode === 'priority') {
     return PRIORITY_COLOR_MAP[note.priority]
   }

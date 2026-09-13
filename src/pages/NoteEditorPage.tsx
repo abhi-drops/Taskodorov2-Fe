@@ -4,7 +4,8 @@ import { AppShell } from '../components/AppShell'
 import { CheckCircle } from '../components/ui/CheckCircle'
 import { Select } from '../components/ui/Select'
 import { SwatchPicker } from '../components/ui/SwatchPicker'
-import { SWATCH_CLASSES } from '../components/ui/swatchColors'
+import { SWATCH_CLASSES, SWATCH_TINT_CLASSES } from '../components/ui/swatchColors'
+import { resolveNoteColor } from '../lib/notes/resolveNoteColor'
 import { Button } from '../components/ui/Button'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { Icon } from '../components/ui/Icon'
@@ -47,7 +48,10 @@ export default function NoteEditorPage() {
     )
   }
 
-  const colorClass = SWATCH_CLASSES[form.color ?? 'yellow']
+  const displayColor = form.group
+    ? resolveNoteColor({ color: form.color, priority: form.priority }, form.group)
+    : (form.color ?? 'yellow')
+  const colorClass = SWATCH_CLASSES[displayColor]
   const colorPickerDisabled = form.group?.noteColorMode !== 'manual'
 
   return (
@@ -190,7 +194,14 @@ export default function NoteEditorPage() {
 
             <div className="flex flex-col gap-1.5 text-left">
               <span className="text-sm font-medium text-slate-700">Color</span>
-              <SwatchPicker value={form.color} onChange={form.handleColorChange} disabled={colorPickerDisabled} />
+              <SwatchPicker value={displayColor} onChange={form.handleColorChange} disabled={colorPickerDisabled} />
+              {form.group?.noteColorMode === 'priority' && (
+                <p
+                  className={`mt-2.5 rounded-card border-2 border-ink px-3.5 py-2.5 text-sm text-nav-dark ${SWATCH_TINT_CLASSES[displayColor]}`}
+                >
+                  Color is set by priority for this group.
+                </p>
+              )}
             </div>
 
             <Select
