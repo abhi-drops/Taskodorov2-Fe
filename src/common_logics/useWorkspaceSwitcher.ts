@@ -7,8 +7,6 @@ export function useWorkspaceSwitcher() {
 
   const [isOpen, setIsOpen] = useState(false)
   const [newName, setNewName] = useState('')
-  const [renamingId, setRenamingId] = useState<string | null>(null)
-  const [renameValue, setRenameValue] = useState('')
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null)
 
   function open() {
@@ -17,7 +15,6 @@ export function useWorkspaceSwitcher() {
 
   function close() {
     setIsOpen(false)
-    setRenamingId(null)
     setConfirmingDeleteId(null)
     setNewName('')
   }
@@ -35,21 +32,9 @@ export function useWorkspaceSwitcher() {
     close()
   }
 
-  function startRename(id: string, currentName: string) {
-    setRenamingId(id)
-    setRenameValue(currentName)
-  }
-
-  function cancelRename() {
-    setRenamingId(null)
-    setRenameValue('')
-  }
-
-  async function confirmRename() {
-    if (!renamingId) return
-    const name = renameValue.trim()
-    if (name) await renameWorkspace(renamingId, name)
-    cancelRename()
+  async function updateName(id: string, name: string) {
+    const trimmed = name.trim()
+    if (trimmed) await renameWorkspace(id, trimmed)
   }
 
   function requestDelete(id: string) {
@@ -76,12 +61,7 @@ export function useWorkspaceSwitcher() {
     setNewName,
     handleCreate,
     handleSwitch,
-    renamingId,
-    renameValue,
-    setRenameValue,
-    startRename,
-    cancelRename,
-    confirmRename,
+    updateName,
     confirmingDeleteId,
     requestDelete,
     cancelDelete,

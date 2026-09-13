@@ -10,9 +10,26 @@ interface ModalProps {
   title?: string
   variant?: 'center' | 'bottom-sheet'
   children: ReactNode
+  /** Full replacement for the default `bg-black/40` overlay — not appended alongside
+   * it, since two conflicting Tailwind background utilities in one class list have no
+   * guaranteed winner (same specificity; source order is the generated stylesheet's,
+   * not the JSX class string's). Pass a complete class string, e.g. for a lighter/
+   * blurred look on a specific consumer, not a default-preserving addition. */
+  overlayClassName?: string
+  /** Same full-replacement rule as `overlayClassName`, for the default `shadow-lg` on
+   * the panel itself (e.g. a deeper custom offset shadow for one consumer). */
+  panelClassName?: string
 }
 
-export function Modal({ isOpen, onClose, title, variant = 'center', children }: ModalProps) {
+export function Modal({
+  isOpen,
+  onClose,
+  title,
+  variant = 'center',
+  children,
+  overlayClassName,
+  panelClassName,
+}: ModalProps) {
   useEffect(() => {
     if (!isOpen) return
 
@@ -38,11 +55,11 @@ export function Modal({ isOpen, onClose, title, variant = 'center', children }: 
 
   return createPortal(
     <div
-      className={`fixed inset-0 z-50 flex bg-black/40 ${panelPositionClasses}`}
+      className={`fixed inset-0 z-50 flex ${overlayClassName ?? 'bg-black/40'} ${panelPositionClasses}`}
       onClick={onClose}
     >
       <div
-        className={`flex max-h-[85vh] flex-col gap-4 bg-white p-6 shadow-lg ${panelShapeClasses}`}
+        className={`flex max-h-[85vh] flex-col gap-4 bg-white p-6 ${panelClassName ?? 'shadow-lg'} ${panelShapeClasses}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-4">

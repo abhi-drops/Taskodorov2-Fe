@@ -23,17 +23,66 @@ run seed guarantees it and the switcher UI enforces it (see below).
 
 `WorkspaceSwitcher.tsx` (`src/components/`) + `useWorkspaceSwitcher.ts`
 (`common_logics/`). **No mockup exists for this** — none of the Penpot screens show
-more than a static "workspace 1" label — so the design was worked out inline this
-session:
+more than a static "workspace 1" label — so the layout was worked out inline; the
+visual system was reworked later to match the board/Power Tools chip aesthetic (see
+`docs/style-guide.md`'s "Power Tools: row chips..." section — this reuses the same
+`border-[3px] border-ink bg-white shadow-card` row-chip treatment, not a bespoke
+style of its own):
 
 - Trigger: the workspace name + chevron, in the board's header (only there — the
   mockups only ever show the workspace label on the Board screen, never on Search/Power
   Tools/etc., so the trigger isn't in the shared `AppShell` chrome).
 - Web: an anchored dropdown (`position: relative`/`absolute`, closes on outside
-  click/Escape). Mobile: a `Modal` with `variant="bottom-sheet"`.
-- Both render the same list content: switch (click name), inline rename, delete
-  (hidden entirely when only 1 workspace remains).
-- Delete confirmation is a full content-swap of whichever panel is open (not a second
-  stacked `Modal`, which would be awkward on mobile where the switcher itself already
-  *is* a `Modal`) — shows "Delete '<name>' and everything in it?" with Cancel/Delete,
-  then reverts to the list.
+  click/Escape) whose panel is a `border-neutral-300 bg-surface` backdrop card (same
+  board-backdrop treatment as `GroupColumn`/`TopNav`/`PowerToolsDesktopLayout`)
+  wrapping the row chips. Mobile: a `Modal` with `variant="bottom-sheet"` — same row
+  chips inside.
+- **Deeper "lifted" feel than the rest of the app, on both platforms**: opening the
+  switcher shows a frosted white dim behind it — `SWITCHER_OVERLAY` (`bg-white/60
+  backdrop-blur-sm`), deliberately *not* the app's usual dark `Modal` backdrop
+  (`bg-black/40`) or the board's opaque grid — plus a bigger offset shadow than the
+  standard `shadow-card` token, `SWITCHER_SHADOW` (`shadow-[6px_10px_0px_0px_rgba(0,0,0,0.25)]`,
+  both constants local to `WorkspaceSwitcher.tsx`). Desktop: a separate `fixed inset-0`
+  overlay `<div>` rendered alongside the dropdown panel (its own `onClick` closes the
+  switcher too, redundant with but consistent with the existing outside-pointerdown
+  listener). Mobile: `Modal.tsx` gained optional `overlayClassName`/`panelClassName`
+  props (full replacements for its default `bg-black/40`/`shadow-lg`, not appended
+  alongside them — see `style-guide.md`) so this one consumer can opt into the same
+  look without changing `Modal`'s default appearance anywhere else it's used (note/
+  group delete confirmations, auth, etc.).
+- **The trigger itself stays sharp above the frost, but only while open** — the
+  "Workspace ▾" button conditionally gets `z-[60]` (`isOpen` only) so it paints above
+  both the desktop overlay (`z-40`) and the mobile `Modal`'s own overlay (hardcoded
+  `z-50` in `Modal.tsx`, portalled to `document.body` — a tied `z-50` on the trigger
+  would've been decided by DOM/portal order, not something to rely on, hence `z-[60]`
+  rather than matching `z-50` exactly). **This must stay conditional on `isOpen`** — an
+  earlier version applied `z-[60]` unconditionally, which meant the trigger sat above
+  *any* unrelated modal/dialog elsewhere in the app (any platform) even while the
+  switcher itself was closed, since z-index still governs stacking against anything
+  spatially overlapping it (e.g. a `ConfirmDialog`'s full-screen backdrop) whether or
+  not the switcher's own popup is open. Caught and fixed same-session.
+- Both render the same list content: click a name to switch to it, a pencil icon to
+  rename, "×" to delete (hidden entirely when only 1 workspace remains, same as
+  before).
+- **Rename is inline and autosaves, but is a separate explicit action from
+  switching** — a first pass made the name itself a directly-editable `<input>`
+  (matching `GroupSettingsPage.tsx`'s title field), reasoning that a click on the
+  padding around it would still switch workspaces. In practice the input's own
+  clickable area covers nearly the whole row, so "click to switch" became almost
+  impossible to hit — a real regression, caught immediately by trying to actually use
+  it. Fixed by keeping the name a plain button (single click = switch, unambiguous,
+  same as before the redesign) and adding a small pencil icon (`EditIcon`, an inline
+  SVG local to `WorkspaceSwitcher.tsx`) that swaps just that row into an autofocused,
+  autosave-on-blur/Enter input (`editingId` state, local to the component — Escape
+  cancels without saving and reverts to the button). Still zero Save/Cancel buttons in
+  the edit state itself (that's the part of the original "inline autosave" idea that
+  *did* hold up) — the only thing that changed is what triggers entering edit mode.
+- Closing the switcher (outside click, Escape, the trigger chevron, or the mobile
+  `Modal`'s own close) also always exits any in-progress rename (`closeAll()`, local to
+  the component) so a stray edit row never reopens already in edit mode next time.
+- Delete confirmation switched from a bespoke full-content-swap of the open panel to
+  the shared `ConfirmDialog` (same component `GroupSettingsPage`/`PowerToolsPage`
+  use for their destructive actions) — a second stacked `Modal` on mobile, where the
+  switcher itself already *is* one; the only visible side effect is two semi-
+  transparent backdrops briefly overlapping (slightly darker), not a functional issue,
+  and was accepted in favor of consistency over the old code path being bespoke.

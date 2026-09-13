@@ -4,6 +4,66 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-09-13 — Fix: workspace switcher trigger's elevated z-index broke stacking everywhere else
+
+Follow-up to the entry below. The `z-[60]` given to the "Workspace ▾" trigger was
+applied unconditionally, not just while its own popup was open — so it sat above *any*
+unrelated modal/dialog elsewhere in the app (any platform, since z-index governs
+stacking against whatever spatially overlaps it, popup open or not) any time that
+trigger happened to be mounted behind one. Made it conditional on `isOpen`, so the
+elevated stacking only exists during the brief window the switcher's own frost is
+actually showing.
+
+## 2026-09-13 — Fix: workspace switcher trigger was getting blurred by its own frosted overlay
+
+Follow-up to the entry below. The "Workspace ▾" trigger button had no elevated
+stacking, so the new frosted backdrop painted over/blurred it too while open —
+looked wrong, since it's the one thing that should stay sharp. Gave it `relative
+z-[60]`, above both the desktop overlay (`z-40`) and the mobile `Modal`'s portalled
+overlay (`z-50`, where a tied `z-50` would've depended on DOM/portal order instead
+of being reliable). See `docs/feat-workspaces.md`.
+
+## 2026-09-13 — Workspace switcher: frosted-white dim + deeper shadow, both platforms
+
+Opening the workspace switcher now dims the background with a frosted white
+blur-and-tint (`bg-white/60 backdrop-blur-sm`) instead of the app's usual dark
+`Modal` overlay, and the switcher panel itself gets a deeper offset shadow
+(`shadow-[6px_10px_0px_0px_rgba(0,0,0,0.25)]`) than the standard `shadow-card` token —
+meant to feel like it lifts further off the page, on desktop's dropdown and mobile's
+bottom sheet alike. `Modal.tsx` gained optional `overlayClassName`/`panelClassName`
+props (full replacements, not additions, for its default dark overlay/`shadow-lg`
+panel) so only this one consumer opts into the look — every other `Modal` use
+(delete confirmations, auth) is unchanged. See `docs/feat-workspaces.md`.
+
+## 2026-09-13 — Fix: workspace switching was nearly impossible to click after the redesign
+
+Follow-up to the entry below. Making the workspace name itself a directly-editable
+`<input>` (to mirror Group Settings' rename field) meant that element's clickable area
+covered almost the entire row, leaving "click to switch" a tiny, hard-to-hit sliver
+around it — caught immediately when actually trying to switch workspaces. Fixed by
+reverting the name to a plain button (single click = switch) and adding a small pencil
+icon per row that enters an autofocused, autosave-on-blur rename for just that row
+(`editingId` local state in `WorkspaceSwitcher.tsx`). See `docs/feat-workspaces.md`'s
+"Switcher UI" section for the full before/after.
+
+## 2026-09-13 — Workspace switcher redesigned to match the board/Power Tools chip style
+
+`WorkspaceSwitcher.tsx` moved off its original plain-white `shadow-lg` dropdown look
+onto the same `border-ink`/`shadow-card` row-chip system as Power Tools/Groups. See
+`docs/feat-workspaces.md`'s "Switcher UI" section.
+
+- Rename is now directly inline (type in the row, autosave on blur/Enter) instead of a
+  "Rename" link that swapped the row into a separate input with Save/Cancel buttons —
+  matching the same pattern `GroupSettingsPage.tsx`'s name field just adopted.
+  `useWorkspaceSwitcher.ts` lost the whole `renamingId`/`renameValue`/`startRename`/
+  `cancelRename`/`confirmRename` state machine in favor of one `updateName(id, name)`.
+- Delete switched from a text "Delete" link to a "×" icon (matching the Groups list),
+  and its confirmation switched from a bespoke content-swap of the open panel to the
+  shared `ConfirmDialog` component used everywhere else destructive actions live.
+- Desktop's dropdown panel is now a `border-neutral-300 bg-surface shadow-card`
+  backdrop card (matching `GroupColumn`/`TopNav`/`PowerToolsDesktopLayout`) instead of
+  a plain white `shadow-lg` box.
+
 ## 2026-09-13 — Groups can now be renamed, inline from Group Settings
 
 Previously deliberately out of scope (see the old "No group rename" note in

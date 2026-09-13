@@ -1,8 +1,24 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { usePlatform } from '../lib/platform/usePlatform'
 import { useWorkspaceSwitcher } from '../common_logics/useWorkspaceSwitcher'
 import { Modal } from './ui/Modal'
-import { Button } from './ui/Button'
+import { ConfirmDialog } from './ui/ConfirmDialog'
+
+const CHIP = 'flex items-center gap-3 rounded-card border-[3px] border-ink bg-white px-3 py-2.5 shadow-card'
+
+/** A frosted white dim (not the default dark `Modal` overlay) plus a deeper offset
+ * shadow than the app's usual `shadow-card` — this switcher is meant to feel like it
+ * lifts further off the page than an ordinary chip, on both platforms. */
+const SWITCHER_OVERLAY = 'bg-white/60 backdrop-blur-sm'
+const SWITCHER_SHADOW = 'shadow-[6px_10px_0px_0px_rgba(0,0,0,0.25)]'
+
+function EditIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className={className}>
+      <path d="M12.5 3.5l4 4L6 18H2v-4L12.5 3.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+    </svg>
+  )
+}
 
 export function WorkspaceSwitcher() {
   const { isNative } = usePlatform()
@@ -16,12 +32,7 @@ export function WorkspaceSwitcher() {
     setNewName,
     handleCreate,
     handleSwitch,
-    renamingId,
-    renameValue,
-    setRenameValue,
-    startRename,
-    cancelRename,
-    confirmRename,
+    updateName,
     confirmingDeleteId,
     requestDelete,
     cancelDelete,
@@ -29,18 +40,29 @@ export function WorkspaceSwitcher() {
   } = useWorkspaceSwitcher()
 
   const containerRef = useRef<HTMLDivElement>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId)
+  const deleteTarget = workspaces.find((w) => w.id === confirmingDeleteId)
+
+  function closeAll() {
+    setEditingId(null)
+    close()
+  }
 
   useEffect(() => {
     if (isNative || !isOpen) return
 
     function handlePointerDown(e: PointerEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setEditingId(null)
         close()
       }
     }
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') close()
+      if (e.key === 'Escape') {
+        setEditingId(null)
+        close()
+      }
     }
 
     document.addEventListener('pointerdown', handlePointerDown)
@@ -51,92 +73,77 @@ export function WorkspaceSwitcher() {
     }
   }, [isNative, isOpen, close])
 
-  function renderConfirmDelete() {
-    const target = workspaces.find((w) => w.id === confirmingDeleteId)
-    return (
-      <div className="flex flex-col gap-4 text-center">
-        <p className="text-slate-700">Delete "{target?.name}" and everything in it?</p>
-        <div className="flex justify-center gap-3">
-          <Button variant="secondary" onClick={cancelDelete}>
-            Cancel
-          </Button>
-          <Button variant="danger" onClick={confirmDelete}>
-            Delete
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
   function renderList() {
     return (
       <div className="flex flex-col gap-2">
-        {workspaces.map((ws) => (
-          <div key={ws.id} className="flex items-center gap-2 rounded-card border border-slate-200 px-3 py-2">
-            {renamingId === ws.id ? (
-              <>
-                <input
-                  autoFocus
-                  value={renameValue}
-                  onChange={(e) => setRenameValue(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') confirmRename()
-                    if (e.key === 'Escape') cancelRename()
-                  }}
-                  className="flex-1 rounded-card border border-slate-200 px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-accent-purple"
-                />
-                <button type="button" onClick={confirmRename} className="text-sm font-medium text-accent-purple">
-                  Save
-                </button>
-                <button type="button" onClick={cancelRename} className="text-sm text-slate-500">
-                  Cancel
-                </button>
-              </>
-            ) : (
-              <>
+        {workspaces.map((ws) =>
+          editingId === ws.id ? (
+            <div key={ws.id} className={CHIP}>
+              <input
+                autoFocus
+                defaultValue={ws.name}
+                onBlur={(e) => {
+                  updateName(ws.id, e.target.value)
+                  setEditingId(null)
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') e.currentTarget.blur()
+                  if (e.key === 'Escape') setEditingId(null)
+                }}
+                aria-label={`Rename ${ws.name}`}
+                className="min-w-0 flex-1 bg-transparent text-sm font-bold text-ink outline-none"
+              />
+            </div>
+          ) : (
+            <div key={ws.id} className={CHIP}>
+              <button
+                type="button"
+                onClick={() => handleSwitch(ws.id)}
+                className={`min-w-0 flex-1 truncate text-left text-sm ${
+                  ws.id === activeWorkspaceId ? 'font-bold text-ink' : 'font-medium text-slate-700'
+                }`}
+              >
+                {ws.name}
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditingId(ws.id)}
+                aria-label={`Rename ${ws.name}`}
+                className="shrink-0 text-ink hover:opacity-70"
+              >
+                <EditIcon className="h-4 w-4" />
+              </button>
+              {workspaces.length > 1 && (
                 <button
                   type="button"
-                  onClick={() => handleSwitch(ws.id)}
-                  className={`flex-1 text-left text-sm ${
-                    ws.id === activeWorkspaceId ? 'font-semibold text-nav-dark' : 'text-slate-700'
-                  }`}
+                  onClick={() => requestDelete(ws.id)}
+                  aria-label={`Delete ${ws.name}`}
+                  className="shrink-0 text-lg leading-none text-ink hover:opacity-70"
                 >
-                  {ws.name}
+                  ×
                 </button>
-                <button
-                  type="button"
-                  onClick={() => startRename(ws.id, ws.name)}
-                  className="text-xs text-slate-500 hover:text-slate-700"
-                >
-                  Rename
-                </button>
-                {workspaces.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => requestDelete(ws.id)}
-                    className="text-xs text-sticky-coral hover:opacity-80"
-                  >
-                    Delete
-                  </button>
-                )}
-              </>
-            )}
-          </div>
-        ))}
+              )}
+            </div>
+          ),
+        )}
 
-        <div className="mt-2 flex items-center gap-2">
+        <div className={`${CHIP} justify-between`}>
           <input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleCreate()
             }}
-            placeholder="New workspace"
-            className="flex-1 rounded-card border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-accent-purple"
+            placeholder="+ New workspace"
+            className="min-w-0 flex-1 bg-transparent text-sm font-medium text-ink outline-none placeholder:text-ink/50"
           />
-          <Button variant="secondary" onClick={handleCreate}>
+          <button
+            type="button"
+            onClick={handleCreate}
+            className="shrink-0 font-display text-sm font-bold uppercase text-ink hover:opacity-70"
+          >
             Add
-          </Button>
+          </button>
         </div>
       </div>
     )
@@ -146,8 +153,10 @@ export function WorkspaceSwitcher() {
     <div ref={containerRef} className="relative inline-block">
       <button
         type="button"
-        onClick={() => (isOpen ? close() : open())}
-        className="flex items-center gap-1.5 font-display text-2xl font-bold text-nav-dark"
+        onClick={() => (isOpen ? closeAll() : open())}
+        className={`relative flex items-center gap-1.5 font-display text-2xl font-bold text-nav-dark ${
+          isOpen ? 'z-[60]' : ''
+        }`}
       >
         {activeWorkspace?.name ?? 'Workspace'}
         <svg className="h-3 w-3" viewBox="0 0 10 6" fill="none" aria-hidden="true">
@@ -162,16 +171,36 @@ export function WorkspaceSwitcher() {
       </button>
 
       {!isNative && isOpen && (
-        <div className="absolute left-0 top-full z-50 mt-2 w-72 rounded-card bg-white p-4 text-left shadow-lg">
-          {confirmingDeleteId ? renderConfirmDelete() : renderList()}
-        </div>
+        <>
+          <div className={`fixed inset-0 z-40 ${SWITCHER_OVERLAY}`} onClick={closeAll} />
+          <div
+            className={`absolute left-0 top-full z-50 mt-2 w-80 border border-neutral-300 bg-surface p-4 text-left ${SWITCHER_SHADOW}`}
+          >
+            {renderList()}
+          </div>
+        </>
       )}
 
       {isNative && (
-        <Modal isOpen={isOpen} onClose={close} title="Workspaces" variant="bottom-sheet">
-          {confirmingDeleteId ? renderConfirmDelete() : renderList()}
+        <Modal
+          isOpen={isOpen}
+          onClose={closeAll}
+          title="Workspaces"
+          variant="bottom-sheet"
+          overlayClassName={SWITCHER_OVERLAY}
+          panelClassName={SWITCHER_SHADOW}
+        >
+          {renderList()}
         </Modal>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmingDeleteId !== null}
+        onClose={cancelDelete}
+        onConfirm={confirmDelete}
+        title="Delete workspace"
+        message={`Delete "${deleteTarget?.name}" and everything in it? This can't be undone.`}
+      />
     </div>
   )
 }
