@@ -28,9 +28,12 @@ search results by the same card components.
 
 A note's *displayed* color depends on its owning group's `noteColorMode`:
 
-- **`manual`** — the picker-set `note.color`, editable.
-- **`random`** — also just `note.color`, but assigned **once at creation time** and
-  frozen — doesn't reshuffle on reload. Picker is disabled in the editor.
+- **`manual`** — a random swatch is assigned **once at creation time** (rolled when the
+  new-note form loads, frozen into `note.color` on save — doesn't reshuffle on reload),
+  and the picker stays enabled so the user can override it at any point afterward.
+  (Before this was consolidated, "random-then-frozen-with-picker-disabled" and
+  "user-picks-freely" were two separate modes, `random` and `manual`; `random` no
+  longer exists as its own mode — `manual` now does both halves of that job.)
 - **`priority`** — **ignores `note.color` entirely**, derived live from `note.priority`
   via a fixed map (`PRIORITY_COLOR_MAP`: high→coral, medium→yellow, normal→blue,
   low→green — no mockup dictates this exact mapping, chosen as a reasonable default).

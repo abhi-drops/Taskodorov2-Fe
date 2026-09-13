@@ -64,7 +64,7 @@ export function useNoteForm({ groupId, noteId }: UseNoteFormArgs) {
         setGroup(g)
         setWorkspaceId(g?.workspaceId ?? null)
         setPayload(defaultPayload('basic'))
-        if (g?.noteColorMode === 'random') setColor(randomSwatchColor())
+        if (g?.noteColorMode === 'manual') setColor(randomSwatchColor())
         setStatus('ready')
       } else {
         setStatus('ready')

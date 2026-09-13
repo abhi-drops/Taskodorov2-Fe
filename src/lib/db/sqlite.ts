@@ -23,8 +23,8 @@ CREATE TABLE IF NOT EXISTS groups (
   workspace_id TEXT NOT NULL,
   name TEXT NOT NULL,
   position INTEGER NOT NULL,
-  sorted_by TEXT NOT NULL DEFAULT 'alphabetical',
-  note_color_mode TEXT NOT NULL DEFAULT 'random',
+  sorted_by TEXT NOT NULL DEFAULT 'manual',
+  note_color_mode TEXT NOT NULL DEFAULT 'manual',
   on_check_move_to_group_id TEXT,
   reset_on_move INTEGER NOT NULL DEFAULT 1,
   created_at INTEGER NOT NULL,
@@ -97,7 +97,7 @@ export async function seedIfEmpty(db: SQLiteDBConnection): Promise<void> {
     await db.run(
       `INSERT INTO groups
         (id, workspace_id, name, position, sorted_by, note_color_mode, on_check_move_to_group_id, created_at, updated_at, deleted_at)
-       VALUES (?, ?, ?, ?, 'alphabetical', 'random', NULL, ?, ?, NULL)`,
+       VALUES (?, ?, ?, ?, 'manual', 'manual', NULL, ?, ?, NULL)`,
       [crypto.randomUUID(), workspaceId, defaultGroups[i], i, now, now],
     )
   }
@@ -128,6 +128,10 @@ async function migrateSchema(db: SQLiteDBConnection): Promise<void> {
     'reset_on_move',
     'ALTER TABLE groups ADD COLUMN reset_on_move INTEGER NOT NULL DEFAULT 1',
   )
+  // 'random' was folded into 'manual' (manual now auto-assigns a random color at
+  // creation, then leaves it user-editable) — rewrite any pre-existing rows so
+  // NoteColorMode's removal of 'random' doesn't leave stale values in old DBs.
+  await db.execute("UPDATE groups SET note_color_mode = 'manual' WHERE note_color_mode = 'random'")
 }
 
 async function initDb(): Promise<SQLiteDBConnection> {

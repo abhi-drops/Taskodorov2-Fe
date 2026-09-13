@@ -59,8 +59,8 @@ export function createGroup(input: { workspaceId: string; name: string }): Promi
 
     const id = crypto.randomUUID()
     const now = Date.now()
-    const sortedBy: SortedBy = 'alphabetical'
-    const noteColorMode: NoteColorMode = 'random'
+    const sortedBy: SortedBy = 'manual'
+    const noteColorMode: NoteColorMode = 'manual'
 
     await db.run(
       `INSERT INTO groups

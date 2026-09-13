@@ -1,5 +1,5 @@
 export type SortedBy = 'manual' | 'alphabetical' | 'date' | 'priority'
-export type NoteColorMode = 'manual' | 'random' | 'priority'
+export type NoteColorMode = 'manual' | 'priority'
 
 export interface Group {
   id: string

@@ -128,10 +128,19 @@ throughout this app):
   this schema has no version tracking, so a plain `IF NOT EXISTS` is a no-op against an
   already-created local `groups` table; see that file's `ensureColumn` for the
   idempotent-`ALTER TABLE` pattern this is the first user of.
-- **Note Colors** — `manual | random | priority`. See `feat-notes.md` for exactly how
-  each mode resolves a note's displayed color.
+- **Note Colors** — `manual | priority`. See `feat-notes.md` for exactly how each mode
+  resolves a note's displayed color (`manual` auto-assigns a random swatch at note
+  creation, then leaves it user-editable — the old separate `random` mode was folded
+  into `manual` rather than kept as a third option).
 - **Delete This Group** — `ConfirmDialog` → cascading soft-delete of the group and its
   notes → back to Power Tools.
+
+New groups default to `sortedBy: 'manual'`, `noteColorMode: 'manual'`,
+`onCheckMoveToGroupId: null` (`createGroup`, `src/lib/db/groups.ts`; mirrored in
+`seedIfEmpty`'s first-run groups in `sqlite.ts`) — matching what a freshly created
+group's Group Settings screen shows. `migrateSchema` (`sqlite.ts`) rewrites any
+pre-existing `note_color_mode = 'random'` rows to `'manual'` so older local databases
+stay valid after `random` was removed from the `NoteColorMode` type.
 
 ## Group rename
 

@@ -4,6 +4,21 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-09-13 — New groups default to Manual/None/Manual; Note Colors' Random mode folded into Manual
+
+New groups (`createGroup` in `src/lib/db/groups.ts`, and the first-run seed groups in
+`sqlite.ts`'s `seedIfEmpty`) now default to `sortedBy: 'manual'` and
+`noteColorMode: 'manual'` (previously `'alphabetical'`/`'random'`), matching the intended
+default shown on a fresh Group Settings screen; `onCheckMoveToGroupId` was already
+`null` by default. Separately, `NoteColorMode`'s `random` option was removed and folded
+into `manual`: `manual` now auto-assigns a random swatch when a note is created (as
+`random` used to) *and* leaves the color picker enabled so the user can change it
+afterward (as `manual` used to) — previously these were two mutually exclusive modes,
+one auto-colored-and-locked and one blank-and-editable. A schema migration in
+`migrateSchema` rewrites any existing `note_color_mode = 'random'` rows to `'manual'`
+so older local databases keep working under the narrowed type. See `docs/feat-groups.md`
+("Group Settings") and `docs/feat-notes.md` ("Color resolution").
+
 ## 2026-09-13 — Every confirm dialog in the app gets the frosted-dim + deep-shadow look
 
 `ConfirmDialog.tsx` now passes `Modal`'s `overlayClassName`/`panelClassName` with the

@@ -105,7 +105,6 @@ export default function GroupSettingsPage() {
         onChange={(e) => updateNoteColorMode(e.target.value as NoteColorMode)}
       >
         <option value="manual">Manual</option>
-        <option value="random">Random</option>
         <option value="priority">Priority</option>
       </Select>
 
