@@ -92,13 +92,26 @@ export async function seedIfEmpty(db: SQLiteDBConnection): Promise<void> {
     [workspaceId, 'Workspace 1', 0, now, now],
   )
 
-  const defaultGroups = ['Todo', 'In Progress', 'Completed']
+  const todoId = crypto.randomUUID()
+  const inProgressId = crypto.randomUUID()
+  const completedId = crypto.randomUUID()
+
+  // Chained "On Check Move To": checking a Todo item just means "move it along" so it
+  // resets to unchecked on arrival in In Progress; checking an In Progress item means
+  // it's actually done, so it keeps its checked state on arrival in Completed.
+  const defaultGroups: { id: string; name: string; moveTo: string | null; resetOnMove: number }[] = [
+    { id: todoId, name: 'Todo', moveTo: inProgressId, resetOnMove: 1 },
+    { id: inProgressId, name: 'In Progress', moveTo: completedId, resetOnMove: 0 },
+    { id: completedId, name: 'Completed', moveTo: null, resetOnMove: 1 },
+  ]
+
   for (let i = 0; i < defaultGroups.length; i++) {
+    const group = defaultGroups[i]
     await db.run(
       `INSERT INTO groups
-        (id, workspace_id, name, position, sorted_by, note_color_mode, on_check_move_to_group_id, created_at, updated_at, deleted_at)
-       VALUES (?, ?, ?, ?, 'manual', 'manual', NULL, ?, ?, NULL)`,
-      [crypto.randomUUID(), workspaceId, defaultGroups[i], i, now, now],
+        (id, workspace_id, name, position, sorted_by, note_color_mode, on_check_move_to_group_id, reset_on_move, created_at, updated_at, deleted_at)
+       VALUES (?, ?, ?, ?, 'manual', 'manual', ?, ?, ?, ?, NULL)`,
+      [group.id, workspaceId, group.name, i, group.moveTo, group.resetOnMove, now, now],
     )
   }
 }

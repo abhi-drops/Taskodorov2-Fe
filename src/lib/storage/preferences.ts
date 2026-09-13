@@ -35,3 +35,14 @@ export async function loadActiveWorkspaceId(): Promise<string | null> {
 export async function clearActiveWorkspaceId(): Promise<void> {
   await Preferences.remove({ key: ACTIVE_WORKSPACE_ID_KEY })
 }
+
+const INTRO_SEEN_KEY = 'taskodoro.intro.seen'
+
+export async function hasSeenIntro(): Promise<boolean> {
+  const { value } = await Preferences.get({ key: INTRO_SEEN_KEY })
+  return value === 'true'
+}
+
+export async function markIntroSeen(): Promise<void> {
+  await Preferences.set({ key: INTRO_SEEN_KEY, value: 'true' })
+}

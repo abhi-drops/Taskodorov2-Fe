@@ -2,7 +2,12 @@
 
 Groups are the board's columns (mobile: tabs) — fully user-customizable, not a fixed
 Todo/In Progress/Completed enum, even though those three are what the first-run seed
-creates.
+creates. The seeded groups also come pre-wired with "On Check Move To" (`seedIfEmpty`,
+`sqlite.ts`): Todo → In Progress (resets to unchecked on arrival — checking a Todo item
+just means "move it along", it isn't done yet) → Completed (does **not** reset — an In
+Progress item being checked means it's actually finished, so it should still show
+checked once it lands in Completed). Completed itself has no move target. This is only
+the *seed*; a user can change or remove these rules like any other group's settings.
 
 ## Board tabs/columns
 

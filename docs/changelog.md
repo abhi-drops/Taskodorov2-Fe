@@ -4,6 +4,37 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-09-13 — Intro modal: bigger desktop image, dedicated mobile crop
+
+Two follow-ups to the first-run intro modal (`IntroModal.tsx`). First, the modal panel
+now scales up on wider screens (`!max-w-lg` → `md:!max-w-2xl` → `lg:!max-w-3xl`) so the
+mockup graphic's text stays readable on desktop instead of being squeezed into
+`Modal`'s default `max-w-sm`. Second, `src/assets/intro-mob.png` (a taller portrait
+crop made for narrow screens) is now shown below the `md:` breakpoint, with the
+original `intro.png` landscape crop reserved for `md:` and up — a plain CSS
+`hidden`/`md:hidden` swap between two `<img>`s, not a `usePlatform().isNative` check,
+since this is about which crop reads best at a given width, not native-vs-web behavior.
+See `docs/feat-navigation.md` ("First-run intro").
+## 2026-09-13 — First-run intro modal showing `src/assets/intro.png`
+
+New `IntroModal.tsx` (+ `common_logics/useIntro.ts`) shows the "How To Use This
+Template" mockup graphic once, the first time the app is opened on a device, styled
+with the app's existing frosted-dim + deep-shadow `Modal` treatment and a top-right ×
+close button (`Modal`'s existing header close button — no new UI needed for that part).
+Seen-state persists via a new `hasSeenIntro`/`markIntroSeen` pair in
+`lib/storage/preferences.ts` (Capacitor Preferences, not raw `localStorage`, so it
+works on native too) so it never shows again once dismissed. Mounted once at the app
+root (`App.tsx`) so it appears regardless of which route the app opens to. See
+`docs/feat-navigation.md` ("First-run intro").
+## 2026-09-13 — First-run seed groups now chain Todo → In Progress → Completed on check
+
+`seedIfEmpty` (`src/lib/db/sqlite.ts`) pre-generates the three default groups' ids so it
+can wire "On Check Move To" between them: checking a note in Todo moves it to In
+Progress and resets it to unchecked (it isn't done yet, just moved along); checking a
+note in In Progress moves it to Completed *without* resetting, since that check meant
+the work was actually finished. Completed has no move target. Previously the seeded
+groups had no move rule at all — a new user had to configure this manually per group.
+See `docs/feat-groups.md`.
 ## 2026-09-13 — Fix: workspace delete button did nothing on web
 
 `WorkspaceSwitcher.tsx`'s outside-click listener closed the whole switcher (resetting
