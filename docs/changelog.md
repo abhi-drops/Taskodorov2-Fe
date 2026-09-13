@@ -4,6 +4,78 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-09-13 — "Reset To Unchecked On Move" is now a per-group toggle (default on)
+
+Follow-up to the entry below: the unchecked-on-arrival reset is now optional, not
+forced. New Group Settings field "Reset To Unchecked On Move" (`on`/`off`, default
+`on`), rendered **only** when "On Check Move To" targets a real group — meaningless
+otherwise, so hidden rather than shown-disabled. Turning it off keeps a moved note
+showing checked/done in its destination, restoring the pre-reset behavior on a per-
+group basis.
+
+- New `groups.reset_on_move` column (`INTEGER NOT NULL DEFAULT 1`). Since this schema
+  has no version tracking (`sqlite.ts`'s `SCHEMA_SQL` is `CREATE TABLE IF NOT EXISTS`
+  only), a plain schema-string edit wouldn't reach already-created local databases —
+  added `migrateSchema()`/`ensureColumn()` (idempotent `ALTER TABLE`, guarded by a
+  `PRAGMA table_info` check) as the first use of an actual migration step in this repo.
+- `useGroupSettings.ts` gained `updateResetOnMove`; `GroupSettingsPage.tsx`'s new
+  `Select` only renders inside the existing `onCheckMoveToGroupId` conditional.
+- `applyOnCheckMove` now returns `{ destGroupId, reset } | null` (was `string | null`)
+  so callers know whether the reset actually happened; `useNoteForm`'s `syncAfterMove`
+  only mirrors the local unchecked-state reset when `reset` is true.
+
+See `docs/feat-groups.md`'s Group Settings section and `docs/feat-notes.md`'s "On Check
+Move To" section.
+
+## 2026-09-13 — "On Check Move To" now resets the note to unchecked on arrival
+
+Reported as: a note that auto-moves to its destination group was still showing checked
+there. That was the original design (move a "done" note as-is), but the intended
+behavior is Kanban-style — checking a note moves it to the next group as a fresh,
+unchecked item, ready for whatever happens there next (and lets rule chains across
+several groups actually fire, rather than needing a manual uncheck/recheck first).
+
+- `onCheckMove.ts`'s `applyOnCheckMove` now also applies a `buildResetPatch`: basic/
+  counter reset `completed` to `false` (value/target left alone for counters — only the
+  checkmark resets); list resets every subtask's `completed` to `false`.
+- `useNoteForm`'s `syncAfterMove` (renamed from `syncGroupAfterMove`) now also mirrors
+  that reset into local `completed`/`payload` state, so a note editor left open across
+  the move doesn't keep showing it as checked.
+
+See `docs/feat-notes.md`'s "On Check Move To" section.
+
+## 2026-09-13 — Fix: re-checking a note in the editor after an "On Check Move To" move used the stale source group's rule
+
+Follow-up to the entry below. `useNoteForm` loads `group` once at mount and never
+refreshed it — so checking a note in the editor (triggering a move), then unchecking
+and re-checking it without leaving that editor page, would re-fire the *original*
+group's move rule instead of the *destination* group's own rule (relevant once groups
+chain: A moves to B, B moves to C). Unchecking itself was always already a no-op
+(`applyOnCheckMove` only ever fires forward), so this only affected the immediate
+re-check case. `applyOnCheckMove` now returns the destination group id on an actual
+move; `useNoteForm` uses it (`syncGroupAfterMove`) to refresh local `group`/
+`resolvedGroupId`. See `docs/feat-notes.md`'s "On Check Move To" section.
+
+## 2026-09-13 — "On Check Move To" group rule is now functional
+
+Previously a visible-but-disabled dropdown (deferred in the Phase 2 plan pending sync
+semantics). Now: a group's Group Settings dropdown picks any other group in the same
+workspace, and a note auto-moves there the moment it becomes fully checked (own
+checkmark for basic/counter — counter's already folds in target-reached auto-complete —
+or every subtask checked for a list note). One-directional: unchecking later never
+moves it back. See `docs/feat-notes.md`'s new "On Check Move To" section and
+`docs/feat-groups.md`'s Group Settings section for the full behavior.
+
+- New `src/lib/notes/onCheckMove.ts`: `isNoteFullyChecked` (type-dependent "checked"
+  definition) and `applyOnCheckMove` (fires the move on a false→true transition,
+  appending the note to the end of the destination group).
+- Wired into every place a note's checked-ness changes: `BasicNoteCard`/
+  `CounterNoteCard`/`ListNoteCard` (board + search results) and `useNoteForm`'s
+  `toggleCompleted`/`toggleItem` (note editor).
+- `useGroupSettings.ts` gained `siblingGroups` (same-workspace groups, excluding the
+  current one) and `updateOnCheckMoveTo`; `GroupSettingsPage.tsx`'s dropdown is no
+  longer hardcoded/disabled.
+
 ## 2026-09-13 — Board: checklist item checkbox now top-aligns on wrapped subtasks
 
 `ListNoteCard.tsx`'s per-item row used `items-center`, so a long subtask that wraps

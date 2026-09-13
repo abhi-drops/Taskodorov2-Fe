@@ -4,6 +4,7 @@ import { SWATCH_CLASSES } from './swatchColors'
 import { updateNote } from '../../lib/db/notes'
 import { resolveNoteColor } from '../../lib/notes/resolveNoteColor'
 import { adjustCounterValue, shouldAutoComplete } from '../../lib/notes/counterLogic'
+import { applyOnCheckMove } from '../../lib/notes/onCheckMove'
 import type { Note, CounterPayload } from '../../types/note'
 import type { Group } from '../../types/group'
 
@@ -22,11 +23,14 @@ export function CounterNoteCard({ note, group, onChange }: CounterNoteCardProps)
     const nextPayload = adjustCounterValue(payload, delta)
     const completed = shouldAutoComplete(nextPayload, note.completed) ? true : note.completed
     await updateNote(note.id, { payload: nextPayload, completed })
+    await applyOnCheckMove(note, group, note.completed, completed)
     onChange()
   }
 
   async function toggleCompleted() {
-    await updateNote(note.id, { completed: !note.completed })
+    const next = !note.completed
+    await updateNote(note.id, { completed: next })
+    await applyOnCheckMove(note, group, note.completed, next)
     onChange()
   }
 

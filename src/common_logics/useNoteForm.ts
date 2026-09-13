@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { getNoteById, createNote, updateNote, deleteNote, defaultPayload } from '../lib/db/notes'
 import { getGroupById } from '../lib/db/groups'
+import { applyOnCheckMove, isNoteFullyChecked, type OnCheckMoveResult } from '../lib/notes/onCheckMove'
 import type { Group } from '../types/group'
 import type { CounterPayload, ListPayload, NotePayload, NoteType, Priority } from '../types/note'
 import type { SwatchColor } from '../components/ui/swatchColors'
@@ -81,6 +82,29 @@ export function useNoteForm({ groupId, noteId }: UseNoteFormArgs) {
     await updateNote(id, patch)
   }
 
+  /**
+   * After a same-session "On Check Move To" relocation: refresh `group`/
+   * `resolvedGroupId` to the destination (otherwise a later re-check in this same
+   * editor session would evaluate the stale source group's rule instead of the
+   * destination's), and — only when the source group's `resetOnMove` was on — mirror
+   * the reset-to-unchecked `applyOnCheckMove` already persisted (`buildResetPatch`)
+   * into local state so the open editor doesn't keep showing the note as checked.
+   */
+  async function syncAfterMove(result: OnCheckMoveResult | null) {
+    if (!result) return
+    const { destGroupId, reset } = result
+    setResolvedGroupId(destGroupId)
+    setGroup(await getGroupById(destGroupId))
+    if (!reset) return
+    if (type === 'list') {
+      setPayload((current) => ({
+        items: (current as ListPayload).items.map((item) => ({ ...item, completed: false })),
+      }))
+    } else {
+      setCompleted(false)
+    }
+  }
+
   async function handleTitleBlur() {
     const trimmed = title.trim()
     setTitle(trimmed)
@@ -127,9 +151,11 @@ export function useNoteForm({ groupId, noteId }: UseNoteFormArgs) {
   }
 
   function toggleCompleted() {
+    const wasChecked = isNoteFullyChecked({ type, completed, payload })
     const next = !completed
     setCompleted(next)
     persist({ completed: next })
+    if (id && group) applyOnCheckMove({ id, type, payload }, group, wasChecked, next).then(syncAfterMove)
   }
 
   // counter payload
@@ -181,12 +207,15 @@ export function useNoteForm({ groupId, noteId }: UseNoteFormArgs) {
   }
 
   function toggleItem(itemId: string) {
+    const wasChecked = isNoteFullyChecked({ type, completed, payload })
     const items = (payload as ListPayload).items.map((item) =>
       item.id === itemId ? { ...item, completed: !item.completed } : item,
     )
     const next: ListPayload = { items }
     setPayload(next)
     persist({ payload: next })
+    const isChecked = items.length > 0 && items.every((item) => item.completed)
+    if (id && group) applyOnCheckMove({ id, type, payload: next }, group, wasChecked, isChecked).then(syncAfterMove)
   }
 
   function removeItem(itemId: string) {

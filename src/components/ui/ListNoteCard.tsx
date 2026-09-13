@@ -3,6 +3,7 @@ import { CheckCircle } from './CheckCircle'
 import { SWATCH_CLASSES } from './swatchColors'
 import { updateNote } from '../../lib/db/notes'
 import { resolveNoteColor } from '../../lib/notes/resolveNoteColor'
+import { applyOnCheckMove, isNoteFullyChecked } from '../../lib/notes/onCheckMove'
 import type { Note, ListPayload } from '../../types/note'
 import type { Group } from '../../types/group'
 
@@ -18,10 +19,13 @@ export function ListNoteCard({ note, group, onChange }: ListNoteCardProps) {
   const payload = note.payload as ListPayload
 
   async function toggleItem(itemId: string) {
+    const wasChecked = isNoteFullyChecked(note)
     const items = payload.items.map((item) =>
       item.id === itemId ? { ...item, completed: !item.completed } : item,
     )
     await updateNote(note.id, { payload: { items } })
+    const isChecked = items.length > 0 && items.every((item) => item.completed)
+    await applyOnCheckMove(note, group, wasChecked, isChecked)
     onChange()
   }
 

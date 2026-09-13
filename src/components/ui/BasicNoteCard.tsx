@@ -3,6 +3,7 @@ import { CheckCircle } from './CheckCircle'
 import { SWATCH_CLASSES } from './swatchColors'
 import { updateNote } from '../../lib/db/notes'
 import { resolveNoteColor } from '../../lib/notes/resolveNoteColor'
+import { applyOnCheckMove } from '../../lib/notes/onCheckMove'
 import type { Note } from '../../types/note'
 import type { Group } from '../../types/group'
 
@@ -17,7 +18,9 @@ export function BasicNoteCard({ note, group, onChange }: BasicNoteCardProps) {
   const color = resolveNoteColor(note, group)
 
   async function toggleCompleted() {
-    await updateNote(note.id, { completed: !note.completed })
+    const next = !note.completed
+    await updateNote(note.id, { completed: next })
+    await applyOnCheckMove(note, group, note.completed, next)
     onChange()
   }
 

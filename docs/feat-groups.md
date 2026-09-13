@@ -106,10 +106,28 @@ throughout this app):
   within *this* group only. Groups themselves are ordered by their own `position`,
   which is now drag-reorderable from the board itself — see "Drag-and-drop" above —
   there's no separate order control here in Group Settings.
-- **On Check Move To** — rendered, **disabled**, "none" only. The field exists on the
-  `groups` row (`on_check_move_to_group_id`) but has zero runtime effect — real
-  behavior (auto-moving a note to another group when checked) is explicitly deferred to
-  Phase 3, since it needs sync semantics to track the move as a change.
+- **On Check Move To** — `none` or any other group in the same workspace
+  (`useGroupSettings.ts`'s `siblingGroups`, `getGroupById`'s workspace filtered to
+  exclude the current group — cross-workspace targets aren't offered). When set, a note
+  in this group auto-relocates to the target group, appended at the end of it, the
+  moment it becomes fully checked — see `feat-notes.md`'s "On Check Move To" section for
+  exactly what "checked" means per note type. **One-directional**: unchecking a note
+  later (or a counter dropping back below target, or unchecking a subtask) never moves
+  it back — the user has to move it manually. Originally deferred to Phase 3 pending
+  sync semantics; built in Phase 2 instead since the local-only move is simple enough
+  not to need sync to land first (sync itself, when built, will just see it as a normal
+  `updated_at`-newer row like any other edit).
+- **Reset To Unchecked On Move** — `on` (default) / `off`. **Only rendered when "On
+  Check Move To" is set to a real group** (`GroupSettingsPage.tsx`'s
+  `{group.onCheckMoveToGroupId && (...)}` guard) — hidden otherwise, since it's
+  meaningless without an active move rule. Controls whether the note arrives unchecked
+  in its destination (`on`) or keeps showing checked/done there (`off`) — see
+  `feat-notes.md`'s "On Check Move To" section. Backed by the `groups.reset_on_move`
+  column (`INTEGER NOT NULL DEFAULT 1`), added via an explicit `ALTER TABLE` migration
+  in `sqlite.ts`'s `migrateSchema` rather than just the `CREATE TABLE IF NOT EXISTS` —
+  this schema has no version tracking, so a plain `IF NOT EXISTS` is a no-op against an
+  already-created local `groups` table; see that file's `ensureColumn` for the
+  idempotent-`ALTER TABLE` pattern this is the first user of.
 - **Note Colors** — `manual | random | priority`. See `feat-notes.md` for exactly how
   each mode resolves a note's displayed color.
 - **Delete This Group** — `ConfirmDialog` → cascading soft-delete of the group and its

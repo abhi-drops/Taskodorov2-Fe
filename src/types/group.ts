@@ -9,6 +9,7 @@ export interface Group {
   sortedBy: SortedBy
   noteColorMode: NoteColorMode
   onCheckMoveToGroupId: string | null
+  resetOnMove: boolean
   createdAt: number
   updatedAt: number
   deletedAt: number | null

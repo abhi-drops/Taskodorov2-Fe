@@ -13,7 +13,16 @@ export default function GroupSettingsPage() {
   const { groupId } = useParams<{ groupId: string }>()
   const navigate = useNavigate()
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const { group, status, updateSortedBy, updateNoteColorMode, remove } = useGroupSettings(groupId ?? '')
+  const {
+    group,
+    siblingGroups,
+    status,
+    updateSortedBy,
+    updateNoteColorMode,
+    updateOnCheckMoveTo,
+    updateResetOnMove,
+    remove,
+  } = useGroupSettings(groupId ?? '')
 
   async function handleDelete() {
     await remove()
@@ -55,9 +64,29 @@ export default function GroupSettingsPage() {
           <option value="priority">Priority</option>
         </Select>
 
-        <Select label="On Check Move To" value="none" disabled>
-          <option value="none">none</option>
+        <Select
+          label="On Check Move To"
+          value={group.onCheckMoveToGroupId ?? 'none'}
+          onChange={(e) => updateOnCheckMoveTo(e.target.value === 'none' ? null : e.target.value)}
+        >
+          <option value="none">None</option>
+          {siblingGroups.map((sg) => (
+            <option key={sg.id} value={sg.id}>
+              {sg.name}
+            </option>
+          ))}
         </Select>
+
+        {group.onCheckMoveToGroupId && (
+          <Select
+            label="Reset To Unchecked On Move"
+            value={group.resetOnMove ? 'on' : 'off'}
+            onChange={(e) => updateResetOnMove(e.target.value === 'on')}
+          >
+            <option value="on">On</option>
+            <option value="off">Off</option>
+          </Select>
+        )}
 
         <Select
           label="Note Colors"

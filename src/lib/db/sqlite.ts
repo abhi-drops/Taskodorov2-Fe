@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS groups (
   sorted_by TEXT NOT NULL DEFAULT 'alphabetical',
   note_color_mode TEXT NOT NULL DEFAULT 'random',
   on_check_move_to_group_id TEXT,
+  reset_on_move INTEGER NOT NULL DEFAULT 1,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   deleted_at INTEGER
@@ -102,9 +103,37 @@ export async function seedIfEmpty(db: SQLiteDBConnection): Promise<void> {
   }
 }
 
+/**
+ * `SCHEMA_SQL` is `CREATE TABLE IF NOT EXISTS` only — there's no schema-version
+ * tracking, so it's a no-op for a column added to an existing table on an install that
+ * already has one from before. New columns need an explicit, idempotent `ALTER TABLE`
+ * step here (SQLite has no `ADD COLUMN IF NOT EXISTS`, hence the `PRAGMA table_info`
+ * existence check) so already-created local databases pick them up too.
+ */
+async function ensureColumn(
+  db: SQLiteDBConnection,
+  table: string,
+  column: string,
+  addColumnSql: string,
+): Promise<void> {
+  const result = await db.query(`PRAGMA table_info(${table})`)
+  const hasColumn = ((result.values ?? []) as { name: string }[]).some((c) => c.name === column)
+  if (!hasColumn) await db.execute(addColumnSql)
+}
+
+async function migrateSchema(db: SQLiteDBConnection): Promise<void> {
+  await ensureColumn(
+    db,
+    'groups',
+    'reset_on_move',
+    'ALTER TABLE groups ADD COLUMN reset_on_move INTEGER NOT NULL DEFAULT 1',
+  )
+}
+
 async function initDb(): Promise<SQLiteDBConnection> {
   const db = await openConnection()
   await db.execute(SCHEMA_SQL)
+  await migrateSchema(db)
   await seedIfEmpty(db)
   return db
 }

@@ -41,6 +41,62 @@ Every consumer of a note's color (board cards, search results, the editor's prev
 calls `resolveNoteColor(note, group)` — never reads `note.color` directly, since that
 would be wrong under `priority` mode.
 
+## On Check Move To (`src/lib/notes/onCheckMove.ts`)
+
+A group can be configured (Group Settings, see `feat-groups.md`) with an
+`onCheckMoveToGroupId` — when set, a note in that group auto-relocates to the target
+group the instant it becomes fully "checked". "Checked" is type-dependent
+(`isNoteFullyChecked`):
+
+- **`basic`** — its own checkmark.
+- **`counter`** — its own checkmark, which folds in the target-reached auto-complete
+  already described above — there's no separate "has it hit its target" check here,
+  since that's exactly what already drives `note.completed` for counters.
+- **`list`** — every subtask `completed` (and at least one subtask exists — an empty
+  list is never "checked"). The note's own unused `completed` field is irrelevant here.
+
+The move only fires on the **false → true transition** (`applyOnCheckMove`'s
+`wasChecked`/`isChecked` pair, computed by every call site before/after its own
+`updateNote` call) and is **one-directional** — unchecking later never moves the note
+back, matching the group-settings doc's note. It's a no-op if the group's target points
+at itself or at nothing (`none`). The note is appended to the end of the destination
+group (a fresh `listNotesByGroup(destGroupId)` count, same pattern as `createNote`'s own
+position calc) — its manual position within the *source* group, if any, isn't
+renumbered, same as any other cross-group move.
+
+**The note arrives unchecked** (`buildResetPatch`) — this is a Kanban-style move-to-
+next-stage, not a "mark done and archive it checked" — so it's ready for whatever
+happens in the destination group, not sitting there already showing complete:
+
+- `basic`/`counter` — `completed` resets to `false`. A counter's `value`/`target` are
+  left untouched; only the checkmark resets.
+- `list` — every subtask's `completed` resets to `false` (id/text unchanged).
+
+This reset is what makes a **chain** of "On Check Move To" rules across several groups
+actually usable (A → B → C): if the note arrived in B still checked, it would need an
+uncheck/recheck round-trip before B's own rule could ever fire.
+
+**This reset is itself optional** — Group Settings' "Reset To Unchecked On Move"
+(`group.resetOnMove`, default **on**), only shown once "On Check Move To" targets a real
+group (see `feat-groups.md`). Turned off, a note keeps showing checked/done after
+landing in its destination — `applyOnCheckMove` reads the *source* group's
+`resetOnMove` at the moment the move fires and skips `buildResetPatch` entirely when
+it's off; it returns `{ destGroupId, reset }` so callers know which happened (`reset`
+mirrors that same flag) rather than assuming a reset always occurred.
+
+Every place a note's checked-ness can change wires this in: `BasicNoteCard`/
+`CounterNoteCard`/`ListNoteCard` on the board (and search results, which reuse the same
+cards), plus `useNoteForm`'s `toggleCompleted`/`toggleItem` for the same actions taken
+from inside the note editor. On the board the reset falls out for free on next render
+(`onChange` → `useBoard`'s `refresh()` re-fetches from the DB). The note editor is the
+one place that needed explicit handling, since it keeps `completed`/`payload`/`group` in
+local state loaded once at mount: `applyOnCheckMove` returns the destination group id
+when it actually moves the note, and `useNoteForm`'s `syncAfterMove` uses it to refresh
+local `group`/`resolvedGroupId` (so a later re-check in the same session evaluates the
+*destination* group's own rule, not stale source-group data) and to mirror the checked-
+state reset locally, so an editor left open across the move doesn't keep showing the
+note as checked.
+
 ## Create/edit (`NoteEditorPage.tsx` + `common_logics/useNoteForm.ts`)
 
 One page/hook drives both `/notes/new?group=<id>` and `/notes/:id/edit`. **No Save

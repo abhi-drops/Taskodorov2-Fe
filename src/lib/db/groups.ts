@@ -9,6 +9,7 @@ interface GroupRow {
   sorted_by: SortedBy
   note_color_mode: NoteColorMode
   on_check_move_to_group_id: string | null
+  reset_on_move: number
   created_at: number
   updated_at: number
   deleted_at: number | null
@@ -23,6 +24,7 @@ function rowToGroup(row: GroupRow): Group {
     sortedBy: row.sorted_by,
     noteColorMode: row.note_color_mode,
     onCheckMoveToGroupId: row.on_check_move_to_group_id,
+    resetOnMove: row.reset_on_move === 1,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     deletedAt: row.deleted_at,
@@ -75,6 +77,7 @@ export function createGroup(input: { workspaceId: string; name: string }): Promi
       sortedBy,
       noteColorMode,
       onCheckMoveToGroupId: null,
+      resetOnMove: true,
       createdAt: now,
       updatedAt: now,
       deletedAt: null,
@@ -84,7 +87,9 @@ export function createGroup(input: { workspaceId: string; name: string }): Promi
 
 export function updateGroup(
   id: string,
-  patch: Partial<Pick<Group, 'name' | 'position' | 'sortedBy' | 'noteColorMode' | 'onCheckMoveToGroupId'>>,
+  patch: Partial<
+    Pick<Group, 'name' | 'position' | 'sortedBy' | 'noteColorMode' | 'onCheckMoveToGroupId' | 'resetOnMove'>
+  >,
 ): Promise<void> {
   return withDb(async (db) => {
     const columns: Record<string, string> = {
@@ -102,6 +107,10 @@ export function updateGroup(
         setClauses.push(`${column} = ?`)
         params.push(patch[key as keyof typeof patch])
       }
+    }
+    if ('resetOnMove' in patch) {
+      setClauses.push('reset_on_move = ?')
+      params.push(patch.resetOnMove ? 1 : 0)
     }
     if (setClauses.length === 0) return
 

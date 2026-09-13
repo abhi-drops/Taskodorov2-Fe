@@ -20,8 +20,16 @@ Bootstrap lives in `src/lib/db/sqlite.ts`:
   DB access onto a single promise queue, because the underlying plugin errors
   ("cannot start a transaction within a transaction") if two callers run statements
   concurrently on the same connection.
-- Schema migration (`CREATE TABLE IF NOT EXISTS`) and first-run seeding ("Workspace 1"
-  + Todo/In Progress/Completed groups) both run once, inside `getDb()`'s init.
+- Schema creation (`CREATE TABLE IF NOT EXISTS`), an explicit `migrateSchema()` step,
+  and first-run seeding ("Workspace 1" + Todo/In Progress/Completed groups) all run
+  once, inside `getDb()`'s init. **There is no schema-version tracking** — `CREATE
+  TABLE IF NOT EXISTS` alone is a no-op for a column added to a table that already
+  exists on an install from before, so a new column needs an explicit, idempotent
+  `ALTER TABLE` in `migrateSchema()` (via `ensureColumn()`'s `PRAGMA table_info`
+  existence check, since SQLite has no `ADD COLUMN IF NOT EXISTS`) or it will silently
+  never appear on already-created local databases. `groups.reset_on_move` is the first
+  column added this way (see `docs/feat-groups.md`'s Group Settings section) — follow
+  that pattern for the next one, don't just edit `SCHEMA_SQL`.
 
 ## Two real bugs found during verification (not hypothetical — both cost real debugging time)
 
