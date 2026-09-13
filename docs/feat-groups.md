@@ -17,6 +17,27 @@ to create a group is Power Tools' "+ NEW GROUP".
 Groups are now reorderable by drag (their `position` is no longer fixed at creation
 order) — see "Drag-and-drop" below.
 
+### Active tab survives navigating away and back
+
+`useBoard.ts`'s `activeGroupId` (mobile's currently-selected tab; irrelevant on web,
+where every column renders at once — see `feat-navigation.md`'s Android back-button
+section for the round trip this fixes) is seeded from a module-level
+`lastActiveGroupId`, not `useState(null)`. Without this, since `useBoard()` is only
+ever instantiated by `HomePage` and `HomePage` fully unmounts when navigating to
+`/notes/:id/edit` (or anywhere else) and remounts on returning to `/`, the active tab
+would silently reset to the workspace's first group on every return trip — including
+via the Android hardware back button/edge-swipe gesture, whose `window.history.back()`
+is otherwise a plain history pop with no way to tell `HomePage` which group to
+restore. Every `setActiveGroupId` call (both explicit tab switches and the init
+effect's own reconciliation) writes through to `lastActiveGroupId`, and the init
+effect's existing "does this group still exist" check (falling back to the first
+group otherwise) already handles a stale value from a previous workspace correctly —
+no extra logic needed there. Deliberately in-memory only, not persisted via
+`lib/storage/preferences.ts` — resets on a full app restart/page reload, unlike the
+active *workspace* selector (`saveActiveWorkspaceId`/`loadActiveWorkspaceId`), which
+was an explicit choice: this wasn't asked for and a module-level value is enough
+since `useBoard` has exactly one call site.
+
 ## Drag-and-drop
 
 Built with `@dnd-kit/*`. Platform-specific by design (see `CLAUDE.md`'s web/mobile

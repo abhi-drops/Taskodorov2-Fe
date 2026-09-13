@@ -21,11 +21,28 @@ function sortNotes(notes: Note[], sortedBy: Group['sortedBy']): Note[] {
   return sorted
 }
 
+/**
+ * Remembers the last active board tab across a `HomePage` unmount/remount (e.g.
+ * navigating to the note editor and back) for the lifetime of this session — reset on
+ * a full app restart/page reload, not persisted to disk. `useBoard` is only ever
+ * instantiated by `HomePage`, so a module-level value is sufficient here without a
+ * dedicated context.
+ */
+let lastActiveGroupId: string | null = null
+
 export function useBoard() {
   const { activeWorkspaceId } = useWorkspace()
   const [groups, setGroups] = useState<Group[]>([])
   const [notes, setNotes] = useState<Note[]>([])
-  const [activeGroupId, setActiveGroupId] = useState<string | null>(null)
+  const [activeGroupId, setActiveGroupIdState] = useState<string | null>(() => lastActiveGroupId)
+
+  function setActiveGroupId(value: string | null | ((current: string | null) => string | null)) {
+    setActiveGroupIdState((current) => {
+      const next = typeof value === 'function' ? value(current) : value
+      lastActiveGroupId = next
+      return next
+    })
+  }
 
   useEffect(() => {
     let cancelled = false

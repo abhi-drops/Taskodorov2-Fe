@@ -4,6 +4,23 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-09-13 — Mobile board remembers the active group tab across navigation
+
+Fixed the mobile board's active group tab (the `Tabs`-switched single-column view)
+resetting to the workspace's first group every time `HomePage` remounts — e.g. opening
+a note and returning to Home via the Android hardware back button/edge-swipe gesture
+added earlier. See `docs/feat-groups.md`'s new "Active tab survives navigating away
+and back" section.
+
+- `common_logics/useBoard.ts`'s `activeGroupId` now seeds from a module-level
+  `lastActiveGroupId` instead of `useState(null)`, and every `setActiveGroupId` call
+  writes through to it — `useBoard()` has exactly one call site (`HomePage`), so this
+  needed no new Context or persistence layer. Deliberately in-memory only for this app
+  session (resets on a full app restart/page reload), unlike the workspace selector's
+  disk-persisted equivalent — not asked for here, and this fix already covers the
+  reported case (and, as a side effect, every other path back to Home, not just the
+  swipe gesture specifically, since the root cause wasn't gesture-specific).
+
 ## 2026-09-13 — Search page: desktop layout with a bento/masonry results grid
 
 `SearchPage.tsx` had no desktop-specific layout at all — capped at `max-w-md` and a
