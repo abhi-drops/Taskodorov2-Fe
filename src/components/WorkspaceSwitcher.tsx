@@ -53,6 +53,11 @@ export function WorkspaceSwitcher() {
     if (isNative || !isOpen) return
 
     function handlePointerDown(e: PointerEvent) {
+      // The delete ConfirmDialog renders through Modal's createPortal(..., document.body),
+      // so its buttons live outside containerRef — without this guard, clicking them
+      // registers as an "outside" pointerdown and closes everything (including the
+      // dialog itself) before the click event can fire onConfirm.
+      if (confirmingDeleteId) return
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setEditingId(null)
         close()
@@ -71,7 +76,7 @@ export function WorkspaceSwitcher() {
       document.removeEventListener('pointerdown', handlePointerDown)
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [isNative, isOpen, close])
+  }, [isNative, isOpen, close, confirmingDeleteId])
 
   function renderList() {
     return (

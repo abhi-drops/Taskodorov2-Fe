@@ -4,6 +4,16 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-09-13 — Fix: workspace delete button did nothing on web
+
+`WorkspaceSwitcher.tsx`'s outside-click listener closed the whole switcher (resetting
+`confirmingDeleteId` to `null`) on any `document` `pointerdown` outside its
+`containerRef` — but the delete `ConfirmDialog` renders through `Modal`'s
+`createPortal(..., document.body)`, so its own Confirm/Cancel buttons live outside
+`containerRef` too. `pointerdown` fires before `click`, so clicking "Delete" unmounted
+the dialog before its `onConfirm` could run — the button appeared to do nothing, and
+`deleteWorkspace` never fired. Native was unaffected (that listener is web-only).
+Fixed by skipping the outside-click check while `confirmingDeleteId` is set.
 ## 2026-09-13 — Dim the disabled color picker in `priority`-mode notes, add an explanatory callout
 
 Reverses a prior design decision (`style-guide.md` used to say `SwatchPicker`'s
