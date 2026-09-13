@@ -32,31 +32,6 @@ viewport check. The two navs are intentionally not 1:1: web's pill only has
 Home/Power Tools (2 items), mobile's bar has Home/+/Power Tools (3 items) — matches
 what the actual Penpot mockups show for each platform rather than forcing parity.
 
-## First-run intro (`IntroModal.tsx` + `useIntro.ts`)
-
-`IntroModal` is mounted once at the app root (`App.tsx`, a sibling of
-`RouterProvider`, inside `WorkspaceProvider`) rather than inside any one page, so it
-shows on top of whichever route the app opens to. `useIntro` (`common_logics/`) checks
-`hasSeenIntro()` (`lib/storage/preferences.ts`, a `taskodoro.intro.seen` flag through
-the same `@capacitor/preferences`-backed helper auth/workspace state already use — not
-a raw `localStorage` call, so it persists correctly on native too) on mount and opens
-the modal if it hasn't been seen; dismissing it (the header's × close button, click
-outside, or Escape — all wired through `Modal`'s existing `onClose`) calls
-`markIntroSeen()` so it never shows again on that device. Content is the "How To Use
-This Template" mockup graphic — `src/assets/intro-mob.png` (taller portrait crop) below
-the `md:` breakpoint, `src/assets/intro.png` (wider landscape crop) at `md:` and above,
-swapped with plain `hidden`/`md:hidden` classes on two `<img>`s rather than
-`usePlatform().isNative`, since this is which crop reads best at a given viewport
-width, not a native-vs-web behavior fork — inside the shared `Modal`, styled with the
-same frosted-white-dim + deep-offset-shadow treatment
-as `ConfirmDialog`/`WorkspaceSwitcher` (`docs/style-guide.md`), widened past `Modal`'s
-default `max-w-sm` via `panelClassName`'s `!max-w-lg md:!max-w-2xl lg:!max-w-3xl` (an
-`!important` override, since appending a plain conflicting-specificity utility to
-`panelClassName` isn't guaranteed to win against `Modal`'s own hardcoded panel-shape
-classes — see `Modal.tsx`'s own comment on why `overlayClassName`/`panelClassName` are
-full replacements, not additions) — progressively wider on desktop viewports so the
-mockup graphic's text stays readable, while staying compact on mobile/native.
-
 ## Android hardware back button / edge-swipe
 
 Handled by `src/lib/platform/useAndroidBackButton.ts`, mounted once in `AppShell.tsx`

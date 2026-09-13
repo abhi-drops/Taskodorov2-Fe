@@ -114,6 +114,29 @@ export async function seedIfEmpty(db: SQLiteDBConnection): Promise<void> {
       [group.id, workspaceId, group.name, i, group.moveTo, group.resetOnMove, now, now],
     )
   }
+
+  // Walks a new user through the "On Check Move To" chain wired above, right in the
+  // Todo column they land on first.
+  const todoNotes: { title: string; description: string | null; color: string }[] = [
+    { title: 'Click to edit me', description: 'Edit Title , Note Type & color ', color: 'yellow' },
+    {
+      title:
+        'Plz check me to go "in progress", then check again to go to "complete" or you can also try drag and drop',
+      description: null,
+      color: 'coral',
+    },
+    { title: 'Try "POWER TOOLS" for advanced behaviour edits', description: null, color: 'green' },
+  ]
+
+  for (let i = 0; i < todoNotes.length; i++) {
+    const note = todoNotes[i]
+    await db.run(
+      `INSERT INTO notes
+        (id, workspace_id, group_id, type, title, description, color, priority, position, completed, payload, created_at, updated_at, deleted_at)
+       VALUES (?, ?, ?, 'basic', ?, ?, ?, 'normal', ?, 0, '{}', ?, ?, NULL)`,
+      [crypto.randomUUID(), workspaceId, todoId, note.title, note.description, note.color, i, now, now],
+    )
+  }
 }
 
 /**

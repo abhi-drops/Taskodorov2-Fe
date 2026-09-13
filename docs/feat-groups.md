@@ -9,6 +9,13 @@ Progress item being checked means it's actually finished, so it should still sho
 checked once it lands in Completed). Completed itself has no move target. This is only
 the *seed*; a user can change or remove these rules like any other group's settings.
 
+The seeded Todo group also comes with three starter notes (`seedIfEmpty`, `sqlite.ts`)
+that double as an in-context walkthrough for a new user, in place of a separate intro
+screen: a yellow "Click to edit me" (description: "Edit Title , Note Type & color "),
+a coral note walking through the check-to-move (and drag-and-drop) flow above, and a
+green pointer to Power Tools for deeper customization. All plain `basic` notes,
+unchecked, `manual` color mode — a user can edit or delete them like any other note.
+
 ## Board tabs/columns
 
 Rendered by `HomePage.tsx` via `common_logics/useBoard.ts`, which loads the active
