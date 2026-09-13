@@ -4,6 +4,16 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-09-13 — Board: checklist item checkbox now top-aligns on wrapped subtasks
+
+`ListNoteCard.tsx`'s per-item row used `items-center`, so a long subtask that wraps
+across several lines (now possible after the previous entry's multiline editing
+support) centered the checkbox vertically against the whole wrapped block instead of
+aligning it with the first line — inconsistent with `BasicNoteCard`/`CounterNoteCard`,
+which both use `items-start` for their checkbox row. Switched to `items-start` (with a
+small `mt-0.5` on the checkbox to match its first line optically), consistent with
+every other note-card checkbox in the app.
+
 ## 2026-09-13 — Subtask items are directly editable, with multiline support
 
 List-note checklist items could previously only be added/toggled/removed, never

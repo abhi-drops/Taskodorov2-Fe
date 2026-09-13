@@ -36,8 +36,8 @@ export function ListNoteCard({ note, group, onChange }: ListNoteCardProps) {
         className={`ml-4 flex flex-col gap-1.5 rounded-card px-4 pb-4 pt-3 shadow-card ${SWATCH_CLASSES[color]}`}
       >
         {payload.items.map((item) => (
-          <li key={item.id} className="flex items-center gap-2">
-            <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+          <li key={item.id} className="flex items-start gap-2">
+            <div className="mt-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
               <CheckCircle checked={item.completed} onChange={() => toggleItem(item.id)} size={18} />
             </div>
             <span className={`min-w-0 text-sm text-black ${item.completed ? 'line-through opacity-70' : ''}`}>
