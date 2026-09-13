@@ -159,6 +159,27 @@ export function useNoteForm({ groupId, noteId }: UseNoteFormArgs) {
     persist({ payload: next })
   }
 
+  function updateItemText(itemId: string, text: string) {
+    const items = (payload as ListPayload).items.map((item) =>
+      item.id === itemId ? { ...item, text } : item,
+    )
+    setPayload({ items })
+  }
+
+  function handleItemTextBlur(itemId: string) {
+    const items = (payload as ListPayload).items
+    const item = items.find((i) => i.id === itemId)
+    if (!item) return
+    const trimmed = item.text.trim()
+    if (!trimmed) {
+      removeItem(itemId)
+      return
+    }
+    const next: ListPayload = { items: items.map((i) => (i.id === itemId ? { ...i, text: trimmed } : i)) }
+    setPayload(next)
+    persist({ payload: next })
+  }
+
   function toggleItem(itemId: string) {
     const items = (payload as ListPayload).items.map((item) =>
       item.id === itemId ? { ...item, completed: !item.completed } : item,
@@ -203,6 +224,8 @@ export function useNoteForm({ groupId, noteId }: UseNoteFormArgs) {
     handleStepBlur,
     handleTargetBlur,
     addItem,
+    updateItemText,
+    handleItemTextBlur,
     toggleItem,
     removeItem,
     remove,

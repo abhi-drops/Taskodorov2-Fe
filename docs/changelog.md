@@ -4,6 +4,26 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-09-13 — Subtask items are directly editable, with multiline support
+
+List-note checklist items could previously only be added/toggled/removed, never
+edited — fixing a typo meant deleting and re-adding the item. See
+`docs/feat-notes.md`'s "Create/edit" section for the full behavior.
+
+- `common_logics/useNoteForm.ts` gained `updateItemText(id, text)` (local-state-only,
+  called on every keystroke) and `handleItemTextBlur(id)` (trims and persists on
+  blur; clearing an item's text and blurring deletes it, matching the note title's
+  "empty = doesn't exist" convention).
+- `NoteEditorPage.tsx`: each item's text is now an always-editable `<textarea>` (click
+  in and type — same inline-edit pattern as the title/description, no separate edit
+  mode), with multiline auto-grow via the same resize approach already used for
+  title/description (extracted into a plain `autoGrow()` function since a dynamic
+  list of items can't each call a hook). Item rows switched to `items-start` so
+  wrapped text doesn't push the checkbox to the row's vertical middle.
+- The "new item" input is now a multiline `<textarea>` too: Enter still adds the item
+  (unchanged), Shift+Enter inserts a line break first so a multi-line subtask can be
+  composed before submitting.
+
 ## 2026-09-13 — Mobile board remembers the active group tab across navigation
 
 Fixed the mobile board's active group tab (the `Tabs`-switched single-column view)

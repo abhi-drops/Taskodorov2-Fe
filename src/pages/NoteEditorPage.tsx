@@ -12,14 +12,16 @@ import { useNoteForm } from '../common_logics/useNoteForm'
 import deleteIcon from '../assets/delete.png'
 import type { CounterPayload, ListPayload } from '../types/note'
 
+function autoGrow(el: HTMLTextAreaElement) {
+  el.style.height = 'auto'
+  el.style.height = `${el.scrollHeight}px`
+}
+
 function useAutoGrowHeight(value: string) {
   const ref = useRef<HTMLTextAreaElement>(null)
 
   useLayoutEffect(() => {
-    const el = ref.current
-    if (!el) return
-    el.style.height = 'auto'
-    el.style.height = `${el.scrollHeight}px`
+    if (ref.current) autoGrow(ref.current)
   }, [value])
 
   return ref
@@ -35,6 +37,7 @@ export default function NoteEditorPage() {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const titleRef = useAutoGrowHeight(form.status === 'loading' ? '' : form.title)
   const descriptionRef = useAutoGrowHeight(form.status === 'loading' ? '' : form.description)
+  const newItemRef = useAutoGrowHeight(newItemText)
 
   if (form.status === 'loading') {
     return (
@@ -82,33 +85,51 @@ export default function NoteEditorPage() {
               <span className="text-sm font-medium text-slate-700">Items</span>
               <div className={`flex flex-col gap-4 rounded-card py-3 pr-4 shadow-card ${colorClass}`}>
                 {(form.payload as ListPayload).items.map((item) => (
-                  <div key={item.id} className="flex items-center gap-2">
-                    <CheckCircle checked={item.completed} onChange={() => form.toggleItem(item.id)} size={20} />
-                    <span className={`flex-1 text-sm ${item.completed ? 'line-through opacity-60' : ''}`}>
-                      {item.text}
-                    </span>
+                  <div key={item.id} className="flex items-start gap-2">
+                    <CheckCircle
+                      checked={item.completed}
+                      onChange={() => form.toggleItem(item.id)}
+                      size={20}
+                      className="mt-0.5"
+                    />
+                    <textarea
+                      ref={(el) => {
+                        if (el) autoGrow(el)
+                      }}
+                      value={item.text}
+                      onChange={(e) => {
+                        form.updateItemText(item.id, e.target.value)
+                        autoGrow(e.target)
+                      }}
+                      onBlur={() => form.handleItemTextBlur(item.id)}
+                      rows={1}
+                      className={`flex-1 resize-none overflow-hidden break-words bg-transparent text-sm outline-none ${item.completed ? 'line-through opacity-60' : ''}`}
+                    />
                     <button
                       type="button"
                       onClick={() => form.removeItem(item.id)}
                       aria-label={`Remove ${item.text}`}
-                      className="text-lg leading-none text-ink hover:opacity-70"
+                      className="mt-0.5 text-lg leading-none text-ink hover:opacity-70"
                     >
                       ×
                     </button>
                   </div>
                 ))}
-                <div className="flex items-center gap-2">
-                  <input
+                <div className="flex items-start gap-2">
+                  <textarea
+                    ref={newItemRef}
                     value={newItemText}
                     onChange={(e) => setNewItemText(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault()
                         form.addItem(newItemText)
                         setNewItemText('')
                       }
                     }}
                     placeholder="New item"
-                    className="flex-1 bg-transparent pl-3 text-sm text-nav-dark outline-none placeholder:text-nav-dark/50"
+                    rows={1}
+                    className="flex-1 resize-none overflow-hidden break-words bg-transparent pl-3 text-sm text-nav-dark outline-none placeholder:text-nav-dark/50"
                   />
                   <button
                     type="button"

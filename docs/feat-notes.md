@@ -83,6 +83,25 @@ note colors. The "Add" control is a small square `+` icon button (`font-display`
 bordered `border-ink`) rather than a full labeled `Button`, since it sits inline with
 the input instead of needing its own row.
 
+**Item text is directly editable, click-and-type** — same always-editable-textarea
+pattern as the title/description, not a separate read/edit-mode toggle. Each item's
+`<span>` is a `<textarea>` bound to `useNoteForm`'s new `updateItemText(id, text)`
+(updates local state on every keystroke) / `handleItemTextBlur(id)` (trims and
+persists on blur; **clearing an item's text entirely and blurring deletes it**, same
+"empty = doesn't exist" convention as the note title). Item rows switched from
+`items-center` to `items-start` (with `mt-0.5` on the checkbox/remove button) so
+wrapped multi-line text doesn't force the checkbox to the vertical middle of a now-
+taller row. Multiline auto-grow reuses the same resize trick as the title/description
+(`autoGrow()`, extracted to a plain function in `NoteEditorPage.tsx` since a dynamic
+list of items can't each call a hook) — applied via both a mount-time `ref` callback
+(for existing multi-line text) and on every `onChange` (for live typing).
+
+The "new item" input itself is also multiline-capable (a `<textarea>`, not an
+`<input>`, using `useAutoGrowHeight` same as title/description since there's exactly
+one of it): plain **Enter still adds the item** (matches the previous single-line
+behavior); **Shift+Enter inserts a line break** first, so a multi-line subtask can be
+composed before submitting.
+
 Counter-type notes get an equivalent swatch-colored config block (the Step/Target
 inputs, `border-2 border-ink` with an explicit `bg-white` — unlike the items block,
 these stay opaque white rather than blending into the swatch color) in the same
