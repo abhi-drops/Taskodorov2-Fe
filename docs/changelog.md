@@ -4,6 +4,27 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-09-13 — Groups can now be renamed, inline from Group Settings
+
+Previously deliberately out of scope (see the old "No group rename" note in
+`docs/feat-groups.md`, now replaced). The group name heading in `GroupSettingsPage.tsx`
+is now a directly-editable input, auto-saving on blur — no separate rename dialog, no
+Save button, matching every other field on that page. `useGroupSettings.ts` gained
+`updateName`; the DB layer needed no change (`updateGroup` already accepted `name`
+generically). Empty/whitespace-only blur reverts to the current name rather than saving
+one. See `docs/feat-groups.md`'s new "Group rename" section.
+
+## 2026-09-13 — Power Tools desktop panels gained the board's backdrop-card treatment
+
+Follow-up to the entry below: on desktop, the sidebar and the right panel were
+floating their row chips/tabs directly on the `.bg-grid` background with no enclosing
+surface, unlike the board's `GroupColumn`/`TopNav`. New `PowerToolsDesktopLayout`
+(`components/PowerToolsSidebar.tsx`) wraps both in a `border-neutral-300 bg-surface
+shadow-card` backdrop card — the same treatment, desktop-only; mobile is unaffected.
+`PowerToolsPage`/`GroupSettingsPage` both render through it now instead of a bare
+flex row. See `docs/style-guide.md`'s "Power Tools: row chips + desktop 2-panel
+drill-down" section.
+
 ## 2026-09-13 — Power Tools redesigned: chip aesthetic + desktop 2-panel drill-down
 
 `PowerToolsPage`/`GroupSettingsPage` moved off the original generic white-card

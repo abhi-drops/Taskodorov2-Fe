@@ -23,6 +23,11 @@ export function useGroupSettings(groupId: string) {
     }
   }, [groupId])
 
+  async function updateName(name: string) {
+    await updateGroup(groupId, { name })
+    setGroup((g) => (g ? { ...g, name } : g))
+  }
+
   async function updateSortedBy(sortedBy: SortedBy) {
     await updateGroup(groupId, { sortedBy })
     setGroup((g) => (g ? { ...g, sortedBy } : g))
@@ -51,6 +56,7 @@ export function useGroupSettings(groupId: string) {
     group,
     siblingGroups,
     status,
+    updateName,
     updateSortedBy,
     updateNoteColorMode,
     updateOnCheckMoveTo,

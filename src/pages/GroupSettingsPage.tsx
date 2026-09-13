@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, type FocusEvent } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { AppShell } from '../components/AppShell'
-import { PowerToolsSidebar } from '../components/PowerToolsSidebar'
+import { PowerToolsDesktopLayout } from '../components/PowerToolsSidebar'
 import { Select } from '../components/ui/Select'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { Icon } from '../components/ui/Icon'
@@ -22,6 +22,7 @@ export default function GroupSettingsPage() {
     group,
     siblingGroups,
     status,
+    updateName,
     updateSortedBy,
     updateNoteColorMode,
     updateOnCheckMoveTo,
@@ -48,6 +49,17 @@ export default function GroupSettingsPage() {
         <p className="text-center text-slate-500">This group no longer exists.</p>
       </AppShell>
     )
+  }
+
+  const currentGroup = group
+
+  function handleNameBlur(e: FocusEvent<HTMLInputElement>) {
+    const trimmed = e.target.value.trim()
+    if (!trimmed) {
+      e.target.value = currentGroup.name
+      return
+    }
+    if (trimmed !== currentGroup.name) updateName(trimmed)
   }
 
   const fields = (
@@ -104,27 +116,39 @@ export default function GroupSettingsPage() {
     </>
   )
 
+  const nameField = (
+    <input
+      key={group.id}
+      defaultValue={group.name}
+      onBlur={handleNameBlur}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur()
+      }}
+      aria-label="Group name"
+      className="w-full bg-transparent font-display text-2xl font-bold text-nav-dark outline-none"
+    />
+  )
+
   return (
     <AppShell>
       {isNative ? (
         <div className="mx-auto flex w-full max-w-sm flex-1 flex-col gap-6">
           <div className="text-center">
-            <h1 className="font-display text-2xl font-bold text-nav-dark">{group.name}</h1>
+            {nameField}
             <p className="text-slate-600">Group settings</p>
           </div>
           {fields}
         </div>
       ) : (
-        <div className="mx-auto flex w-full max-w-4xl flex-1 gap-10">
-          <PowerToolsSidebar activeTab="groups" />
-          <div className="flex flex-1 flex-col gap-6">
+        <PowerToolsDesktopLayout activeTab="groups">
+          <div className="flex flex-col gap-6">
             <div>
-              <h1 className="font-display text-2xl font-bold text-nav-dark">{group.name}</h1>
+              {nameField}
               <p className="text-slate-600">Group settings</p>
             </div>
-            <div className="flex max-w-sm flex-col gap-6">{fields}</div>
+            <div className="flex flex-col gap-6">{fields}</div>
           </div>
-        </div>
+        </PowerToolsDesktopLayout>
       )}
 
       <ConfirmDialog

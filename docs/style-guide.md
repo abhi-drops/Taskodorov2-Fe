@@ -128,15 +128,27 @@ Groups → Account) and the separate full-page Group Settings screen, just reski
 this matches the two distinct mobile mockups exactly.
 
 **Desktop gained a real structural change**: a persistent left sidebar
-(`components/PowerToolsSidebar.tsx`, 3 tabs — Groups/Addons/Account & Sync, via
-`?tab=` on `/power-tools`) with a right panel that swaps content depending on the
-selected tab, and — when a specific group is opened — "drills down" into that group's
-settings in the same right-panel position, mimicking a single 2-panel app even though
-`/power-tools` and `/power-tools/groups/:id` are still two real routes underneath (kept
-as separate routes deliberately, so browser back/forward and deep-linking still work —
-see `docs/feat-power-tools.md`). No explicit "Back" control in the detail view — the
-persistent sidebar's own "Groups" tab (`<PowerToolsSidebar activeTab="groups" />`,
-rendered by both pages) is the way back, so a separate back link would be redundant.
+(`components/PowerToolsSidebar.tsx`'s `PowerToolsSidebar`, 3 tabs — Groups/Addons/
+Account & Sync, via `?tab=` on `/power-tools`) with a right panel that swaps content
+depending on the selected tab, and — when a specific group is opened — "drills down"
+into that group's settings in the same right-panel position, mimicking a single
+2-panel app even though `/power-tools` and `/power-tools/groups/:id` are still two real
+routes underneath (kept as separate routes deliberately, so browser back/forward and
+deep-linking still work — see `docs/feat-power-tools.md`). No explicit "Back" control
+in the detail view — the persistent sidebar's own "Groups" tab
+(`<PowerToolsSidebar activeTab="groups" />`, rendered by both pages) is the way back,
+so a separate back link would be redundant.
+
+Desktop-only, both panels sit on their own backdrop card —
+`components/PowerToolsSidebar.tsx`'s `PowerToolsDesktopLayout` wraps the sidebar and
+the right-panel content each in `border-neutral-300 bg-surface shadow-card`, the same
+"light panel behind the content" treatment `GroupColumn`'s note-list backdrop and
+`TopNav`'s pill backdrop use on the board — rather than floating the row chips/sidebar
+tabs directly on `.bg-grid` the way earlier revisions of this page did. `PowerToolsPage`
+and `GroupSettingsPage` both render through `PowerToolsDesktopLayout` on desktop
+(mobile skips it entirely, going straight to `AppShell`'s plain `.bg-grid` content
+area) — same as `GroupColumn`'s backdrop, this is `bg-surface`, not `bg-white`; don't
+swap it for pure white, that's a different (and here, wrong) token.
 This is a genuine `isNative` branch, not a CSS breakpoint (unlike `NoteEditorPage`'s
 `lg:` grid) — the sidebar+drill-down is a real interaction/navigation-model
 difference from mobile's flat page stack, not just a layout reflow at the same width.
@@ -190,7 +202,9 @@ to live in `ui/`. `AppShell` wraps page content with `.bg-grid` + `TopNav`/`Bott
 based on `usePlatform().isNative` (plus the `headerStart`/`headerEnd` slots above) —
 every page routes through it. `GroupColumn` is the board's column renderer, used by
 both the web multi-column layout and the mobile single-active-tab view in
-`HomePage.tsx`. `PowerToolsSidebar` is the desktop-only persistent left panel shared by
+`HomePage.tsx`. `PowerToolsSidebar.tsx` exports both `PowerToolsSidebar` (the
+desktop-only persistent left-panel tabs) and `PowerToolsDesktopLayout` (the 2-panel
+backdrop-card shell wrapping it + the right panel), shared by
 `PowerToolsPage`/`GroupSettingsPage` — see "Power Tools: row chips + desktop 2-panel
 drill-down" above.
 

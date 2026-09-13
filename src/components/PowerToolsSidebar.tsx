@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
 export type PowerToolsTab = 'groups' | 'addons' | 'account'
@@ -33,5 +34,25 @@ export function PowerToolsSidebar({ activeTab }: { activeTab: PowerToolsTab }) {
         </Link>
       ))}
     </nav>
+  )
+}
+
+/**
+ * Desktop-only 2-panel shell for `PowerToolsPage`/`GroupSettingsPage`: the sidebar and
+ * the right-panel content each sit on their own backdrop card — `border-neutral-300
+ * bg-surface shadow-card`, the same "light panel behind the content" treatment
+ * `GroupColumn`'s note-list backdrop and `TopNav`'s pill backdrop use on the board (see
+ * `docs/style-guide.md`) — instead of floating directly on the `.bg-grid` background
+ * the way the row chips inside do. Mobile never renders this; see the `isNative`
+ * branch in each page.
+ */
+export function PowerToolsDesktopLayout({ activeTab, children }: { activeTab: PowerToolsTab; children: ReactNode }) {
+  return (
+    <div className="mx-auto flex w-full max-w-4xl items-start gap-8">
+      <div className="border border-neutral-300 bg-surface p-4 shadow-card">
+        <PowerToolsSidebar activeTab={activeTab} />
+      </div>
+      <div className="flex-1 border border-neutral-300 bg-surface p-6 shadow-card">{children}</div>
+    </div>
   )
 }

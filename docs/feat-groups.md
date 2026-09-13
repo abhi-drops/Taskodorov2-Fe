@@ -133,8 +133,19 @@ throughout this app):
 - **Delete This Group** — `ConfirmDialog` → cascading soft-delete of the group and its
   notes → back to Power Tools.
 
-## No group rename
+## Group rename
 
-Deliberately out of scope, despite workspaces having gotten rename via their switcher.
-Neither the Power Tools mockup nor the Group Settings mockup shows any rename
-affordance for a group anywhere — the group's name is only ever set at creation.
+The group name heading at the top of Group Settings (both platforms) is directly
+editable — a plain `<input>` styled as the `<h1>` it replaces, not a separate rename
+dialog like the workspace switcher's. Auto-saves on blur (`useGroupSettings.ts`'s
+`updateName` → `updateGroup`'s already-generic `name` column update — the DB layer
+never actually needed a change, only the UI was missing), same "no Save button, save on
+blur" convention as every other field on this page (`docs/feat-power-tools.md`).
+Uncontrolled (`defaultValue` + `onBlur`, `key={group.id}` to reset it when navigating to
+a different group) rather than a controlled `value`/`useState` pair kept in sync via a
+`useEffect` — same pattern `NoteEditorPage.tsx`'s counter Step/Target inputs already
+use, and it sidesteps a `setState`-in-`useEffect` lint error a naive controlled version
+hits. Blurring with an empty/all-whitespace value reverts the input back to the
+current name instead of saving an empty group name (the DB column is `NOT NULL`, and an
+empty group name has no equivalent to a note's "no title yet" convention, since a group
+already exists in the DB the moment this page can be reached).

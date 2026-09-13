@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { AppShell } from '../components/AppShell'
-import { PowerToolsSidebar, type PowerToolsTab } from '../components/PowerToolsSidebar'
+import { PowerToolsDesktopLayout, type PowerToolsTab } from '../components/PowerToolsSidebar'
 import { useAuth } from '../lib/auth/useAuth'
 import { useWorkspace } from '../lib/workspace/useWorkspace'
 import { usePlatform } from '../lib/platform/usePlatform'
@@ -227,9 +227,8 @@ export default function PowerToolsPage() {
           {accountSection}
         </div>
       ) : (
-        <div className="mx-auto flex w-full max-w-4xl flex-1 gap-10">
-          <PowerToolsSidebar activeTab={activeTab} />
-          <div className="flex flex-1 flex-col gap-6">
+        <PowerToolsDesktopLayout activeTab={activeTab}>
+          <div className="flex flex-col gap-6">
             <div>
               <h1 className="font-display text-2xl font-bold text-nav-dark">Power Tools</h1>
               <p className="text-slate-600">Something more for Power Users.</p>
@@ -238,7 +237,7 @@ export default function PowerToolsPage() {
             {activeTab === 'account' && accountSection}
             {activeTab === 'groups' && groupsSection}
           </div>
-        </div>
+        </PowerToolsDesktopLayout>
       )}
 
       <ConfirmDialog

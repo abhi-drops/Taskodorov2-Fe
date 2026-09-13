@@ -26,7 +26,10 @@ desktop wireframe — see `docs/style-guide.md`'s "Power Tools: row chips + desk
   persistent sidebar's own "Groups" tab (`activeTab="groups"`, rendered by
   `GroupSettingsPage.tsx` too) already is the way back. This is a real `isNative`
   branch in both page files (not a CSS breakpoint) since it's
-  an actual navigation-model difference, not just a layout reflow.
+  an actual navigation-model difference, not just a layout reflow. Both the sidebar
+  and the right panel sit on their own `border-neutral-300 bg-surface shadow-card`
+  backdrop card (`PowerToolsDesktopLayout` in `components/PowerToolsSidebar.tsx`) —
+  the same board-backdrop treatment `GroupColumn`/`TopNav` use, desktop-only.
 
 ## Sections
 
