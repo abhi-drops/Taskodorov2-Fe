@@ -11,6 +11,15 @@ plus the 5 Penpot mockup exports under `docs/design-references/{mobile,web}/`. T
 does not repeat that content — it sequences the work and records the handful of
 decisions from the 2026-08-26 planning session that supersede or extend those two docs.
 
+> **Status (2026-09-19): all 7 sub-phases below (2.0–2.6) are complete**, plus a large
+> amount of work built afterward that this roadmap never scoped — visual reworks,
+> drag-and-drop, Android back-button handling, and several items this doc's own
+> "explicitly out of scope" table originally deferred to Phase 3 (notably "On Check Move
+> To" actually moving notes, now implemented). See **"Beyond this roadmap"** near the
+> bottom for a dated, linked index of everything built past 2.6 — check there first
+> before assuming something below is still pending. `docs/changelog.md` is the full
+> authoritative log; that new section is a curated map into it.
+
 ---
 
 ## Decisions locked in this session
@@ -161,7 +170,7 @@ three-way split already gives web vs. native.
 
 ## Sub-phases
 
-### 2.0 — Design system foundation
+### 2.0 — Design system foundation ✅ complete (`165f2c8`; visually reworked further, see "Beyond this roadmap")
 
 **Goal:** establish fonts, grid background, and the shared UI primitives every later
 phase depends on, so 2.1–2.6 aren't each rebuilding the same dropdown/modal/checkbox.
@@ -200,7 +209,7 @@ emerged.
 
 ---
 
-### 2.1 — Local data layer (SQLite)
+### 2.1 — Local data layer (SQLite) ✅ complete (`165f2c8`; verified on real Android device 2026-08-26; gained its first real migration step since, see "Beyond this roadmap")
 
 **Goal:** a working, tested (both platforms) local persistence layer for
 Workspace/Group/Note, with no UI yet.
@@ -237,7 +246,7 @@ a browser before calling this phase done — don't assume parity.
 
 ---
 
-### 2.2 — Guest-first routing rework
+### 2.2 — Guest-first routing rework ✅ complete (`80aa860`)
 
 **Goal:** drop the forced auth gate; board becomes the default landing experience for
 everyone, authenticated or not.
@@ -266,7 +275,7 @@ left panel) — confirms login/signup live there now, not at the app door.
 
 ---
 
-### 2.3 — Workspace context & switcher UI
+### 2.3 — Workspace context & switcher UI ✅ complete (`666e8ae`; switcher UI redesigned several times since, see "Beyond this roadmap")
 
 **Goal:** multi-workspace create/rename/delete/switch, with one workspace always active.
 
@@ -297,7 +306,7 @@ expect more design iteration in-session than the mockup-backed phases.
 
 ---
 
-### 2.4 — Group CRUD UI + settings + Power Tools screen
+### 2.4 — Group CRUD UI + settings + Power Tools screen ✅ complete (`dbaa462`; Power Tools/Group Settings visually redesigned and "On Check Move To" made functional since, see "Beyond this roadmap")
 
 **Goal:** full group management: board tabs, group settings, and the Power Tools hub
 screen that links to it.
@@ -332,7 +341,7 @@ destructive action, not a data-model decision.
 
 ---
 
-### 2.5 — Note CRUD UI (3 types) + board rendering
+### 2.5 — Note CRUD UI (3 types) + board rendering ✅ complete (`4da912b`; editor and card visuals reworked, drag-and-drop added since, see "Beyond this roadmap")
 
 **Goal:** the core CRUD surface — create/edit notes of all 3 types, render them on the
 board.
@@ -371,7 +380,7 @@ when building this phase and move on; don't block on it.
 
 ---
 
-### 2.6 — Search & filter screen
+### 2.6 — Search & filter screen ✅ complete (`1d7e17b`; gained a desktop bento/masonry layout since, see "Beyond this roadmap")
 
 **Goal:** read-only cross-group search/filter view, the last piece since it's purely a
 view over data all prior phases already produce.
@@ -396,14 +405,112 @@ phases' components.
 
 ## Explicitly out of scope for all of Phase 2
 
-Reproduced from `phase2-offline-first-plan.md` §8 for quick reference — do not build
-these in any sub-phase above without an explicit new decision:
+Reproduced from `phase2-offline-first-plan.md` §8, **as originally decided** — kept for
+history, but see the status column: one of these was in fact built since. Do not build
+any row still marked "still deferred" without an explicit new decision.
 
-| Item | Deferred to |
-|---|---|
-| "On Check Move To" actually moving notes | Phase 3 |
-| "Total % excluding next-group-check notes" | Phase 3 |
-| Turnication (text-truncation toggle) | Later / Power Tools pass |
-| "Sync with Google" (Calendar/Tasks/Keep) | Later |
-| Monetization / tier gating | Unchanged, exploratory |
-| Pomodoro addon | Not core |
+| Item | Originally deferred to | Status (2026-09-19) |
+|---|---|---|
+| "On Check Move To" actually moving notes | Phase 3 | **Built, 2026-09-13** — see "Beyond this roadmap" below |
+| "Total % excluding next-group-check notes" | Phase 3 | Still deferred — group progress bar is still a plain complete/total count |
+| Turnication (text-truncation toggle) | Later / Power Tools pass | Still deferred |
+| "Sync with Google" (Calendar/Tasks/Keep) | Later | Still deferred — listed as disabled/placeholder in Power Tools' Account section |
+| Monetization / tier gating | Unchanged, exploratory | Still deferred |
+| Pomodoro addon | Not core | Still deferred — listed as disabled/placeholder in Power Tools' Addon Tools section |
+
+---
+
+## Beyond this roadmap: everything built after 2.6 that this doc never scoped
+
+This roadmap's 7 sub-phases (2.0–2.6) were finished 2026-08-26. Every commit since then
+(`db61a81` onward — 21 commits as of 2026-09-19) is real product work this doc doesn't
+mention. `docs/changelog.md` is the authoritative, chronological record with full
+rationale for each; this section is a topic-indexed map into it so you don't have to
+scroll the whole changelog to find something. Dates below are changelog entry dates,
+not commit dates, and group same-day follow-up fixes under their parent item.
+
+### New functionality this roadmap didn't plan
+
+- **"On Check Move To" is now fully functional** (2026-09-13) — this roadmap's own
+  out-of-scope table above deferred this to Phase 3; it shipped instead. A group can
+  target any other group in the same workspace; checking a note (fully, per-type) moves
+  it to the destination, appended at the end. Ships with an optional per-group "Reset To
+  Unchecked On Move" toggle (default on) so a moved note can either arrive fresh/
+  unchecked (Kanban-style) or keep its checked state. The first-run seed groups
+  (Todo/In Progress/Completed) now chain through this by default. See
+  `docs/feat-notes.md` ("On Check Move To") and `docs/feat-groups.md`.
+- **Kanban drag-and-drop for the board** (2026-09-03, mobile redesigned 2026-09-13) —
+  `@dnd-kit/core`+`sortable`. Notes reorderable within a `manual`-sorted group,
+  draggable to any other group regardless of sort mode; groups/tabs reorderable too.
+  Mobile's cross-group move went through a full redesign (dwell-to-switch-tab →
+  drop-target tiles) after the first approach proved unreliable on a real device. See
+  `docs/feat-groups.md` ("Drag-and-drop").
+- **Android hardware back button / edge-swipe navigation** (2026-09-12) — new
+  `@capacitor/app` dependency; without this, every back press/gesture exited the app
+  outright instead of walking router history. Includes a "press back again to exit"
+  toast when there's no history left to walk. See `docs/feat-navigation.md`.
+- **Directly-editable checklist subtasks, multiline** (2026-09-13) — list-note items
+  were previously add/toggle/remove only; now click-in-and-type like the title/
+  description, with Shift+Enter for a line break. See `docs/feat-notes.md`.
+- **Inline group rename from Group Settings** (2026-09-13) — previously explicitly out
+  of scope; the group name heading is now a directly-editable, autosave-on-blur input.
+  See `docs/feat-groups.md`.
+- **Mobile board remembers the last active group tab** across navigating away and back
+  (2026-09-13) — was resetting to the first group on every `HomePage` remount (e.g. via
+  the new Android back button). See `docs/feat-groups.md`.
+- **First-run onboarding reworked to seeded walkthrough notes** (2026-09-13) — an
+  intro-image modal was built, then replaced same-session by three seeded notes in the
+  default Todo group that double as a live demo of the check-to-move/drag-and-drop
+  chain. See `docs/feat-groups.md`.
+
+### Visual/UX reworks beyond the original mockup-matching pass
+
+- **Board & note-card visual rework** (2026-08-28) — new `--color-ink`/`--shadow-card`/
+  `--radius-card: 0px` tokens, `GroupColumn` extracted as its own component, note cards
+  moved to a hard-edged neo-brutalist look matching a Penpot export pixel-for-pixel. See
+  `docs/style-guide.md`.
+- **Power Tools + Group Settings redesigned**: chip-row aesthetic replacing the original
+  generic white-card look, plus a genuine desktop-only structural change — a persistent
+  left sidebar (`PowerToolsSidebar`) with a right panel that drills into a selected
+  group's settings (2026-09-13). See `docs/style-guide.md` ("Power Tools: row chips +
+  desktop 2-panel drill-down") and `docs/feat-power-tools.md`.
+- **Workspace switcher redesigned** several times in one session (2026-09-13): moved to
+  the same chip-row system as Power Tools/Groups, inline autosave-on-blur rename with a
+  pencil-icon trigger (a plain rename-as-input first broke click-to-switch, then got
+  fixed), "×" delete replacing a text link, frosted-white dim overlay + deep offset
+  shadow on open (plus two stacking/z-index follow-up fixes). See
+  `docs/feat-workspaces.md`.
+- **Every destructive `ConfirmDialog`** (note/group/workspace delete, Reset to Default)
+  picked up the frosted-dim + deep-shadow look automatically once `Modal` gained
+  `overlayClassName`/`panelClassName` (2026-09-13).
+- **Search page gained a desktop layout** — bento/masonry results grid via CSS
+  `columns`, widened filter cluster (2026-09-13). See `docs/feat-search-filter.md`
+  ("Desktop layout").
+- **Note editor**: swatch-colored checklist/counter config blocks (matching the
+  read-only card instead of plain white fields), auto-growing title/description with no
+  line cap, `lg:` two-column desktop layout (2026-09-12, several follow-up passes). See
+  `docs/feat-notes.md`.
+
+### Data model / defaults changes since the original decisions
+
+- **Note Colors' `random` mode folded into `manual`** (2026-09-13) — `manual` now
+  auto-assigns a random swatch at creation *and* stays user-editable afterward (previously
+  two mutually-exclusive modes: auto-colored-and-locked vs. blank-and-editable). A schema
+  migration rewrites existing `random` rows to `manual`. New groups now default to
+  `sortedBy: 'manual'` / `noteColorMode: 'manual'` (was `alphabetical`/`random`). See
+  `docs/feat-groups.md`, `docs/feat-notes.md` ("Color resolution").
+- **First real schema-migration step** — `migrateSchema()`/`ensureColumn()` (idempotent
+  `ALTER TABLE`, guarded by `PRAGMA table_info`), added for the new `groups.reset_on_move`
+  column, since the schema previously had no version-tracking mechanism at all. Precedent
+  for any future column addition to an existing table. See `docs/feat-offline-data-layer.md`.
+
+### Bug fixes worth knowing about (surprising root causes, not just "fixed a typo")
+
+- Workspace delete button did nothing on web — the switcher's outside-click listener
+  raced the portalled `ConfirmDialog`'s own Confirm button (`pointerdown` fires before
+  `click`), closing the dialog before `onConfirm` ran (2026-09-13).
+- Note editor showed the raw manual color, not the priority-resolved color, in
+  `priority`-mode groups — `resolveNoteColor`'s param type was too narrow to call from
+  the editor's separate form-field state (2026-09-13).
+- Checklist item checkbox didn't top-align on wrapped multi-line subtasks, inconsistent
+  with basic/counter cards (2026-09-13).
