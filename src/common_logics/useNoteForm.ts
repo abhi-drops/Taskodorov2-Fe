@@ -4,7 +4,7 @@ import { getNoteById, createNote, updateNote, deleteNote, defaultPayload } from 
 import { getGroupById } from '../lib/db/groups'
 import { applyOnCheckMove, isNoteFullyChecked, type OnCheckMoveResult } from '../lib/notes/onCheckMove'
 import type { Group } from '../types/group'
-import type { CounterPayload, ListPayload, NotePayload, NoteType, Priority } from '../types/note'
+import type { CounterPayload, ListPayload, NotePayload, NoteStatus, NoteType, Priority } from '../types/note'
 import type { SwatchColor } from '../components/ui/swatchColors'
 
 const SWATCH_COLORS: SwatchColor[] = ['yellow', 'coral', 'blue', 'green']
@@ -33,6 +33,7 @@ export function useNoteForm({ groupId, noteId }: UseNoteFormArgs) {
   const [color, setColor] = useState<SwatchColor | null>(null)
   const [priority, setPriority] = useState<Priority>('normal')
   const [payload, setPayload] = useState<NotePayload>({})
+  const [statuses, setStatuses] = useState<NoteStatus[]>([])
   const [completed, setCompleted] = useState(false)
 
   useEffect(() => {
@@ -54,6 +55,7 @@ export function useNoteForm({ groupId, noteId }: UseNoteFormArgs) {
         setColor(note.color as SwatchColor | null)
         setPriority(note.priority)
         setPayload(note.payload)
+        setStatuses(note.statuses)
         setCompleted(note.completed)
         const g = await getGroupById(note.groupId)
         if (!cancelled) setGroup(g)
@@ -225,6 +227,38 @@ export function useNoteForm({ groupId, noteId }: UseNoteFormArgs) {
     persist({ payload: next })
   }
 
+  // statuses
+  function addStatus(text: string) {
+    const trimmed = text.trim()
+    if (!trimmed) return
+    const next: NoteStatus[] = [...statuses, { id: crypto.randomUUID(), text: trimmed, createdAt: Date.now() }]
+    setStatuses(next)
+    persist({ statuses: next })
+  }
+
+  function updateStatusText(statusId: string, text: string) {
+    setStatuses((current) => current.map((s) => (s.id === statusId ? { ...s, text } : s)))
+  }
+
+  function handleStatusTextBlur(statusId: string) {
+    const status = statuses.find((s) => s.id === statusId)
+    if (!status) return
+    const trimmed = status.text.trim()
+    if (!trimmed) {
+      removeStatus(statusId)
+      return
+    }
+    const next = statuses.map((s) => (s.id === statusId ? { ...s, text: trimmed } : s))
+    setStatuses(next)
+    persist({ statuses: next })
+  }
+
+  function removeStatus(statusId: string) {
+    const next = statuses.filter((s) => s.id !== statusId)
+    setStatuses(next)
+    persist({ statuses: next })
+  }
+
   async function remove() {
     if (!id) return
     await deleteNote(id)
@@ -257,6 +291,11 @@ export function useNoteForm({ groupId, noteId }: UseNoteFormArgs) {
     handleItemTextBlur,
     toggleItem,
     removeItem,
+    statuses,
+    addStatus,
+    updateStatusText,
+    handleStatusTextBlur,
+    removeStatus,
     remove,
   }
 }

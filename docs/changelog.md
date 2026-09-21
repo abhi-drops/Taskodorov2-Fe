@@ -4,6 +4,24 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-09-22 — Add per-note statuses, with a latest-status marquee strip on the board
+
+Notes can now carry multiple free-text "status" entries (`NoteStatus { id, text,
+createdAt }`), each showing when it was created — a new `notes.statuses` DB column
+(`TEXT NOT NULL DEFAULT '[]'`, added via `migrateSchema()`'s `ensureColumn` pattern,
+same as `groups.reset_on_move`) parallel to but separate from `payload`, since statuses
+apply to all three note types, not just `list`. The note editor
+(`NoteEditorPage.tsx`/`useNoteForm.ts`) gets full add/edit-in-place/delete CRUD for
+statuses, listed newest-first, reusing the exact always-editable-textarea/trim-on-blur/
+empty-deletes convention `list`-type items already use — gated behind an existing
+(non-new) note, same as the Delete button. On the board (and search results, which
+reuse the same card components), a note with any statuses shows only its latest one
+(`lib/notes/noteStatus.ts`'s `getLatestStatus`) as a new `NoteStatusStrip` — a full-width
+dark (`bg-ink`) footer strip on `BasicNoteCard`/`CounterNoteCard`/`ListNoteCard`, static
+and right-aligned when it fits on one line, auto-scrolling (`.animate-marquee` in
+`index.css`, the app's first CSS keyframe animation) when it doesn't. See
+`docs/feat-notes.md`'s new "Statuses" section.
+
 ## 2026-09-13 — Onboarding via seeded Todo notes instead of an intro image modal
 
 Replaced the first-run intro image modal (`IntroModal.tsx`/`useIntro.ts`, `intro.png`/

@@ -20,6 +20,22 @@ body {
   margin: 0;
 }
 
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    /* Paired with rendering the status text twice back-to-back (see
+       NoteStatusStrip.tsx) — translating by exactly half the doubled track's width
+       lands the second copy where the first started, for a seamless, no-jump-cut loop. */
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 20s linear infinite;
+}
+
 .bg-grid {
   /* background-image doesn't have its own opacity, and a plain `opacity` on this
      element would dim the nav/content sitting inside it too — so the image is faded

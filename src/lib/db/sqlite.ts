@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS notes (
   position INTEGER NOT NULL,
   completed INTEGER NOT NULL DEFAULT 0,
   payload TEXT NOT NULL DEFAULT '{}',
+  statuses TEXT NOT NULL DEFAULT '[]',
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   deleted_at INTEGER
@@ -168,6 +169,12 @@ async function migrateSchema(db: SQLiteDBConnection): Promise<void> {
   // creation, then leaves it user-editable) — rewrite any pre-existing rows so
   // NoteColorMode's removal of 'random' doesn't leave stale values in old DBs.
   await db.execute("UPDATE groups SET note_color_mode = 'manual' WHERE note_color_mode = 'random'")
+  await ensureColumn(
+    db,
+    'notes',
+    'statuses',
+    "ALTER TABLE notes ADD COLUMN statuses TEXT NOT NULL DEFAULT '[]'",
+  )
 }
 
 async function initDb(): Promise<SQLiteDBConnection> {

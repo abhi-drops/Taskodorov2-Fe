@@ -50,6 +50,51 @@ its card background and the (disabled, in `priority` mode) swatch picker's highl
 color both come from `resolveNoteColor`, so they stay in sync with the Priority
 `<Select>` live, with no save/reload needed.
 
+## Statuses (`src/lib/notes/noteStatus.ts`)
+
+Any note (all 3 types) can carry a list of free-text status entries — `NoteStatus {
+id, text, createdAt }`, stored as `note.statuses`, its own top-level DB column
+(`statuses TEXT NOT NULL DEFAULT '[]'`) rather than living inside `payload`. This is
+deliberately separate from `ListPayload.items`: items are `list`-type-specific,
+statuses apply across `basic`/`counter`/`list` alike, so they couldn't share
+`payload`'s type-specific slot. `NoteStatus` has no edit timestamp — `createdAt` is set
+once at creation and never touched by a later text edit; "latest" is always just the
+entry with the highest `createdAt` (`getLatestStatus`), not array/insertion order.
+
+**Editor CRUD** (`NoteEditorPage.tsx` + `useNoteForm.ts`'s `addStatus`/
+`updateStatusText`/`handleStatusTextBlur`/`removeStatus`) reuses the exact convention
+`list`-type items already established (see "Create/edit" below): always-editable
+`<textarea>` rows, click-and-type with no separate edit mode, text changes persist
+(trimmed) only on blur, and blurring an entry to empty text deletes it instead of
+persisting empty. The whole Status block is gated behind `!form.isNew` — same reasoning
+as the Delete button — since a status needs a real note id to attach to, and a
+brand-new note isn't written to the DB until its title is non-empty. The editor lists
+existing statuses newest-first (`sortStatusesNewestFirst`), each showing its text and a
+formatted created date/time (`formatStatusTimestamp`, the app's first date-formatting
+helper — plain `Intl.DateTimeFormat`, no library).
+
+**Board rendering**: `components/ui/NoteStatusStrip.tsx` is a shared component rendered
+as the last child of all three `*NoteCard.tsx` components (and, since `SearchPage.tsx`
+reuses those same cards, search results too) — a full-width `bg-ink` footer strip
+showing only the note's latest status, or nothing at all if the note has none. The
+status text itself is `font-semibold` and tinted to the note's own resolved swatch
+color (`SWATCH_TEXT_CLASSES` in `swatchColors.ts`, the `text-sticky-*` counterpart to
+the existing `bg-`/tint variants) rather than a fixed gray, so the strip reads as
+belonging to its card even though the strip's own background is always the same dark
+`ink`. Short text sits static and right-aligned (`truncate`); text that overflows one line
+auto-scrolls instead (`.animate-marquee` in `src/index.css`) — overflow is measured in
+JS against a hidden, undoubled copy of the text (measuring the animated/duplicated
+markup directly would always read as overflowing), so short statuses never animate
+unnecessarily. The strip is just part of the card's existing click target — clicking it
+opens the editor like clicking anywhere else on the card, no `stopPropagation`.
+`BasicNoteCard`/`CounterNoteCard` moved their padding off the outer card `<div>` onto a
+new inner wrapper so the strip can sit flush, full-bleed, below it; `ListNoteCard`
+needed no such change beyond an `ml-4` wrapper — its outer `<div>` was already a bare
+wrapper around independently-styled full-width pieces (see its own section below), and
+the strip becomes a natural third one, width-matched to the narrower, indented
+checklist body directly above it (not the wider title strip) so the two bottom pieces
+read as one continuous edge.
+
 ## On Check Move To (`src/lib/notes/onCheckMove.ts`)
 
 A group can be configured (Group Settings, see `feat-groups.md`) with an

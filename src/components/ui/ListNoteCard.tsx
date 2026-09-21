@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router'
 import { CheckCircle } from './CheckCircle'
+import { NoteStatusStrip } from './NoteStatusStrip'
 import { SWATCH_CLASSES } from './swatchColors'
 import { updateNote } from '../../lib/db/notes'
 import { resolveNoteColor } from '../../lib/notes/resolveNoteColor'
@@ -50,6 +51,9 @@ export function ListNoteCard({ note, group, onChange }: ListNoteCardProps) {
           </li>
         ))}
       </ul>
+      <div className="ml-4">
+        <NoteStatusStrip statuses={note.statuses} color={color} />
+      </div>
     </div>
   )
 }

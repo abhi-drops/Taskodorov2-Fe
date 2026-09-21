@@ -4,8 +4,14 @@ import { AppShell } from '../components/AppShell'
 import { CheckCircle } from '../components/ui/CheckCircle'
 import { Select } from '../components/ui/Select'
 import { SwatchPicker } from '../components/ui/SwatchPicker'
-import { SWATCH_CLASSES, SWATCH_TINT_CLASSES } from '../components/ui/swatchColors'
+import {
+  SWATCH_CLASSES,
+  SWATCH_TINT_CLASSES,
+  SWATCH_TEXT_CLASSES,
+  SWATCH_PLACEHOLDER_TEXT_CLASSES,
+} from '../components/ui/swatchColors'
 import { resolveNoteColor } from '../lib/notes/resolveNoteColor'
+import { sortStatusesNewestFirst, formatStatusTimestamp } from '../lib/notes/noteStatus'
 import { Button } from '../components/ui/Button'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { Icon } from '../components/ui/Icon'
@@ -35,10 +41,12 @@ export default function NoteEditorPage() {
 
   const form = useNoteForm({ groupId, noteId: id })
   const [newItemText, setNewItemText] = useState('')
+  const [newStatusText, setNewStatusText] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const titleRef = useAutoGrowHeight(form.status === 'loading' ? '' : form.title)
   const descriptionRef = useAutoGrowHeight(form.status === 'loading' ? '' : form.description)
   const newItemRef = useAutoGrowHeight(newItemText)
+  const newStatusRef = useAutoGrowHeight(newStatusText)
 
   if (form.status === 'loading') {
     return (
@@ -52,6 +60,8 @@ export default function NoteEditorPage() {
     ? resolveNoteColor({ color: form.color, priority: form.priority }, form.group)
     : (form.color ?? 'yellow')
   const colorClass = SWATCH_CLASSES[displayColor]
+  const statusTextColorClass = SWATCH_TEXT_CLASSES[displayColor]
+  const statusPlaceholderClass = SWATCH_PLACEHOLDER_TEXT_CLASSES[displayColor]
   const colorPickerDisabled = form.group?.noteColorMode !== 'manual'
 
   return (
@@ -175,6 +185,72 @@ export default function NoteEditorPage() {
                     className="w-full min-w-0 rounded-card border-2 border-ink bg-white px-3.5 py-2.5 text-nav-dark outline-none focus:ring-2 focus:ring-accent-purple"
                   />
                 </label>
+              </div>
+            </div>
+          )}
+
+          {!form.isNew && (
+            <div className="flex flex-col gap-2">
+              <span className="text-sm font-medium text-slate-700">Status</span>
+              <div className="flex flex-col gap-4 rounded-card bg-ink py-3 pr-4 shadow-card">
+                {sortStatusesNewestFirst(form.statuses).map((s) => (
+                  <div key={s.id} className="flex items-start gap-2">
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <textarea
+                        ref={(el) => {
+                          if (el) autoGrow(el)
+                        }}
+                        value={s.text}
+                        onChange={(e) => {
+                          form.updateStatusText(s.id, e.target.value)
+                          autoGrow(e.target)
+                        }}
+                        onBlur={() => form.handleStatusTextBlur(s.id)}
+                        rows={1}
+                        className={`w-full resize-none overflow-hidden break-words bg-transparent pl-3 text-sm font-semibold outline-none ${statusTextColorClass}`}
+                      />
+                      <span className={`pl-3 text-xs font-semibold opacity-70 ${statusTextColorClass}`}>
+                        {formatStatusTimestamp(s.createdAt)}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => form.removeStatus(s.id)}
+                      aria-label="Remove status"
+                      className={`mt-0.5 text-lg font-semibold leading-none hover:opacity-70 ${statusTextColorClass}`}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                <div className="flex items-start gap-2">
+                  <textarea
+                    ref={newStatusRef}
+                    value={newStatusText}
+                    onChange={(e) => setNewStatusText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault()
+                        form.addStatus(newStatusText)
+                        setNewStatusText('')
+                      }
+                    }}
+                    placeholder="New status"
+                    rows={1}
+                    className={`flex-1 resize-none overflow-hidden break-words bg-transparent pl-3 text-sm font-semibold outline-none ${statusTextColorClass} ${statusPlaceholderClass}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      form.addStatus(newStatusText)
+                      setNewStatusText('')
+                    }}
+                    aria-label="Add status"
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-card border border-current font-display text-lg font-semibold leading-none hover:opacity-70 ${statusTextColorClass}`}
+                  >
+                    +
+                  </button>
+                </div>
               </div>
             </div>
           )}

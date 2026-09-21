@@ -1,5 +1,5 @@
 import { withDb } from './sqlite'
-import type { Note, NotePayload, NoteType, Priority } from '../../types/note'
+import type { Note, NotePayload, NoteStatus, NoteType, Priority } from '../../types/note'
 
 interface NoteRow {
   id: string
@@ -13,6 +13,7 @@ interface NoteRow {
   position: number
   completed: number
   payload: string
+  statuses: string
   created_at: number
   updated_at: number
   deleted_at: number | null
@@ -31,6 +32,7 @@ function rowToNote(row: NoteRow): Note {
     position: row.position,
     completed: row.completed === 1,
     payload: JSON.parse(row.payload) as NotePayload,
+    statuses: JSON.parse(row.statuses) as NoteStatus[],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     deletedAt: row.deleted_at,
@@ -97,8 +99,8 @@ export function createNote(input: {
 
     await db.run(
       `INSERT INTO notes
-        (id, workspace_id, group_id, type, title, description, color, priority, position, completed, payload, created_at, updated_at, deleted_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, NULL)`,
+        (id, workspace_id, group_id, type, title, description, color, priority, position, completed, payload, statuses, created_at, updated_at, deleted_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, '[]', ?, ?, NULL)`,
       [
         id,
         input.workspaceId,
@@ -127,6 +129,7 @@ export function createNote(input: {
       position,
       completed: false,
       payload,
+      statuses: [],
       createdAt: now,
       updatedAt: now,
       deletedAt: null,
@@ -139,7 +142,16 @@ export function updateNote(
   patch: Partial<
     Pick<
       Note,
-      'title' | 'description' | 'color' | 'priority' | 'position' | 'completed' | 'payload' | 'groupId' | 'type'
+      | 'title'
+      | 'description'
+      | 'color'
+      | 'priority'
+      | 'position'
+      | 'completed'
+      | 'payload'
+      | 'statuses'
+      | 'groupId'
+      | 'type'
     >
   >,
 ): Promise<void> {
@@ -178,6 +190,10 @@ export function updateNote(
     if ('payload' in patch) {
       setClauses.push('payload = ?')
       params.push(JSON.stringify(patch.payload))
+    }
+    if ('statuses' in patch) {
+      setClauses.push('statuses = ?')
+      params.push(JSON.stringify(patch.statuses))
     }
     if ('groupId' in patch) {
       setClauses.push('group_id = ?')

@@ -22,6 +22,12 @@ export interface ListPayload {
 
 export type NotePayload = BasicPayload | CounterPayload | ListPayload
 
+export interface NoteStatus {
+  id: string
+  text: string
+  createdAt: number
+}
+
 export interface Note {
   id: string
   workspaceId: string
@@ -34,6 +40,7 @@ export interface Note {
   position: number
   completed: boolean
   payload: NotePayload
+  statuses: NoteStatus[]
   createdAt: number
   updatedAt: number
   deletedAt: number | null
