@@ -33,7 +33,7 @@ export function NoteStatusStrip({ statuses, color }: NoteStatusStripProps) {
   if (!latest) return null
 
   return (
-    <div ref={containerRef} className="w-full overflow-hidden bg-ink px-3 py-1.5">
+    <div ref={containerRef} className="relative w-full overflow-hidden bg-ink px-3 py-1.5">
       <span ref={measureRef} className="invisible absolute whitespace-nowrap text-sm">
         {latest.text}
       </span>
