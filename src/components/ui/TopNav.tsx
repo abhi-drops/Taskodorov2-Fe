@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router'
 import { Icon } from './Icon'
+import { GearIcon, GridIcon } from './NavIcons'
 import homeIcon from '../../assets/home.png'
-import powerToolsIcon from '../../assets/power-tools.png'
 
 interface TopNavProps {
   className?: string
@@ -20,11 +20,18 @@ export function TopNav({ className = '' }: TopNavProps) {
           Home
         </NavLink>
         <NavLink
-          to="/power-tools"
+          to="/settings"
           className="flex items-center gap-2 bg-nav-dark px-5 py-2 text-sm font-medium text-white"
         >
-          <Icon src={powerToolsIcon} alt="" size={18} />
-          Power Tools
+          <GearIcon className="h-[18px] w-[18px] text-sticky-yellow" />
+          Settings
+        </NavLink>
+        <NavLink
+          to="/apps"
+          className="flex items-center gap-2 bg-sticky-blue px-5 py-2 text-sm font-medium text-nav-dark"
+        >
+          <GridIcon className="h-[18px] w-[18px]" />
+          Apps
         </NavLink>
       </nav>
     </div>

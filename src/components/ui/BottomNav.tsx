@@ -1,42 +1,30 @@
 import { NavLink } from 'react-router'
 import { Icon } from './Icon'
+import { GearIcon, GridIcon } from './NavIcons'
 import homeIcon from '../../assets/home.png'
-import pluseIcon from '../../assets/pluse.png'
-import powerToolsIcon from '../../assets/power-tools.png'
 
-interface BottomNavProps {
-  showAddButton?: boolean
-  addNoteGroupId?: string | null
-}
-
-export function BottomNav({ showAddButton = true, addNoteGroupId }: BottomNavProps) {
+/**
+ * Mobile bottom bar: Home / Apps / Settings, icon-only per the mobile wireframe. The
+ * quick-add "+" that used to sit here now lives on the board as `FloatingAddButton`.
+ */
+export function BottomNav() {
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-40 flex"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <NavLink
-        to="/"
-        end
-        className="flex flex-1 items-center justify-center gap-2 bg-sticky-yellow py-3 text-sm font-medium text-nav-dark"
-      >
-        <Icon src={homeIcon} alt="" size={20} />
-        Home
+      <NavLink to="/" end aria-label="Home" className="flex flex-1 items-center justify-center bg-sticky-yellow py-3">
+        <Icon src={homeIcon} alt="" size={22} />
       </NavLink>
-      {showAddButton && (
-        <NavLink
-          to={addNoteGroupId ? `/notes/new?group=${addNoteGroupId}` : '/notes/new'}
-          className="flex w-16 items-center justify-center bg-accent-purple py-3"
-        >
-          <Icon src={pluseIcon} alt="Add note" size={20} className="[filter:brightness(0)_invert(1)]" />
-        </NavLink>
-      )}
+      <NavLink to="/apps" aria-label="Apps" className="flex flex-1 items-center justify-center bg-sticky-blue py-3 text-nav-dark">
+        <GridIcon className="h-[22px] w-[22px]" />
+      </NavLink>
       <NavLink
-        to="/power-tools"
-        className="flex flex-1 items-center justify-center gap-2 bg-nav-dark py-3 text-sm font-medium text-white"
+        to="/settings"
+        aria-label="Settings"
+        className="flex flex-1 items-center justify-center bg-nav-dark py-3 text-sticky-yellow"
       >
-        <Icon src={powerToolsIcon} alt="" size={20} />
-        Power Tools
+        <GearIcon className="h-[22px] w-[22px]" />
       </NavLink>
     </nav>
   )

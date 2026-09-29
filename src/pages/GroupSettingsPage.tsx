@@ -32,7 +32,7 @@ export default function GroupSettingsPage() {
 
   async function handleDelete() {
     await remove()
-    navigate('/power-tools')
+    navigate('/settings')
   }
 
   if (status === 'loading') {

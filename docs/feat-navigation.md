@@ -16,11 +16,14 @@ again.
 |---|---|---|
 | `/` | `HomePage` | The board. |
 | `/search` | `SearchPage` | |
-| `/power-tools` | `PowerToolsPage` | |
-| `/power-tools/groups/:groupId` | `GroupSettingsPage` | |
+| `/settings` | `PowerToolsPage` | Settings (formerly Power Tools) — see `feat-power-tools.md`. |
+| `/settings/groups/:groupId` | `GroupSettingsPage` | |
+| `/power-tools`, `/power-tools/groups/:groupId` | → `/settings…` | Legacy redirects (`replace`) since the 2.7 rename. |
+| `/apps` | `AppsPage` | Web: redirects to the first enabled app. Mobile: app tile list. See `feat-apps.md`. |
+| `/apps/diary` | `DiaryPage` | Placeholder until Phase 2.8. |
 | `/notes/new` | `NoteEditorPage` | Reads `?group=<id>` from the query string. |
 | `/notes/:id/edit` | `NoteEditorPage` | Same component as create — see `feat-notes.md`. |
-| `/login`, `/signup` | `LoginPage`, `SignupPage` | Reachable only from Power Tools' Account section now, not the app door. |
+| `/login`, `/signup` | `LoginPage`, `SignupPage` | Reachable only from Settings' Account section now, not the app door. |
 | `*` | → `/` | Catch-all redirect. |
 
 ## Chrome (`AppShell.tsx` + `TopNav`/`BottomNav`)
@@ -28,9 +31,21 @@ again.
 Every page wraps in `AppShell` (`src/components/AppShell.tsx`), which applies the
 `.bg-grid` background and renders `TopNav` (web) or `BottomNav` (mobile) based on
 `usePlatform().isNative` — see `style-guide.md` for why this is never a
-viewport check. The two navs are intentionally not 1:1: web's pill only has
-Home/Power Tools (2 items), mobile's bar has Home/+/Power Tools (3 items) — matches
-what the actual Penpot mockups show for each platform rather than forcing parity.
+viewport check. Since Phase 2.7 both navs have the same 3 destinations, in the order
+each wireframe shows: web's pill is **Home / Settings / Apps** (labelled), mobile's bar
+is **Home / Apps / Settings** (icon-only, `aria-label`s).
+
+### Mobile quick-add (`FloatingAddButton`)
+
+Mobile's "+" used to be the middle cell of `BottomNav`; since 2.7 it's
+`components/ui/FloatingAddButton.tsx` — a purple half-pill pinned to the right screen
+edge, rendered by `HomePage`'s `isNative` board branch only. It links to
+`/notes/new?group=<activeGroupId>`, i.e. the active tab's group — the same target the
+old nav "+" used and the same thing web's per-column "+" (`GroupColumn` header, unchanged,
+hidden on mobile via `showHeader={false}`) does per column. So there's still exactly one
+add affordance per platform. Hidden during a note drag (so it can't cover
+`GroupDropTargets`) and when the workspace has no groups (the empty state points to
+Settings instead). Other pages have no quick-add on mobile anymore.
 
 ## Android hardware back button / edge-swipe
 

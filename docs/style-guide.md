@@ -33,11 +33,15 @@ No icon library. `src/assets/` holds a curated set of flat single-color PNGs
 (`home.png`, `pluse.png`, `power-tools.png`, `search.png`, `check-circle.png`,
 `check-tick.png`, `delete.png`) rendered through `components/ui/Icon.tsx` (a thin
 `<img>` wrapper). A few icons are synthesized from these instead of adding new assets:
-`Modal`'s close "×" is `pluse.png` rotated 45°; `BottomNav`'s "+" is `pluse.png` with a
+`Modal`'s close "×" is `pluse.png` rotated 45°; `FloatingAddButton`'s "+" is `pluse.png` with a
 `brightness(0) invert(1)` CSS filter to render white-on-purple. One-off glyphs that
 don't fit the PNG set (`Select`'s dropdown chevron, `WorkspaceSwitcher`'s trigger
-chevron, `PowerToolsPage`'s gear/clock/box icons) are small inline SVGs or Unicode
-characters instead of pulling in an icon library for a single glyph.
+chevron, `PowerToolsPage`'s box icon) are small inline SVGs or Unicode
+characters instead of pulling in an icon library for a single glyph. Glyphs shared
+across files — the nav's Apps grid and Settings gear, and the Apps sidebar's Diary book
+and Pomodoro clock — live together in `components/ui/NavIcons.tsx` (`currentColor`
+stroke, tinted via `text-*`). `power-tools.png` is no longer referenced since the 2.7
+Settings rename.
 
 ## Board & note-card system
 
@@ -119,33 +123,36 @@ actions (Reset to Default, Delete This Group) are the same chip shape with
 `bg-sticky-coral text-white` instead of the shared `Button.tsx` `danger` variant (which
 has no border) — a page-local `DANGER_CHIP` class string in each file, not a change to
 `Button.tsx` itself, since that primitive is used well beyond this page's aesthetic.
-`ClockIcon`/`BoxIcon` (Pomodoro / each group row) are small inline SVGs local to
-`PowerToolsPage.tsx`, following the same one-off-glyph convention as the gear/chevron
-icons above rather than adding new PNG assets.
+`BoxIcon` (each group row) is a small inline SVG local to `PowerToolsPage.tsx`,
+following the same one-off-glyph convention as the chevron icons above rather than
+adding new PNG assets. (Since the 2.7 rename to **Settings**, the Addons/Pomodoro chip
+moved to Apps — see `feat-apps.md`.)
 
-**Mobile is unchanged in structure** — still the single scrolling page (Addon Tools →
-Groups → Account) and the separate full-page Group Settings screen, just reskinned;
+**Mobile is unchanged in structure** — still the single scrolling page (Groups →
+Account) and the separate full-page Group Settings screen, just reskinned;
 this matches the two distinct mobile mockups exactly.
 
 **Desktop gained a real structural change**: a persistent left sidebar
-(`components/PowerToolsSidebar.tsx`'s `PowerToolsSidebar`, 3 tabs — Groups/Addons/
-Account & Sync, via `?tab=` on `/power-tools`) with a right panel that swaps content
+(`components/PowerToolsSidebar.tsx`, 2 tabs — Groups/Account & Sync, via `?tab=` on
+`/settings`) with a right panel that swaps content
 depending on the selected tab, and — when a specific group is opened — "drills down"
 into that group's settings in the same right-panel position, mimicking a single
-2-panel app even though `/power-tools` and `/power-tools/groups/:id` are still two real
+2-panel app even though `/settings` and `/settings/groups/:id` are still two real
 routes underneath (kept as separate routes deliberately, so browser back/forward and
 deep-linking still work — see `docs/feat-power-tools.md`). No explicit "Back" control
 in the detail view — the persistent sidebar's own "Groups" tab
-(`<PowerToolsSidebar activeTab="groups" />`, rendered by both pages) is the way back,
+(`<PowerToolsDesktopLayout activeTab="groups">`, rendered by both pages) is the way back,
 so a separate back link would be redundant.
 
 Desktop-only, both panels sit on their own backdrop card —
-`components/PowerToolsSidebar.tsx`'s `PowerToolsDesktopLayout` wraps the sidebar and
-the right-panel content each in `border-neutral-300 bg-surface shadow-card`, the same
+`components/SidebarPanelLayout.tsx` (generic since 2.7: `items`/`activeId`, disabled
+items render as dimmed non-links; also exports the shared `CHIP` class) wraps the
+sidebar and the right-panel content each in `border-neutral-300 bg-surface shadow-card`, the same
 "light panel behind the content" treatment `GroupColumn`'s note-list backdrop and
 `TopNav`'s pill backdrop use on the board — rather than floating the row chips/sidebar
 tabs directly on `.bg-grid` the way earlier revisions of this page did. `PowerToolsPage`
-and `GroupSettingsPage` both render through `PowerToolsDesktopLayout` on desktop
+and `GroupSettingsPage` both render through `PowerToolsDesktopLayout` (and Apps'
+`DiaryPage` through `AppsDesktopLayout` — both thin wrappers over `SidebarPanelLayout`) on desktop
 (mobile skips it entirely, going straight to `AppShell`'s plain `.bg-grid` content
 area) — same as `GroupColumn`'s backdrop, this is `bg-surface`, not `bg-white`; don't
 swap it for pure white, that's a different (and here, wrong) token.
@@ -191,7 +198,8 @@ system" above).
 | `SwatchPicker.tsx` | Single-select 4-color note-color picker. Colors/classes live in `swatchColors.ts` (split out from `SwatchPicker.tsx` itself — the component and the constants can't share a file without breaking React Fast Refresh, which requires component-only files). Disabled state (`noteColorMode !== 'manual'`, i.e. `priority` mode) is `pointer-events-none opacity-35` — dimmed to visually read as non-interactive, unlike most disabled controls in this app which only block interaction. In the note editor, a `priority`-mode note also shows a bordered/tinted callout ("Color is set by priority for this group.") directly under the picker, styled `rounded-card border-2 border-ink` with its background tinted to the note's own resolved color (`SWATCH_TINT_CLASSES[displayColor]` in `swatchColors.ts` — each swatch color at 15% opacity, e.g. `bg-sticky-yellow/15`) rather than a fixed accent color, so the callout visually matches whichever priority color is currently active. `swatchColors.ts` also exports `SWATCH_TEXT_CLASSES` (`text-sticky-*`, added for `NoteStatusStrip`/the note editor's Status block — swatch-colored *text* on a dark background, rather than a swatch-colored background) and `SWATCH_PLACEHOLDER_TEXT_CLASSES` (the `placeholder:text-sticky-*/60` counterpart, kept as its own map of complete literal class strings rather than built by concatenating a `placeholder:` prefix onto `SWATCH_TEXT_CLASSES` at the call site — Tailwind's content scanner needs a class's full string to appear literally somewhere in scanned source to generate its CSS, which a runtime-only template-literal concatenation wouldn't satisfy). |
 | `ProgressBar.tsx` | Simple track + fill, optional `%` label. No longer used on the board (removed from `GroupColumn` in 2.7 — the reference design never shows it on the default view); still a generic primitive, may be reused elsewhere. |
 | `BasicNoteCard.tsx`, `CounterNoteCard.tsx`, `ListNoteCard.tsx` | The three note-type cards rendered by `GroupColumn`. Share the `shadow-card`/`text-black`/`SWATCH_CLASSES[color]` treatment (see above); `CounterNoteCard`'s `+`/`−` row order matters — `+` left, `−` right, matching the reference (easy to get backwards). `ListNoteCard` has its own two-piece shape, see above. All three (plus `SearchPage`'s reuse of them) render `NoteStatusStrip` as their last child — see `docs/feat-notes.md`'s "Statuses" section for the full behavior; the one style-system point worth repeating here is that its dark `bg-ink` background is a deliberate departure from every other note-card-adjacent chrome, which uses the note's own swatch color, not a fixed dark token. |
-| `TopNav.tsx` (web) / `BottomNav.tsx` (mobile) | Home/Power Tools (web, 2 items) vs Home/+/Power Tools (mobile, 3 items) — deliberately not matched 1:1, since the mockups themselves differ here. `TopNav` has the backdrop card treatment described above; `BottomNav` doesn't (out of scope for the 2.7 rework — mobile board polish wasn't part of that pass). |
+| `TopNav.tsx` (web) / `BottomNav.tsx` (mobile) | Home (`sticky-yellow`) / Settings (`nav-dark`, yellow gear) / Apps (`sticky-blue`, grid) on web, labelled; Home / Apps / Settings on mobile, icon-only with `aria-label`s — order follows each platform's wireframe. `TopNav` has the backdrop card treatment described above; `BottomNav` doesn't. |
+| `FloatingAddButton.tsx` | Mobile quick-add: purple `rounded-l-full` half-pill (`border-[3px] border-ink`, no right border) fixed to the right screen edge, `pluse.png` inverted white. Generic (`to` prop) — `HomePage` decides the target and visibility. See `feat-navigation.md`. |
 | `Icon.tsx` | Thin `<img>` wrapper used by everything above. |
 | `ExitToast.tsx` | Small fixed-position "Press back again to exit" pill, shown above `BottomNav` when the Android hardware back button/edge-swipe is pressed on Home with no more history — see `docs/feat-navigation.md`. Native-only in practice (driven by `useAndroidBackButton`), but the component itself has no platform branching of its own. |
 
@@ -202,11 +210,10 @@ to live in `ui/`. `AppShell` wraps page content with `.bg-grid` + `TopNav`/`Bott
 based on `usePlatform().isNative` (plus the `headerStart`/`headerEnd` slots above) —
 every page routes through it. `GroupColumn` is the board's column renderer, used by
 both the web multi-column layout and the mobile single-active-tab view in
-`HomePage.tsx`. `PowerToolsSidebar.tsx` exports both `PowerToolsSidebar` (the
-desktop-only persistent left-panel tabs) and `PowerToolsDesktopLayout` (the 2-panel
-backdrop-card shell wrapping it + the right panel), shared by
-`PowerToolsPage`/`GroupSettingsPage` — see "Power Tools: row chips + desktop 2-panel
-drill-down" above.
+`HomePage.tsx`. `SidebarPanelLayout.tsx` is the generic desktop 2-panel shell;
+`PowerToolsSidebar.tsx`'s `PowerToolsDesktopLayout` (Settings) and `AppsSidebar.tsx`'s
+`AppsDesktopLayout` (Apps, items from `appsList.ts`) are thin wrappers over it — see
+"Power Tools: row chips + desktop 2-panel drill-down" above.
 
 ## Platform detection
 

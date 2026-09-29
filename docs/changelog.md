@@ -4,6 +4,28 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-09-29 — Phase 2.7: Power Tools → Settings, new Apps tab, mobile floating "+"
+
+Nav and shell changes from `docs/phase2-apps-diary-plan.md` §2.7, built from the new
+wireframes (`docs/design-references/web/diary*.png`, `mobile/newuiapps.png`):
+
+- **Power Tools is now "Settings"**, both the visible label and the route: `/settings` and
+  `/settings/groups/:id`. The old `/power-tools*` paths redirect with `replace`. The
+  **Addons tab was removed** because Pomodoro moved to Apps, so Settings is now Groups +
+  Account & Sync. Internal names (`PowerToolsPage`, `PowerToolsSidebar`) are unchanged.
+  See `feat-power-tools.md`.
+- **New Apps nav item** (`/apps`, `/apps/diary`). On web it is a 2-panel sidebar (Diary,
+  plus Pomodoro greyed out); on mobile it is a list of tiles. Diary shows a placeholder
+  until 2.8. The desktop sidebar markup was extracted into a generic
+  `components/SidebarPanelLayout.tsx`, which Settings and Apps now share. See
+  `feat-apps.md`.
+- **Navs:** the web `TopNav` shows Home / Settings / Apps. The mobile `BottomNav` shows
+  icons only (Home / Apps / Settings) and no longer has the "+".
+- **Mobile quick-add** is now `components/ui/FloatingAddButton.tsx`, a purple half-pill on
+  the right edge of the board. It adds to the active tab's group, which is the same
+  target the old bottom-nav "+" used. It is hidden during a note drag and when there are
+  no groups. The web per-column "+" is unchanged. See `feat-navigation.md`.
+
 ## 2026-09-22 — Fix: long marquee status text broke layout with page-level horizontal scroll
 
 `NoteStatusStrip.tsx`'s hidden overflow-measurement `<span>` (`position: absolute`, used

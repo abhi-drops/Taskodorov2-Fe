@@ -1,8 +1,14 @@
-# Feature: Power Tools
+# Feature: Settings (formerly Power Tools)
 
-`/power-tools` (`PowerToolsPage.tsx`) and `/power-tools/groups/:id`
+`/settings` (`PowerToolsPage.tsx`) and `/settings/groups/:id`
 (`GroupSettingsPage.tsx`) — the hub for everything that isn't core board/note CRUD:
-group management, account, and placeholder addons. Deliberately kept separate from the
+group management and account. **Renamed from "Power Tools" in Phase 2.7**
+(`phase2-apps-diary-plan.md`): the user-facing label and routes changed; internal
+file/component names (`PowerToolsPage`, `PowerToolsSidebar`, `PowerToolsTab`) did not.
+The old `/power-tools` and `/power-tools/groups/:id` paths redirect (`replace`) to the
+new ones in `router/routes.tsx`. The **Addons tab/section was removed** in the same pass
+— Pomodoro now lives under Apps (`feat-apps.md`); an old `?tab=addons` link falls back
+to the Groups tab. Deliberately kept separate from the
 guest-first board so first-time UX stays simple; this is where complexity lives once
 someone goes looking for it.
 
@@ -13,14 +19,14 @@ desktop wireframe — see `docs/style-guide.md`'s "Power Tools: row chips + desk
 2-panel drill-down" section for the full visual system (chip rows, `DANGER_CHIP`,
 `ClockIcon`/`BoxIcon`). Structurally the two platforms now genuinely diverge:
 
-- **Mobile** — unchanged from before: `/power-tools` is one scrolling page (Addon
-  Tools → Groups → Account, in that order) and `/power-tools/groups/:id` is a separate
-  full-page screen, matching the two distinct mobile mockups.
-- **Desktop** — a persistent left sidebar (`components/PowerToolsSidebar.tsx`, 3 tabs:
-  Groups / Addons / Account & Sync, selected via `?tab=` on `/power-tools`, default
-  `groups`) with a right panel whose content depends on the active tab. Opening a
+- **Mobile** — `/settings` is one scrolling page (Groups → Account, in that order) and
+  `/settings/groups/:id` is a separate full-page screen, matching the two distinct
+  mobile mockups.
+- **Desktop** — a persistent left sidebar (`components/PowerToolsSidebar.tsx`, 2 tabs:
+  Groups / Account & Sync, selected via `?tab=` on `/settings`, default `groups`) with a
+  right panel whose content depends on the active tab. Opening a
   specific group's settings **is still a real navigation** to
-  `/power-tools/groups/:id` (kept as a separate route on purpose — browser
+  `/settings/groups/:id` (kept as a separate route on purpose — browser
   back/forward and deep-linking both still work), but visually it reads as the same
   right panel "drilling down" in place — no separate "Back" control, since the
   persistent sidebar's own "Groups" tab (`activeTab="groups"`, rendered by
@@ -28,15 +34,14 @@ desktop wireframe — see `docs/style-guide.md`'s "Power Tools: row chips + desk
   branch in both page files (not a CSS breakpoint) since it's
   an actual navigation-model difference, not just a layout reflow. Both the sidebar
   and the right panel sit on their own `border-neutral-300 bg-surface shadow-card`
-  backdrop card (`PowerToolsDesktopLayout` in `components/PowerToolsSidebar.tsx`) —
+  backdrop card (`PowerToolsDesktopLayout` in `components/PowerToolsSidebar.tsx`, a thin
+  wrapper over the generic `components/SidebarPanelLayout.tsx` that Apps also uses) —
   the same board-backdrop treatment `GroupColumn`/`TopNav` use, desktop-only.
 
 ## Sections
 
-- **Addon Tools** — "Pomodoro", rendered disabled (dimmed chip). Not built in Phase 2;
-  present-but-inert so the surface area is visible without implying it works.
 - **Groups** — list of the active workspace's groups, each row: box icon, name, gear
-  icon (→ `/power-tools/groups/:id`, see `feat-groups.md`), "×" (→ `ConfirmDialog` →
+  icon (→ `/settings/groups/:id`, see `feat-groups.md`), "×" (→ `ConfirmDialog` →
   cascading delete). A "+ New group" input + button chip below the list
   (`common_logics/useGroupForm.ts`) — **this is the only way to create a group** (see
   `feat-groups.md` for why the board itself has no create-group UI).

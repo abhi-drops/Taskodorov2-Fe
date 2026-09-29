@@ -9,10 +9,9 @@ interface AppShellProps {
   children: ReactNode
   headerStart?: ReactNode
   headerEnd?: ReactNode
-  addNoteGroupId?: string | null
 }
 
-export function AppShell({ children, headerStart, headerEnd, addNoteGroupId }: AppShellProps) {
+export function AppShell({ children, headerStart, headerEnd }: AppShellProps) {
   const { isNative } = usePlatform()
   const { showExitToast } = useAndroidBackButton()
 
@@ -26,7 +25,7 @@ export function AppShell({ children, headerStart, headerEnd, addNoteGroupId }: A
         </div>
       )}
       <div className={`flex flex-1 flex-col p-6 ${isNative ? 'pb-24' : ''}`}>{children}</div>
-      {isNative && <BottomNav addNoteGroupId={addNoteGroupId} />}
+      {isNative && <BottomNav />}
       {showExitToast && <ExitToast />}
     </div>
   )

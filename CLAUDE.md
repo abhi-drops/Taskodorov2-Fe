@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Taskodoro frontend: a React 19 + Vite + TypeScript app wrapped with Capacitor to run on both web and Android from one codebase. Guest-first and offline-first — the app is fully usable with zero account, all data stored locally on-device via SQLite. It optionally talks to a separate backend (`Taskodoro-Be`, not in this repo) running locally at `http://localhost:8787` during development, only for the opt-in account/sign-in features reached from Power Tools.
+Taskodoro frontend: a React 19 + Vite + TypeScript app wrapped with Capacitor to run on both web and Android from one codebase. Guest-first and offline-first — the app is fully usable with zero account, all data stored locally on-device via SQLite. It optionally talks to a separate backend (`Taskodoro-Be`, not in this repo) running locally at `http://localhost:8787` during development, only for the opt-in account/sign-in features reached from Settings (formerly "Power Tools" — internal file/component names like `PowerToolsPage` kept the old name).
 
 ## Commands
 
@@ -29,7 +29,7 @@ Copy `.env.example` to `.env.local` (gitignored) and fill in:
 
 ## Documentation
 
-- **`docs/feat-*.md`** — one file per major feature (auth, offline-data-layer, navigation, workspaces, groups, power-tools, notes, search-filter, design-system). This is where feature *behavior and rationale* lives in depth; this file (`CLAUDE.md`) stays a high-level map plus the gotchas sharp enough to bite someone.
+- **`docs/feat-*.md`** — one file per major feature (auth, offline-data-layer, navigation, workspaces, groups, power-tools (= Settings), apps, notes, search-filter, design-system). This is where feature *behavior and rationale* lives in depth; this file (`CLAUDE.md`) stays a high-level map plus the gotchas sharp enough to bite someone.
 - **`docs/changelog.md`** — running log of what changed and when, newest entry first.
   **After any meaningful change to this codebase (a new feature, a real bug fix, a
   behavior change — not a typo fix or a pure refactor with no behavior change), add an
@@ -74,7 +74,7 @@ Self-hosted fonts (never a Google Fonts CDN link — this is an offline-first ap
 
 ### Auth
 
-`lib/auth/AuthContext.tsx` (`AuthProvider`) hydrates from Capacitor Preferences on mount (`status: 'hydrating' | 'authenticated' | 'unauthenticated'`), exposes `login`/`signup`/`loginWithGoogle`/`logout`. **Auth is optional** since the guest-first rework — reached only from Power Tools' Account section, not required to use the app (see "Guest-first & routing" above). All API calls go through `lib/api/auth.ts` (the only file to touch if the backend contract changes) → `lib/api/client.ts` (fetch wrapper, normalizes errors to `ApiError`). Session persistence is `lib/storage/preferences.ts`, wrapping `@capacitor/preferences` — transparently falls back to `localStorage` on web, so no platform branching is needed there. Full detail: `docs/feat-auth.md`.
+`lib/auth/AuthContext.tsx` (`AuthProvider`) hydrates from Capacitor Preferences on mount (`status: 'hydrating' | 'authenticated' | 'unauthenticated'`), exposes `login`/`signup`/`loginWithGoogle`/`logout`. **Auth is optional** since the guest-first rework — reached only from Settings' Account section, not required to use the app (see "Guest-first & routing" above). All API calls go through `lib/api/auth.ts` (the only file to touch if the backend contract changes) → `lib/api/client.ts` (fetch wrapper, normalizes errors to `ApiError`). Session persistence is `lib/storage/preferences.ts`, wrapping `@capacitor/preferences` — transparently falls back to `localStorage` on web, so no platform branching is needed there. Full detail: `docs/feat-auth.md`.
 
 Note: the real backend's `/auth/signup` and `/auth/login` responses only include `{id, email}` on `user` — no `name`, even though signup accepts a `name` in the payload. `types/auth.ts`'s `User.name` is optional to reflect this.
 

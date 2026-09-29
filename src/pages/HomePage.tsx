@@ -7,6 +7,7 @@ import { GroupColumn } from '../components/GroupColumn'
 import { BoardTabStrip } from '../components/BoardTabStrip'
 import { GroupDropTargets } from '../components/GroupDropTargets'
 import { Icon } from '../components/ui/Icon'
+import { FloatingAddButton } from '../components/ui/FloatingAddButton'
 import { SWATCH_CLASSES } from '../components/ui/swatchColors'
 import { usePlatform } from '../lib/platform/usePlatform'
 import { useBoard } from '../common_logics/useBoard'
@@ -55,7 +56,6 @@ export default function HomePage() {
     <AppShell
       headerStart={!isNative ? workspaceSwitcher : undefined}
       headerEnd={!isNative ? searchLink : undefined}
-      addNoteGroupId={isNative ? activeGroupId : undefined}
     >
       {isNative && (
         <div className="flex items-center justify-between gap-4">
@@ -66,9 +66,9 @@ export default function HomePage() {
 
       {groups.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
-          <p className="text-slate-600">No groups yet — add one from Power Tools.</p>
-          <Link to="/power-tools" className="font-medium text-accent-purple">
-            Go to Power Tools
+          <p className="text-slate-600">No groups yet — add one from Settings.</p>
+          <Link to="/settings" className="font-medium text-accent-purple">
+            Go to Settings
           </Link>
         </div>
       ) : (
@@ -87,6 +87,12 @@ export default function HomePage() {
                   onChange={refresh}
                   showHeader={false}
                 />
+              )}
+              {/* Mobile's quick-add — adds to the active tab's group, same target the
+                  web per-column "+" uses. Hidden mid-drag so it can't overlap the drop
+                  targets. */}
+              {activeDragItem?.type !== 'note' && (
+                <FloatingAddButton to={activeGroupId ? `/notes/new?group=${activeGroupId}` : '/notes/new'} />
               )}
             </div>
           ) : (
