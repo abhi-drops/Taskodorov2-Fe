@@ -4,6 +4,24 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-09-30 — Mobile: tilt the phone to slide the floating "+"
+
+The mobile `FloatingAddButton` now slides up and down as the phone tilts, like a
+physical object:
+
+- Dipping the phone's bottom edge moves it down, to at most 2/6, 3/6, or 4/6 of the screen height. You choose which in Settings → Board's
+  "Slide distance" row, shown as Short / Medium / Long; the default is Medium (3/6).
+  Tilting the other way moves it back up.
+- It has inertia and friction, so it eases in, eases out, and stays wherever it
+  stops.
+- Small tilts (under 4°) are ignored. "Level" is learned from how you are holding the
+  phone.
+- It can be turned off in Settings → Board. It is also off when the OS "reduce motion"
+  setting is on or the phone is in landscape.
+
+The physics is in `lib/motion/useTiltSlide.ts`, and the preference is in
+`lib/storage/preferences.ts`. See `feat-navigation.md` ("Tilt to move").
+
 ## 2026-09-29 — Phase 2.7: Power Tools → Settings, new Apps tab, mobile floating "+"
 
 Nav and shell changes from `docs/phase2-apps-diary-plan.md` §2.7, built from the new

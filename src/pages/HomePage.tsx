@@ -11,6 +11,7 @@ import { FloatingAddButton } from '../components/ui/FloatingAddButton'
 import { SWATCH_CLASSES } from '../components/ui/swatchColors'
 import { usePlatform } from '../lib/platform/usePlatform'
 import { useBoard } from '../common_logics/useBoard'
+import { useTiltAddButtonSetting } from '../common_logics/useTiltAddButtonSetting'
 import { useBoardDnd, groupChipDragId } from '../common_logics/useBoardDnd'
 import { resolveNoteColor } from '../lib/notes/resolveNoteColor'
 import searchIcon from '../assets/search.png'
@@ -36,6 +37,7 @@ function DragGhost({ item, groups }: { item: NonNullable<ReturnType<typeof useBo
 export default function HomePage() {
   const { isNative } = usePlatform()
   const board = useBoard()
+  const { enabled: tiltAddButton, travel: tiltTravel } = useTiltAddButtonSetting()
   const { groups, activeGroupId, setActiveGroupId, notesForGroup, refresh } = board
   const { sensors, activeDragItem, handleDragStart, handleDragEnd, handleDragCancel } = useBoardDnd(board, {
     // Mobile only: after dragging a note into a different group via GroupDropTargets,
@@ -92,7 +94,11 @@ export default function HomePage() {
                   web per-column "+" uses. Hidden mid-drag so it can't overlap the drop
                   targets. */}
               {activeDragItem?.type !== 'note' && (
-                <FloatingAddButton to={activeGroupId ? `/notes/new?group=${activeGroupId}` : '/notes/new'} />
+                <FloatingAddButton
+                  to={activeGroupId ? `/notes/new?group=${activeGroupId}` : '/notes/new'}
+                  tiltToMove={tiltAddButton === true && tiltTravel !== null}
+                  tiltMaxFraction={(tiltTravel ?? 3) / 6}
+                />
               )}
             </div>
           ) : (

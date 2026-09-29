@@ -47,6 +47,48 @@ add affordance per platform. Hidden during a note drag (so it can't cover
 `GroupDropTargets`) and when the workspace has no groups (the empty state points to
 Settings instead). Other pages have no quick-add on mobile anymore.
 
+#### Tilt to move
+
+`FloatingAddButton`'s `tiltToMove` prop is driven by the stored preference
+(`common_logics/useTiltAddButtonSetting.ts`, key `taskodoro.ui.tiltAddButton`). It is on
+by default and toggled in Settings → Board, which only appears on mobile. The prop runs
+`lib/motion/useTiltSlide.ts`, which works like this:
+
+- **Sensor:** the web `deviceorientation` event's `beta` (front-back tilt). Capacitor's
+  Android WebView provides it without a permission prompt, and no plugin is used. The
+  reading is low-pass filtered (about 80 ms) to remove hand tremor.
+- **Neutral:** the angle the phone is held at when the board mounts becomes the
+  baseline. The baseline re-adjusts slowly (τ = 15 s) only while the phone is within 10°
+  of it. That way a new resting grip stops counting as tilt, but a deliberate tilt held
+  for a long time is not absorbed. The baseline is re-learned after the phone goes to
+  landscape or the app is backgrounded.
+- **Physics:**
+  - Tilts under 4° are ignored.
+  - Past that, acceleration is `3000px/s² × sin(tilt)`, with the tilt capped at 30°.
+  - Rolling drag always applies. Strong extra friction applies when the phone is back
+    inside the deadzone, so the button coasts to a stop and stays there; it does not
+    spring back.
+  - Top speed is 900 px/s.
+  - The ends of travel give a small damped bounce. The top end is the button's CSS
+    `top`; the bottom end is where the button's centre reaches the user-chosen
+    fraction of the viewport height — **2/6, 3/6 (default), or 4/6**, shown as **Short / Medium / Long**
+    in Settings → Board's "Slide distance" row (key `taskodoro.ui.tiltAddButtonTravel`, stored as the numerator;
+    unknown values fall back to 3). Passed as `FloatingAddButton`'s `tiltMaxFraction`.
+    Changing it while the button sits lower than the new limit clamps it up on the next
+    board mount.
+- **Direction:** positive `beta` delta (the bottom edge dips as the phone becomes more
+  upright) moves the button down.
+- **Runtime:**
+  - Position is written straight to `style.transform`, so React does not re-render each
+    frame.
+  - The rAF loop sleeps whenever the button is at rest and the phone is level.
+  - The offset is kept in a module variable, so it survives remounts (navigating away,
+    or hiding during a drag).
+  - It is disabled under `prefers-reduced-motion` and in landscape.
+
+All tuning constants are at the top of `useTiltSlide.ts`. This can only be tested on a
+real device; desktop browsers do not fire `deviceorientation` with real data.
+
 ## Android hardware back button / edge-swipe
 
 Handled by `src/lib/platform/useAndroidBackButton.ts`, mounted once in `AppShell.tsx`

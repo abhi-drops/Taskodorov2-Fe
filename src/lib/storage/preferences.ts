@@ -35,3 +35,32 @@ export async function loadActiveWorkspaceId(): Promise<string | null> {
 export async function clearActiveWorkspaceId(): Promise<void> {
   await Preferences.remove({ key: ACTIVE_WORKSPACE_ID_KEY })
 }
+
+const TILT_ADD_BUTTON_KEY = 'taskodoro.ui.tiltAddButton'
+
+/** Mobile "tilt to move the + button" — on unless explicitly turned off. */
+export async function loadTiltAddButtonEnabled(): Promise<boolean> {
+  const { value } = await Preferences.get({ key: TILT_ADD_BUTTON_KEY })
+  return value !== 'off'
+}
+
+export async function saveTiltAddButtonEnabled(enabled: boolean): Promise<void> {
+  await Preferences.set({ key: TILT_ADD_BUTTON_KEY, value: enabled ? 'on' : 'off' })
+}
+
+const TILT_ADD_BUTTON_TRAVEL_KEY = 'taskodoro.ui.tiltAddButtonTravel'
+
+/** How far down the + button may slide, in sixths of the screen height. */
+export type TiltTravelSixths = 2 | 3 | 4
+export const TILT_TRAVEL_OPTIONS: TiltTravelSixths[] = [2, 3, 4]
+const DEFAULT_TILT_TRAVEL: TiltTravelSixths = 3
+
+export async function loadTiltAddButtonTravel(): Promise<TiltTravelSixths> {
+  const { value } = await Preferences.get({ key: TILT_ADD_BUTTON_TRAVEL_KEY })
+  const parsed = Number(value)
+  return TILT_TRAVEL_OPTIONS.includes(parsed as TiltTravelSixths) ? (parsed as TiltTravelSixths) : DEFAULT_TILT_TRAVEL
+}
+
+export async function saveTiltAddButtonTravel(sixths: TiltTravelSixths): Promise<void> {
+  await Preferences.set({ key: TILT_ADD_BUTTON_TRAVEL_KEY, value: String(sixths) })
+}

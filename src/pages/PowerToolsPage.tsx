@@ -9,6 +9,9 @@ import { usePlatform } from '../lib/platform/usePlatform'
 import { Button } from '../components/ui/Button'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { useGroupForm } from '../common_logics/useGroupForm'
+import { useTiltAddButtonSetting } from '../common_logics/useTiltAddButtonSetting'
+import { Tabs } from '../components/ui/Tabs'
+import { TILT_TRAVEL_OPTIONS, type TiltTravelSixths } from '../lib/storage/preferences'
 import { listGroups, deleteGroup } from '../lib/db/groups'
 import { resetToDefault } from '../lib/db/reset'
 import type { Group } from '../types/group'
@@ -29,6 +32,43 @@ function BoxIcon({ className = '' }: { className?: string }) {
 
 function SectionHeading({ children }: { children: string }) {
   return <h2 className="text-sm font-medium text-slate-600">{children}</h2>
+}
+
+/** 2/6, 3/6, 4/6 of the screen height — see `useTiltSlide`. */
+const TILT_TRAVEL_LABELS: Record<TiltTravelSixths, string> = { 2: 'Short', 3: 'Medium', 4: 'Long' }
+
+/** Mobile-only: web has no floating "+" to tilt. */
+function BoardSection() {
+  const { enabled, setEnabled, travel, setTravel } = useTiltAddButtonSetting()
+
+  return (
+    <div className="flex flex-col gap-3">
+      <SectionHeading>Board</SectionHeading>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={enabled === true}
+        disabled={enabled === null}
+        onClick={() => setEnabled(!enabled)}
+        className={`${CHIP} justify-between text-left`}
+      >
+        <span className="font-medium text-ink">Tilt phone to move + button</span>
+        <span className="shrink-0 font-display text-sm font-bold uppercase text-ink">
+          {enabled === null ? '' : enabled ? 'On' : 'Off'}
+        </span>
+      </button>
+      {enabled && travel !== null && (
+        <div className={`${CHIP} flex-col items-stretch gap-2`}>
+          <span className="font-medium text-ink">Slide distance</span>
+          <Tabs
+            options={TILT_TRAVEL_OPTIONS.map((sixths) => ({ label: TILT_TRAVEL_LABELS[sixths], value: String(sixths) }))}
+            value={String(travel)}
+            onChange={(value) => setTravel(Number(value) as TiltTravelSixths)}
+          />
+        </div>
+      )}
+    </div>
+  )
 }
 
 function GroupsSection({
@@ -201,6 +241,7 @@ export default function PowerToolsPage() {
             <p className="text-slate-600">Groups, account & sync.</p>
           </div>
           {groupsSection}
+          <BoardSection />
           {accountSection}
         </div>
       ) : (
