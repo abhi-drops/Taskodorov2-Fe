@@ -4,6 +4,58 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-09-22 — Fix: long marquee status text broke layout with page-level horizontal scroll
+
+`NoteStatusStrip.tsx`'s hidden overflow-measurement `<span>` (`position: absolute`, used
+so a long status's un-wrapped width can be compared against its container without ever
+painting it) had no `relative` ancestor — it escaped to the document's initial
+containing block instead of being scoped to its own `overflow-hidden` container.
+`visibility: hidden` still occupies layout space, so a long status inflated the whole
+page's scrollable width, most visibly on narrow (mobile) viewports. Fixed by adding
+`relative` to the strip's own container so the span is clipped locally, as intended.
+Confirmed via a direct before/after `scrollWidth` comparison (1199px vs. 430px on a
+390px-wide viewport for the same long status) — 430px is the pre-existing, unrelated web
+multi-column board's own intentional horizontal scroll, not a regression. See
+`docs/feat-notes.md` ("Statuses" → "Board rendering").
+
+## 2026-09-22 — Fix: multiline status text didn't fully display in the note editor
+
+The existing-status `<textarea>` in `NoteEditorPage.tsx`'s Status block sat inside a
+`flex-col` wrapper (added to also hold the timestamp caption underneath it) and carried
+`flex-1` — but in a column-direction flex container, `flex-1` (`flex: 1 1 0%`) governs
+the item's *height*, which fights the manual autoGrow-via-inline-height technique: the
+flex algorithm collapses a `flex-basis: 0%` item back toward min-content height
+regardless of the inline `height` autoGrow sets, when the container's own height is
+otherwise auto/intrinsic. A multi-line status therefore rendered clipped to one line
+even though its full text was present in the DOM. `list`-type items never hit this,
+since their row is a `flex` *row* (not column) — `flex-1` there governs width, not
+height, so it never fought the height-based autoGrow. Fixed by swapping `flex-1` →
+`w-full` on the status textarea (it doesn't need vertical flex-grow at all — its height
+is entirely content-driven). See `docs/feat-notes.md`.
+
+## 2026-09-22 — Status strip/editor block polish pass: swatch-colored text, bold, dark editor background, slower marquee
+
+Follow-up refinements to the per-note statuses feature shipped the same day:
+- Board `NoteStatusStrip` text is now tinted to the note's own resolved swatch color
+  (new `SWATCH_TEXT_CLASSES` in `swatchColors.ts`, the `text-sticky-*` counterpart to
+  the existing `bg-`/tint variants) and `font-semibold`, instead of a fixed gray — ties
+  the strip visually back to its card. Font size bumped `text-xs` → `text-sm` for
+  legibility.
+- The note editor's own Status add/edit block was reskinned to match: dark `bg-ink`
+  background (same token the board strip uses, not the note's own swatch color like the
+  adjacent list-items/counter-config blocks), with all text, timestamps, and the
+  add/remove icons tinted to the note's swatch color and bold (new
+  `SWATCH_PLACEHOLDER_TEXT_CLASSES` in `swatchColors.ts` for the "New status" input's
+  placeholder; the add button's border uses `border-current` rather than a new
+  border-color map, since its color already matches the icon glyph).
+- `ListNoteCard`'s status strip now width-matches the checklist body directly above it
+  (`ml-4`-indented, narrower than the card) instead of spanning the full card width —
+  reads as one continuous edge with the notch shape instead of protruding past it.
+- Marquee animation duration doubled (`10s` → `20s`, same distance covered, half the
+  speed) per user feedback that the original pace was too fast to comfortably read.
+
+See `docs/feat-notes.md` ("Statuses").
+
 ## 2026-09-22 — Add per-note statuses, with a latest-status marquee strip on the board
 
 Notes can now carry multiple free-text "status" entries (`NoteStatus { id, text,

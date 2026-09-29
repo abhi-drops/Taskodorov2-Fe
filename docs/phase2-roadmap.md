@@ -423,7 +423,7 @@ any row still marked "still deferred" without an explicit new decision.
 ## Beyond this roadmap: everything built after 2.6 that this doc never scoped
 
 This roadmap's 7 sub-phases (2.0–2.6) were finished 2026-08-26. Every commit since then
-(`db61a81` onward — 21 commits as of 2026-09-19) is real product work this doc doesn't
+(`db61a81` onward — 28 commits as of 2026-09-22) is real product work this doc doesn't
 mention. `docs/changelog.md` is the authoritative, chronological record with full
 rationale for each; this section is a topic-indexed map into it so you don't have to
 scroll the whole changelog to find something. Dates below are changelog entry dates,
@@ -462,6 +462,14 @@ not commit dates, and group same-day follow-up fixes under their parent item.
   intro-image modal was built, then replaced same-session by three seeded notes in the
   default Todo group that double as a live demo of the check-to-move/drag-and-drop
   chain. See `docs/feat-groups.md`.
+- **Per-note statuses** (2026-09-22) — notes can now carry multiple free-text status
+  entries (`NoteStatus { id, text, createdAt }`), added/edited-in-place/deleted from the
+  note editor and shown newest-first with a created date/time; the board (and search
+  results) show only the latest one per note as a full-width `NoteStatusStrip` footer
+  that auto-scrolls (marquees) when it doesn't fit on one line. A new `notes.statuses`
+  DB column, not part of `payload` since it applies across all 3 note types. Not
+  scoped by this roadmap or by `phase2-offline-first-plan.md`'s original Note field
+  table. See `docs/feat-notes.md` ("Statuses").
 
 ### Visual/UX reworks beyond the original mockup-matching pass
 
@@ -490,6 +498,13 @@ not commit dates, and group same-day follow-up fixes under their parent item.
   read-only card instead of plain white fields), auto-growing title/description with no
   line cap, `lg:` two-column desktop layout (2026-09-12, several follow-up passes). See
   `docs/feat-notes.md`.
+- **Status strip/editor block polish** (2026-09-22, same-day follow-up to the statuses
+  feature above) — board strip text recolored to the note's own swatch color (was a
+  fixed gray) and made bold; the editor's Status block reskinned to a dark `bg-ink`
+  background (matching the board strip) with swatch-colored, bold text/icons instead of
+  the note's own swatch-colored background the adjacent config blocks use;
+  `ListNoteCard`'s strip width-matched to its indented checklist body instead of
+  spanning the full card; marquee speed halved. See `docs/feat-notes.md`.
 
 ### Data model / defaults changes since the original decisions
 
@@ -514,3 +529,13 @@ not commit dates, and group same-day follow-up fixes under their parent item.
   the editor's separate form-field state (2026-09-13).
 - Checklist item checkbox didn't top-align on wrapped multi-line subtasks, inconsistent
   with basic/counter cards (2026-09-13).
+- Multiline status text didn't fully display in the note editor (2026-09-22) — the
+  status textarea's `flex-1` governed *height* inside its column-direction flex
+  wrapper (added to hold the timestamp caption underneath it), which fought the
+  manual autoGrow-via-inline-height technique used for auto-growing textareas
+  throughout this page; swapped to `w-full`. See `docs/feat-notes.md`.
+- Long marquee status text broke layout with page-level horizontal scroll, worst on
+  mobile (2026-09-22) — `NoteStatusStrip`'s hidden overflow-measurement span was
+  `position: absolute` with no `relative` ancestor, escaping its own
+  `overflow-hidden` container to the document's initial containing block; fixed by
+  adding `relative` to the container. See `docs/feat-notes.md`.

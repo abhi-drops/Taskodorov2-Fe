@@ -78,6 +78,12 @@ once notes/groups already have real data in them.
 | `payload` | JSON, type-specific | see below |
 | `createdAt` / `updatedAt` / `deletedAt` | timestamp | |
 
+> **Since superseded (2026-09-22):** the `notes` table gained a `statuses` column —
+> `NoteStatus { id, text, createdAt }[]`, its own top-level field, not part of
+> `payload`. Not reflected in the table above since this doc is a historical planning
+> snapshot (see `CLAUDE.md`'s documentation-map note); current-state schema and behavior
+> lives in `docs/feat-notes.md`'s "Statuses" section.
+
 **Payload shapes:**
 - `basic`: `{}` — title + description only.
 - `counter`: `{ value: number, step: number }` — default `step: 1`, no min/max/goal in
