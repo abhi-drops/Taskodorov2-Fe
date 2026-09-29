@@ -1,4 +1,5 @@
 import { useEffect, type RefObject } from 'react'
+import { haptics } from '../platform/haptics'
 
 /**
  * Slides a fixed-position element up/down the screen as the phone tilts, like a
@@ -23,6 +24,13 @@ import { useEffect, type RefObject } from 'react'
  * `IDLE_SCALE` (anchored at its right edge); it springs back to full size as soon as it
  * moves again, or when the phone is rolled left (`gamma`, same filtered-and-baselined
  * treatment as `beta`) past `WAKE_ROLL_DEG`. Then the idle countdown starts over.
+ *
+ * Manual tuck: rolling the phone *right* past `TUCK_ROLL_DEG` while full-size and not
+ * sliding (vertical speed under `TUCK_MAX_SPEED_PX` — tiny drift doesn't count) shrinks
+ * it immediately, and then *nothing* (movement or roll-left) can wake it for
+ * `TUCK_WAKE_LOCK_MS`. Edge-triggered: the roll has to come back under half the
+ * threshold before another tuck can fire, so a phone that just happens to be held
+ * rolled right doesn't re-tuck the moment it wakes.
  *
  * Position is written straight to the individual CSS `translate` property and size to
  * `scale` (so a CSS spring transition can run on size while position updates every
@@ -57,7 +65,21 @@ const IDLE_SCALE = 0.6
 const ACTIVE_SPEED_PX = 20
 /** Rolling the left edge down this far past the grip baseline wakes it. */
 const WAKE_ROLL_DEG = 12
+/** Rolling the right edge down this far past the grip baseline tucks it away (shrinks). */
+const TUCK_ROLL_DEG = 12
+/** Only tuck while it's (nearly) still — faster than this means it's sliding. */
+const TUCK_MAX_SPEED_PX = 60
+/** After a tuck, ignore every wake trigger for this long. */
+const TUCK_WAKE_LOCK_MS = 1700
 const SPRING_MS = 650
+
+/** Arriving at an end of travel faster than this is a heavy thud, slower a medium one. */
+const HEAVY_THUD_SPEED_PX = 500
+/**
+ * After a thud, the element must move this far away from that end before arriving there
+ * again can thud again — so a small bounce-and-settle is one thud, not a buzz.
+ */
+const THUD_REARM_PX = 12
 
 /**
  * An underdamped spring (ζ = 0.45) sampled into a CSS `linear()` easing — overshoots
@@ -155,7 +177,7 @@ export function useTiltSlide(ref: RefObject<HTMLElement | null>, enabled: boolea
     }
 
     const pitch = createTiltAxis() // beta — drives the slide
-    const roll = createTiltAxis() // gamma — roll-left wakes it from idle
+    const roll = createTiltAxis() // gamma — roll-left wakes it, roll-right tucks it
     let offset = savedOffset
     let velocity = 0
     let lastFrameTime = 0
@@ -163,6 +185,12 @@ export function useTiltSlide(ref: RefObject<HTMLElement | null>, enabled: boolea
     let shrunk = false
     let lastActiveAt = performance.now()
     let idleTimer: ReturnType<typeof setTimeout> | null = null
+    /** Which end last thudded (and hasn't been left by `THUD_REARM_PX` since). */
+    let thuddedEnd: 'top' | 'bottom' | null = null
+    /** Until this time (performance.now()), no wake trigger can grow it back. */
+    let wakeLockedUntil = 0
+    /** Edge-trigger for the roll-right tuck; re-armed once the roll relaxes. */
+    let tuckArmed = true
 
     el.style.transformOrigin = '100% 50%'
     el.style.willChange = 'translate, scale'
@@ -175,20 +203,35 @@ export function useTiltSlide(ref: RefObject<HTMLElement | null>, enabled: boolea
         idleTimer = null
         const idleFor = performance.now() - lastActiveAt
         if (idleFor >= IDLE_MS) {
-          shrunk = true
-          el!.style.scale = String(IDLE_SCALE)
+          shrink()
         } else {
           scheduleIdleCheck(IDLE_MS - idleFor)
         }
       }, delay)
     }
 
+    function shrink() {
+      if (shrunk) return
+      shrunk = true
+      el!.style.scale = String(IDLE_SCALE)
+      haptics.light()
+    }
+
+    /** Roll-right while full-size and still → shrink now, and hold it shrunk for a while. */
+    function tuck() {
+      shrink()
+      wakeLockedUntil = performance.now() + TUCK_WAKE_LOCK_MS
+    }
+
     /** Something happened — grow back if shrunk, and restart the idle countdown. */
     function markActive() {
+      // Just tucked away on purpose — ignore everything until the lock expires.
+      if (performance.now() < wakeLockedUntil) return
       lastActiveAt = performance.now()
       if (shrunk) {
         shrunk = false
         el!.style.scale = ''
+        haptics.medium()
       }
       // Only (re)arm when nothing's pending — a pending check re-arms itself for the
       // remaining time, so we don't churn setTimeout every frame while moving.
@@ -235,8 +278,21 @@ export function useTiltSlide(ref: RefObject<HTMLElement | null>, enabled: boolea
 
       const max = maxOffset()
       if (offset < 0 || offset > max) {
-        offset = offset < 0 ? 0 : max
-        velocity = Math.abs(velocity) > MIN_BOUNCE_SPEED ? -velocity * BOUNCE : 0
+        const end = offset < 0 ? 'top' : 'bottom'
+        offset = end === 'top' ? 0 : max
+        const impactSpeed = Math.abs(velocity)
+        velocity = impactSpeed > MIN_BOUNCE_SPEED ? -velocity * BOUNCE : 0
+        // Haptic on *arriving* at the topmost/bottommost point, however gently.
+        if (thuddedEnd !== end) {
+          thuddedEnd = end
+          if (impactSpeed > HEAVY_THUD_SPEED_PX) haptics.heavy()
+          else haptics.medium()
+        }
+      } else if (
+        (thuddedEnd === 'top' && offset > THUD_REARM_PX) ||
+        (thuddedEnd === 'bottom' && offset < max - THUD_REARM_PX)
+      ) {
+        thuddedEnd = null
       }
 
       if (Math.abs(velocity) > ACTIVE_SPEED_PX) markActive()
@@ -261,8 +317,18 @@ export function useTiltSlide(ref: RefObject<HTMLElement | null>, enabled: boolea
       pitch.sample(event.beta, event.timeStamp)
       if (event.gamma !== null) {
         roll.sample(event.gamma, event.timeStamp)
-        // Negative gamma = left edge down.
-        if (!isLandscape() && roll.delta() < -WAKE_ROLL_DEG) markActive()
+        if (!isLandscape()) {
+          const rollDelta = roll.delta()
+          // Negative gamma = left edge down → wake.
+          if (rollDelta < -WAKE_ROLL_DEG) markActive()
+          // Positive = right edge down → tuck, if full-size and not sliding.
+          if (rollDelta < TUCK_ROLL_DEG / 2) {
+            tuckArmed = true
+          } else if (rollDelta > TUCK_ROLL_DEG && tuckArmed && !shrunk && Math.abs(velocity) < TUCK_MAX_SPEED_PX) {
+            tuckArmed = false
+            tuck()
+          }
+        }
       }
       wake()
     }
@@ -286,6 +352,10 @@ export function useTiltSlide(ref: RefObject<HTMLElement | null>, enabled: boolea
     }
 
     offset = Math.min(offset, maxOffset())
+    // Already resting at an end on mount (usually the top) counts as having arrived
+    // there — pushing further into it shouldn't buzz.
+    if (offset <= 0) thuddedEnd = 'top'
+    else if (offset >= maxOffset()) thuddedEnd = 'bottom'
     render()
     scheduleIdleCheck(IDLE_MS)
     window.addEventListener('deviceorientation', handleOrientation)

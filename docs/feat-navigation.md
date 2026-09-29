@@ -107,13 +107,66 @@ by default and toggled in Settings → Board, which only appears on mobile. The 
   - The easing is a real underdamped spring (ζ 0.45, 650 ms, about 20% overshoot)
     sampled into a CSS `linear()` curve. Older WebViews without `linear()` fall back to
     an overshooting cubic-bézier.
+  - **Manual tuck (roll right):**
+    - Rolling the phone's right edge down more than 12° past the grip baseline
+      (positive `gamma` delta) shrinks the button immediately.
+    - This only happens while it's full size and not sliding. A vertical speed under
+      60 px/s counts as still, so small drift is ignored.
+    - After a tuck, **every** wake trigger (sliding and roll-left) is ignored for 1.7 s.
+      Afterwards the normal rules apply again.
+    - The tuck is edge-triggered: the roll has to relax back under 6° before another
+      tuck can fire. So a phone that happens to be held rolled right doesn't re-tuck
+      the instant it wakes.
+    - It shares the shrink path, including the light haptic, with the idle shrink. An
+      idle timer that was already pending is a no-op if the button is already small.
   - The idle timer is one self-re-arming `setTimeout`, not a timer reset every frame.
   - The button is still tappable while small.
   - When the tilt setting is off, the button never shrinks, because nothing could wake
     it again.
 
+- **Haptics** (`@capacitor/haptics`, wrapped by `lib/platform/haptics.ts`: native-only,
+  fire-and-forget, errors swallowed):
+  - Tapping the button: medium impact, set with `data-haptic="medium"`. It comes from
+    the app-wide tap haptics below, so it is always on, even when tilt is off.
+  - Shrinking to idle: light impact. Growing back: medium impact.
+  - Sliding itself has **no** haptic. Per-distance ticks were tried and removed as too
+    busy.
+  - Arriving at the topmost or bottommost point gives one thud, however gently it
+    arrives: heavy above 500 px/s, medium below that.
+    - It rearms only after the button moves 12 px away from that end, so a
+      bounce-and-settle, or holding the tilt against the end, is a single thud.
+    - If the button is already at an end when the board mounts, that end counts as
+      reached, so pushing further into it doesn't buzz.
+  - The plugin brings the `VIBRATE` permission through its own manifest merge, so no
+    manual `AndroidManifest.xml` change is needed. It does need `npx cap sync`, which
+    `npm run android` already runs.
+
 All tuning constants are at the top of `useTiltSlide.ts`. This can only be tested on a
 real device; desktop browsers do not fire `deviceorientation` with real data.
+
+## Tap haptics (mobile, app-wide)
+
+`src/lib/platform/useTapHaptics.ts` is mounted once in `App.tsx`. It is native-only and
+does nothing on web. It is a single capture-phase `click` listener on `document`, not a
+handler on every button, so **every button, link, tab, switch and checkbox gets haptic
+feedback automatically, including ones added later.** No per-component work is needed.
+
+- It matches `button`, `a[href]`, `[role=button|tab|switch|checkbox]`, and native
+  checkbox or radio inputs. The closest match to the tapped element decides.
+- Most elements get a light impact.
+- Checkboxes (`CheckCircle` is a `role="checkbox"` button):
+  - Checking gets a medium impact, unchecking a light one.
+  - The old state is read from `aria-checked` before React handles the click. For
+    native inputs it is read as `!checked`, because those toggle before listeners run.
+- Per-element override: `data-haptic="light" | "medium" | "heavy" | "none"`. For
+  example, the floating "+" uses `medium`. Use `none` to silence a control that already
+  gives its own feedback.
+- It listens for `click`, not `pointerdown`, so a touch that turns into a scroll never
+  buzzes. Disabled buttons don't fire `click`, and `aria-disabled="true"` elements are
+  skipped.
+- **Don't** also call `haptics.*` in a button's own `onClick`. It would fire twice; set
+  `data-haptic` instead. `haptics.*` calls are for non-tap events, like the floating
+  "+"'s spring and end-of-travel thuds.
 
 ## Android hardware back button / edge-swipe
 

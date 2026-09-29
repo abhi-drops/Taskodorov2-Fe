@@ -45,7 +45,8 @@ desktop wireframe — see `docs/style-guide.md`'s "Power Tools: row chips + desk
   cascading delete). A "+ New group" input + button chip below the list
   (`common_logics/useGroupForm.ts`) — **this is the only way to create a group** (see
   `feat-groups.md` for why the board itself has no create-group UI).
-- **Board** (mobile only) — the "Tilt phone to move + button" on/off switch chip, plus
+- **Board** (mobile only) — the "Dynamic Add Button" on/off switch chip (tilt-to-slide, idle
+  shrink, and tilt-right tuck of the floating "+" — all gated by this one switch), plus
   (while on) a "Slide distance" picker — Short / Medium / Long = 2/6 · 3/6 · 4/6 of the screen
   height (`Tabs`, default Medium); see
   `feat-navigation.md` ("Tilt to move"). Not shown on web, which has no floating "+".

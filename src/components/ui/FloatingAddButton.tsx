@@ -1,7 +1,6 @@
 import { useId, useRef } from 'react'
 import { Link } from 'react-router'
 import { useTiltSlide } from '../../lib/motion/useTiltSlide'
-
 /**
  * The bell-curve bump from the mobile Penpot export (`newdesktoplayloutMobile.html`),
  * translated to the origin: flat tails hugging the screen edge at x≈34 top and bottom,
@@ -36,6 +35,7 @@ export function FloatingAddButton({ to, tiltToMove = false, tiltMaxFraction = 3 
       ref={ref}
       to={to}
       aria-label="Add note"
+      data-haptic="medium"
       className={`fixed right-0 top-32 z-40 block h-[100px] w-[34px] [filter:drop-shadow(1px_3px_0_rgba(0,0,0,0.2))] ${className}`}
     >
       <svg viewBox="0 0 34.07 100" className="absolute inset-0 h-full w-full" aria-hidden="true">

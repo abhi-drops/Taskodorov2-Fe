@@ -52,7 +52,7 @@ function BoardSection() {
         onClick={() => setEnabled(!enabled)}
         className={`${CHIP} justify-between text-left`}
       >
-        <span className="font-medium text-ink">Tilt phone to move + button</span>
+        <span className="font-medium text-ink">Dynamic Add Button</span>
         <span className="shrink-0 font-display text-sm font-bold uppercase text-ink">
           {enabled === null ? '' : enabled ? 'On' : 'Off'}
         </span>

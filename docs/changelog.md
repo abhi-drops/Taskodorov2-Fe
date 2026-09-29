@@ -4,6 +4,41 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-09-30 — Tilt right to tuck the floating "+" away
+
+Rolling the phone right (more than 12°), while the "+" is full size and not sliding,
+shrinks it immediately. Small vertical drift doesn't count as sliding. For the next 1.7 s
+nothing wakes it, neither sliding nor tilting left. It's edge-triggered, so holding the
+phone rolled right doesn't keep re-tucking it. See `feat-navigation.md`
+("Tilt to move" → Manual tuck).
+
+## 2026-09-30 — Haptic feedback on every button and checkbox (mobile)
+
+A new app-wide `useTapHaptics` hook, mounted once in `App.tsx`, adds haptic feedback on
+native:
+
+- Every button, link, tab and switch gives a light tap.
+- Checkboxes give a medium tap when checking and a light one when unchecking.
+- It is one delegated `click` listener rather than per-component code, so future
+  buttons get it for free.
+- `data-haptic` overrides the strength, or silences it with `none`.
+- The floating "+" moved from its own `onClick` haptic to `data-haptic="medium"`.
+
+See `feat-navigation.md` ("Tap haptics").
+
+## 2026-09-30 — Haptics on the floating "+"
+
+Added `@capacitor/haptics`, used through a new native-only wrapper,
+`lib/platform/haptics.ts`. The floating "+" now gives haptic feedback when you:
+
+- tap it (medium);
+- see it spring down to idle (light) or back up to full size (medium);
+- slide it all the way to the top or bottom point (one thud per arrival, heavy or
+  medium depending on speed, with no repeat from bouncing or holding it there).
+
+Sliding itself has no haptic: per-distance ticks were tried and removed as too busy. See
+`feat-navigation.md` ("Tilt to move" → Haptics).
+
 ## 2026-09-30 — Fix: floating "+" jumped vertically when shrinking
 
 The idle shrink animated the CSS `scale` property while the tilt position was in
