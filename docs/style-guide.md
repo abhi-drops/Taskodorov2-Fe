@@ -33,8 +33,9 @@ No icon library. `src/assets/` holds a curated set of flat single-color PNGs
 (`home.png`, `pluse.png`, `power-tools.png`, `search.png`, `check-circle.png`,
 `check-tick.png`, `delete.png`) rendered through `components/ui/Icon.tsx` (a thin
 `<img>` wrapper). A few icons are synthesized from these instead of adding new assets:
-`Modal`'s close "×" is `pluse.png` rotated 45°; `FloatingAddButton`'s "+" is `pluse.png` with a
-`brightness(0) invert(1)` CSS filter to render white-on-purple. One-off glyphs that
+`Modal`'s close "×" is `pluse.png` rotated 45°; `GroupColumn`'s add-note "+" is `pluse.png` with a
+`brightness(0) invert(1)` CSS filter to render white-on-purple. (`FloatingAddButton`'s
+"+" is a text glyph instead, matching the export.) One-off glyphs that
 don't fit the PNG set (`Select`'s dropdown chevron, `WorkspaceSwitcher`'s trigger
 chevron, `PowerToolsPage`'s box icon) are small inline SVGs or Unicode
 characters instead of pulling in an icon library for a single glyph. Glyphs shared
@@ -199,7 +200,7 @@ system" above).
 | `ProgressBar.tsx` | Simple track + fill, optional `%` label. No longer used on the board (removed from `GroupColumn` in 2.7 — the reference design never shows it on the default view); still a generic primitive, may be reused elsewhere. |
 | `BasicNoteCard.tsx`, `CounterNoteCard.tsx`, `ListNoteCard.tsx` | The three note-type cards rendered by `GroupColumn`. Share the `shadow-card`/`text-black`/`SWATCH_CLASSES[color]` treatment (see above); `CounterNoteCard`'s `+`/`−` row order matters — `+` left, `−` right, matching the reference (easy to get backwards). `ListNoteCard` has its own two-piece shape, see above. All three (plus `SearchPage`'s reuse of them) render `NoteStatusStrip` as their last child — see `docs/feat-notes.md`'s "Statuses" section for the full behavior; the one style-system point worth repeating here is that its dark `bg-ink` background is a deliberate departure from every other note-card-adjacent chrome, which uses the note's own swatch color, not a fixed dark token. |
 | `TopNav.tsx` (web) / `BottomNav.tsx` (mobile) | Home (`sticky-yellow`) / Settings (`nav-dark`, yellow gear) / Apps (`sticky-blue`, grid) on web, labelled; Home / Apps / Settings on mobile, icon-only with `aria-label`s — order follows each platform's wireframe. `TopNav` has the backdrop card treatment described above; `BottomNav` doesn't. |
-| `FloatingAddButton.tsx` | Mobile quick-add: purple `rounded-l-full` half-pill (`border-[3px] border-ink`, no right border) fixed to the right screen edge, `pluse.png` inverted white. Generic (`to` prop) — `HomePage` decides the target and visibility. See `feat-navigation.md`. |
+| `FloatingAddButton.tsx` | Mobile quick-add: a 34×100px bell-curve bump fixed flush to the right screen edge, drawn as an inline SVG using the exact path from the mobile Penpot export (`newdesktoplayloutMobile.html`), translated to the origin. The export closes the shape outside the viewBox, which is why there is no outline along the screen edge. `accent-purple` fill (the export uses a lighter `#d47cff`, but the app's existing purple was kept deliberately); the export's inner stroke is reproduced as a 10-wide `stroke-ink` clipped to the shape, so 5px is visible. It has a white bold `font-display` "+" glyph (not `pluse.png`; white rather than the export's dark glyph, for contrast on the darker purple) and `shadow-card` done as a CSS `drop-shadow`, so it follows the curve. Generic (`to`, `tiltToMove`, `tiltMaxFraction` props); `HomePage` decides the target and visibility. See `feat-navigation.md`. |
 | `Icon.tsx` | Thin `<img>` wrapper used by everything above. |
 | `ExitToast.tsx` | Small fixed-position "Press back again to exit" pill, shown above `BottomNav` when the Android hardware back button/edge-swipe is pressed on Home with no more history — see `docs/feat-navigation.md`. Native-only in practice (driven by `useAndroidBackButton`), but the component itself has no platform branching of its own. |
 

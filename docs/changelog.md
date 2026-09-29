@@ -4,6 +4,14 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-09-30 — Fix: floating "+" jumped vertically when shrinking
+
+The idle shrink animated the CSS `scale` property while the tilt position was in
+`transform: translate3d(…)`. CSS applies `transform` inside `scale`, so the slide offset
+was scaled too: shrinking to 60% moved the button up to 60% of its offset. Position now
+uses the individual `translate` property, which sits outside `scale`, so shrinking only
+changes size. See `feat-navigation.md` ("Tilt to move").
+
 ## 2026-09-30 — Mobile: tilt the phone to slide the floating "+"
 
 The mobile `FloatingAddButton` now slides up and down as the phone tilts, like a
@@ -18,6 +26,9 @@ physical object:
   phone.
 - It can be turned off in Settings → Board. It is also off when the OS "reduce motion"
   setting is on or the phone is in landscape.
+
+After 8 s with no movement it springs down to 60% size. It springs back when it moves
+again or when the phone is rolled left, and then the 8 s countdown restarts.
 
 The physics is in `lib/motion/useTiltSlide.ts`, and the preference is in
 `lib/storage/preferences.ts`. See `feat-navigation.md` ("Tilt to move").
@@ -39,7 +50,7 @@ wireframes (`docs/design-references/web/diary*.png`, `mobile/newuiapps.png`):
   `feat-apps.md`.
 - **Navs:** the web `TopNav` shows Home / Settings / Apps. The mobile `BottomNav` shows
   icons only (Home / Apps / Settings) and no longer has the "+".
-- **Mobile quick-add** is now `components/ui/FloatingAddButton.tsx`, a purple half-pill on
+- **Mobile quick-add** is now `components/ui/FloatingAddButton.tsx`, a purple bell-curve bump (the exact shape from the Penpot export, in the app's own purple) on
   the right edge of the board. It adds to the active tab's group, which is the same
   target the old bottom-nav "+" used. It is hidden during a note drag and when there are
   no groups. The web per-column "+" is unchanged. See `feat-navigation.md`.

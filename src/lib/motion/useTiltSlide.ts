@@ -19,8 +19,18 @@ import { useEffect, type RefObject } from 'react'
  *   height for its centre — user-selectable in Settings) give a
  *   soft, damped bump instead of a hard stop.
  *
- * Position is written straight to `style.transform` (no React state per frame), and the
- * rAF loop sleeps whenever the element is at rest and the phone is level.
+ * Idle shrink: after `IDLE_MS` with no movement, the element springs down to
+ * `IDLE_SCALE` (anchored at its right edge); it springs back to full size as soon as it
+ * moves again, or when the phone is rolled left (`gamma`, same filtered-and-baselined
+ * treatment as `beta`) past `WAKE_ROLL_DEG`. Then the idle countdown starts over.
+ *
+ * Position is written straight to the individual CSS `translate` property and size to
+ * `scale` (so a CSS spring transition can run on size while position updates every
+ * frame) — no React state per frame. **Not `transform`:** CSS composes these as
+ * `translate · rotate · scale · transform`, so a `translateY` inside `transform` gets
+ * multiplied by `scale` — shrinking to 60% would also pull the slide offset to 60%
+ * and visibly jump the element up. `translate` sits outside `scale`, so it doesn't. The rAF loop sleeps whenever the element is
+ * at rest and the phone is level.
  */
 
 const DEADZONE_DEG = 4
@@ -40,6 +50,39 @@ const SENSOR_SMOOTHING_S = 0.08
 const BASELINE_DRIFT_WINDOW_DEG = 10
 const BASELINE_DRIFT_S = 15
 
+/** No movement for this long → shrink. */
+const IDLE_MS = 8000
+const IDLE_SCALE = 0.6
+/** Slower than this doesn't count as "moving" for the idle timer (px/s). */
+const ACTIVE_SPEED_PX = 20
+/** Rolling the left edge down this far past the grip baseline wakes it. */
+const WAKE_ROLL_DEG = 12
+const SPRING_MS = 650
+
+/**
+ * An underdamped spring (ζ = 0.45) sampled into a CSS `linear()` easing — overshoots
+ * and settles, in both directions. Falls back to an overshooting cubic-bézier on
+ * WebViews without `linear()` support.
+ */
+const SPRING_EASING = (() => {
+  const zeta = 0.45
+  const omega = 14
+  const omegaD = omega * Math.sqrt(1 - zeta * zeta)
+  const points: string[] = []
+  for (let i = 0; i <= 40; i++) {
+    const t = (i / 40) * (SPRING_MS / 1000)
+    const x =
+      i === 40
+        ? 1
+        : 1 - Math.exp(-zeta * omega * t) * (Math.cos(omegaD * t) + ((zeta * omega) / omegaD) * Math.sin(omegaD * t))
+    points.push(x.toFixed(4))
+  }
+  const springLinear = `linear(${points.join(', ')})`
+  return typeof CSS !== 'undefined' && CSS.supports?.('transition-timing-function', springLinear)
+    ? springLinear
+    : 'cubic-bezier(0.34, 1.56, 0.64, 1)'
+})()
+
 /** Survives remounts (e.g. navigating away and back, or hiding during a drag). */
 let savedOffset = 0
 
@@ -47,8 +90,49 @@ function wrapDegrees(deg: number) {
   return ((((deg + 180) % 360) + 360) % 360) - 180
 }
 
+/** Individual `translate`/`scale` properties (Chromium 104+) — required, see above. */
+function supportsIndividualTransforms() {
+  return typeof CSS !== 'undefined' && (CSS.supports?.('translate', '0 1px') ?? false)
+}
+
 function prefersReducedMotion() {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+}
+
+/**
+ * Low-pass filtered sensor angle plus a slowly re-learned "how I hold it" baseline.
+ * Used for both `beta` (slide) and `gamma` (roll-left wake).
+ */
+function createTiltAxis() {
+  let smoothed: number | null = null
+  let baseline: number | null = null
+  let lastTime = 0
+
+  return {
+    sample(value: number, time: number) {
+      if (smoothed === null) {
+        smoothed = value
+      } else {
+        const dt = Math.max(0, (time - lastTime) / 1000)
+        smoothed += wrapDegrees(value - smoothed) * (1 - Math.exp(-dt / SENSOR_SMOOTHING_S))
+      }
+      lastTime = time
+      if (baseline === null) baseline = smoothed
+    },
+    /** Signed degrees away from the baseline, or 0 before the first reading. */
+    delta() {
+      return smoothed === null || baseline === null ? 0 : wrapDegrees(smoothed - baseline)
+    },
+    drift(dt: number) {
+      const d = this.delta()
+      if (baseline !== null && Math.abs(d) < BASELINE_DRIFT_WINDOW_DEG) {
+        baseline += d * (1 - Math.exp(-dt / BASELINE_DRIFT_S))
+      }
+    },
+    reset() {
+      baseline = null
+    },
+  }
 }
 
 /**
@@ -59,21 +143,61 @@ export function useTiltSlide(ref: RefObject<HTMLElement | null>, enabled: boolea
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    if (!enabled || prefersReducedMotion() || typeof DeviceOrientationEvent === 'undefined') {
-      el.style.transform = ''
+    if (
+      !enabled ||
+      prefersReducedMotion() ||
+      !supportsIndividualTransforms() ||
+      typeof DeviceOrientationEvent === 'undefined'
+    ) {
+      el.style.translate = ''
+      el.style.scale = ''
       return
     }
 
+    const pitch = createTiltAxis() // beta — drives the slide
+    const roll = createTiltAxis() // gamma — roll-left wakes it from idle
     let offset = savedOffset
     let velocity = 0
-    let smoothedBeta: number | null = null
-    let baseline: number | null = null
-    let lastSampleTime = 0
     let lastFrameTime = 0
     let frame: number | null = null
+    let shrunk = false
+    let lastActiveAt = performance.now()
+    let idleTimer: ReturnType<typeof setTimeout> | null = null
+
+    el.style.transformOrigin = '100% 50%'
+    el.style.willChange = 'translate, scale'
+    el.style.transition = `scale ${SPRING_MS}ms ${SPRING_EASING}`
+    el.style.scale = ''
+
+    function scheduleIdleCheck(delay: number) {
+      if (idleTimer !== null) clearTimeout(idleTimer)
+      idleTimer = setTimeout(() => {
+        idleTimer = null
+        const idleFor = performance.now() - lastActiveAt
+        if (idleFor >= IDLE_MS) {
+          shrunk = true
+          el!.style.scale = String(IDLE_SCALE)
+        } else {
+          scheduleIdleCheck(IDLE_MS - idleFor)
+        }
+      }, delay)
+    }
+
+    /** Something happened — grow back if shrunk, and restart the idle countdown. */
+    function markActive() {
+      lastActiveAt = performance.now()
+      if (shrunk) {
+        shrunk = false
+        el!.style.scale = ''
+      }
+      // Only (re)arm when nothing's pending — a pending check re-arms itself for the
+      // remaining time, so we don't churn setTimeout every frame while moving.
+      if (idleTimer === null) scheduleIdleCheck(IDLE_MS)
+    }
 
     function maxOffset() {
-      // `offsetTop` of a `position: fixed` element is its CSS `top` in the viewport.
+      // `offsetTop`/`offsetHeight` ignore transforms and `scale`, so the travel range
+      // stays the same whether the element is shrunk or not.
       const centerTop = el!.offsetTop + el!.offsetHeight / 2
       return Math.max(0, window.innerHeight * maxCenterFraction - centerTop)
     }
@@ -83,13 +207,13 @@ export function useTiltSlide(ref: RefObject<HTMLElement | null>, enabled: boolea
     }
 
     function render() {
-      el!.style.transform = `translate3d(0, ${offset.toFixed(2)}px, 0)`
+      el!.style.translate = `0 ${offset.toFixed(2)}px`
     }
 
     /** Signed effective tilt in degrees past the deadzone; positive = bottom edge down. */
     function effectiveTilt() {
-      if (smoothedBeta === null || baseline === null || isLandscape()) return 0
-      const delta = wrapDegrees(smoothedBeta - baseline)
+      if (isLandscape()) return 0
+      const delta = pitch.delta()
       const magnitude = Math.min(Math.abs(delta), MAX_TILT_DEG) - DEADZONE_DEG
       return magnitude > 0 ? Math.sign(delta) * magnitude : 0
     }
@@ -101,13 +225,8 @@ export function useTiltSlide(ref: RefObject<HTMLElement | null>, enabled: boolea
       lastFrameTime = now
 
       const tilt = effectiveTilt()
-
-      if (smoothedBeta !== null && baseline !== null) {
-        const delta = wrapDegrees(smoothedBeta - baseline)
-        if (Math.abs(delta) < BASELINE_DRIFT_WINDOW_DEG) {
-          baseline += delta * (1 - Math.exp(-dt / BASELINE_DRIFT_S))
-        }
-      }
+      pitch.drift(dt)
+      roll.drift(dt)
 
       velocity += GRAVITY_PX * Math.sin((tilt * Math.PI) / 180) * dt
       velocity *= Math.exp(-(ROLLING_DRAG + (tilt === 0 ? REST_FRICTION : 0)) * dt)
@@ -119,6 +238,8 @@ export function useTiltSlide(ref: RefObject<HTMLElement | null>, enabled: boolea
         offset = offset < 0 ? 0 : max
         velocity = Math.abs(velocity) > MIN_BOUNCE_SPEED ? -velocity * BOUNCE : 0
       }
+
+      if (Math.abs(velocity) > ACTIVE_SPEED_PX) markActive()
 
       savedOffset = offset
       render()
@@ -137,32 +258,36 @@ export function useTiltSlide(ref: RefObject<HTMLElement | null>, enabled: boolea
 
     function handleOrientation(event: DeviceOrientationEvent) {
       if (event.beta === null) return
-      const now = event.timeStamp
-      if (smoothedBeta === null) {
-        smoothedBeta = event.beta
-      } else {
-        const dt = Math.max(0, (now - lastSampleTime) / 1000)
-        smoothedBeta += wrapDegrees(event.beta - smoothedBeta) * (1 - Math.exp(-dt / SENSOR_SMOOTHING_S))
+      pitch.sample(event.beta, event.timeStamp)
+      if (event.gamma !== null) {
+        roll.sample(event.gamma, event.timeStamp)
+        // Negative gamma = left edge down.
+        if (!isLandscape() && roll.delta() < -WAKE_ROLL_DEG) markActive()
       }
-      lastSampleTime = now
-      if (baseline === null) baseline = smoothedBeta
       wake()
     }
 
     function handleResize() {
       // Rotating to landscape and back re-learns the grip rather than reading the
       // rotation itself as a huge tilt.
-      if (isLandscape()) baseline = null
+      if (isLandscape()) {
+        pitch.reset()
+        roll.reset()
+      }
       offset = Math.min(offset, maxOffset())
       render()
     }
 
     function handleVisibility() {
-      if (document.hidden) baseline = null
+      if (document.hidden) {
+        pitch.reset()
+        roll.reset()
+      }
     }
 
     offset = Math.min(offset, maxOffset())
     render()
+    scheduleIdleCheck(IDLE_MS)
     window.addEventListener('deviceorientation', handleOrientation)
     window.addEventListener('resize', handleResize)
     document.addEventListener('visibilitychange', handleVisibility)
@@ -172,6 +297,7 @@ export function useTiltSlide(ref: RefObject<HTMLElement | null>, enabled: boolea
       window.removeEventListener('resize', handleResize)
       document.removeEventListener('visibilitychange', handleVisibility)
       if (frame !== null) cancelAnimationFrame(frame)
+      if (idleTimer !== null) clearTimeout(idleTimer)
     }
   }, [ref, enabled, maxCenterFraction])
 }

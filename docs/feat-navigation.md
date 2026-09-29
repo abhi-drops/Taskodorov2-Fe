@@ -38,7 +38,7 @@ is **Home / Apps / Settings** (icon-only, `aria-label`s).
 ### Mobile quick-add (`FloatingAddButton`)
 
 Mobile's "+" used to be the middle cell of `BottomNav`; since 2.7 it's
-`components/ui/FloatingAddButton.tsx` — a purple half-pill pinned to the right screen
+`components/ui/FloatingAddButton.tsx` — a purple bell-curve bump (exact Penpot path, see `style-guide.md`) pinned to the right screen
 edge, rendered by `HomePage`'s `isNative` board branch only. It links to
 `/notes/new?group=<activeGroupId>`, i.e. the active tab's group — the same target the
 old nav "+" used and the same thing web's per-column "+" (`GroupColumn` header, unchanged,
@@ -85,6 +85,32 @@ by default and toggled in Settings → Board, which only appears on mobile. The 
   - The offset is kept in a module variable, so it survives remounts (navigating away,
     or hiding during a drag).
   - It is disabled under `prefers-reduced-motion` and in landscape.
+
+- **Idle shrink:**
+  - After 8 s without movement, the button springs down to 60% size. The spring is
+    anchored at the screen edge (`transform-origin: 100% 50%`), so it tucks in rather
+    than floating.
+  - It springs back to full size as soon as it slides again (speed over 20 px/s), or
+    when the phone is rolled **left** more than 12° past the grip baseline.
+    `deviceorientation`'s `gamma` gets the same smoothing and baseline treatment as
+    `beta`, and negative `gamma` means the left edge is down.
+  - Either of those restarts the 8 s countdown.
+  - Size uses the individual CSS `scale` property, and position uses the individual
+    `translate` property, not `transform`. That way a CSS transition can animate size
+    while position is still written every frame.
+  - **Gotcha (already hit once):** CSS composes these as
+    `translate · rotate · scale · transform`. An offset inside `transform` is
+    multiplied by `scale`, so shrinking to 60% also pulled the button's slide position
+    to 60% and it jumped up. `translate` sits outside `scale`, so keep position there.
+    Both properties need Chromium 104+. On older WebViews tilt is disabled entirely,
+    which is checked with `CSS.supports`.
+  - The easing is a real underdamped spring (ζ 0.45, 650 ms, about 20% overshoot)
+    sampled into a CSS `linear()` curve. Older WebViews without `linear()` fall back to
+    an overshooting cubic-bézier.
+  - The idle timer is one self-re-arming `setTimeout`, not a timer reset every frame.
+  - The button is still tappable while small.
+  - When the tilt setting is off, the button never shrinks, because nothing could wake
+    it again.
 
 All tuning constants are at the top of `useTiltSlide.ts`. This can only be tested on a
 real device; desktop browsers do not fire `deviceorientation` with real data.
