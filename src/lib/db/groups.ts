@@ -1,4 +1,5 @@
 import { withDb } from './sqlite'
+import { logEvent, logGroupCreated } from './eventLog'
 import type { Group, NoteColorMode, SortedBy } from '../../types/group'
 
 interface GroupRow {
@@ -41,6 +42,20 @@ export function listGroups(workspaceId: string): Promise<Group[]> {
   })
 }
 
+/**
+ * Every group in a workspace, **including soft-deleted ones**, in board order. Only for
+ * the Diary's history replay, where a group deleted later still has to appear as a
+ * column in earlier frames.
+ */
+export function listAllGroupsForHistory(workspaceId: string): Promise<Group[]> {
+  return withDb(async (db) => {
+    const result = await db.query('SELECT * FROM groups WHERE workspace_id = ? ORDER BY position ASC', [
+      workspaceId,
+    ])
+    return ((result.values ?? []) as GroupRow[]).map(rowToGroup)
+  })
+}
+
 export function getGroupById(id: string): Promise<Group | null> {
   return withDb(async (db) => {
     const result = await db.query('SELECT * FROM groups WHERE id = ? AND deleted_at IS NULL', [id])
@@ -68,6 +83,7 @@ export function createGroup(input: { workspaceId: string; name: string }): Promi
        VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, NULL)`,
       [id, input.workspaceId, input.name, position, sortedBy, noteColorMode, now, now],
     )
+    await logGroupCreated(db, { id, workspaceId: input.workspaceId, createdAt: now })
 
     return {
       id,
@@ -136,10 +152,26 @@ export function deleteGroup(id: string): Promise<void> {
   return withDb(async (db) => {
     const now = Date.now()
 
+    // Diary: the cascade deletes the group's live notes too, so each gets its own
+    // `deleted` event. Read them before they're soft-deleted.
+    const groupRow = ((await db.query('SELECT workspace_id FROM groups WHERE id = ?', [id])).values ?? [])[0] as
+      | { workspace_id: string }
+      | undefined
+    const liveNotes = ((await db.query('SELECT id FROM notes WHERE group_id = ? AND deleted_at IS NULL', [id]))
+      .values ?? []) as { id: string }[]
+
     await db.run('UPDATE groups SET deleted_at = ?, updated_at = ? WHERE id = ?', [now, now, id])
     await db.run(
       'UPDATE notes SET deleted_at = ?, updated_at = ? WHERE group_id = ? AND deleted_at IS NULL',
       [now, now, id],
     )
+
+    if (groupRow) {
+      const workspaceId = groupRow.workspace_id
+      for (const note of liveNotes) {
+        await logEvent(db, { workspaceId, entityType: 'note', entityId: note.id, action: 'deleted', createdAt: now })
+      }
+      await logEvent(db, { workspaceId, entityType: 'group', entityId: id, action: 'deleted', createdAt: now })
+    }
   })
 }

@@ -1,5 +1,26 @@
+import type { SQLiteDBConnection } from '@capacitor-community/sqlite'
 import { withDb } from './sqlite'
+import { logEvent, logNoteCreated, trackedNoteFields } from './eventLog'
 import type { Note, NotePayload, NoteStatus, NoteType, Priority } from '../../types/note'
+
+/** The fields the Diary log tracks, read before a write so changes can be diffed. */
+interface TrackedRow {
+  workspace_id: string
+  group_id: string
+  type: string
+  title: string
+  color: string | null
+  completed: number
+  payload: string
+}
+
+async function readTrackedFields(db: SQLiteDBConnection, id: string): Promise<TrackedRow | null> {
+  const { values } = await db.query(
+    'SELECT workspace_id, group_id, type, title, color, completed, payload FROM notes WHERE id = ?',
+    [id],
+  )
+  return (values?.[0] ?? null) as TrackedRow | null
+}
 
 interface NoteRow {
   id: string
@@ -73,6 +94,17 @@ export function listNotesByWorkspace(workspaceId: string): Promise<Note[]> {
   })
 }
 
+/**
+ * Every note in a workspace, **including soft-deleted ones**. Only for the Diary's
+ * history replay, where a note deleted later still has to appear in earlier frames.
+ */
+export function listAllNotesForHistory(workspaceId: string): Promise<Note[]> {
+  return withDb(async (db) => {
+    const result = await db.query('SELECT * FROM notes WHERE workspace_id = ?', [workspaceId])
+    return ((result.values ?? []) as NoteRow[]).map(rowToNote)
+  })
+}
+
 export function createNote(input: {
   workspaceId: string
   groupId: string
@@ -116,6 +148,17 @@ export function createNote(input: {
         now,
       ],
     )
+    await logNoteCreated(db, {
+      id,
+      workspaceId: input.workspaceId,
+      groupId: input.groupId,
+      type: input.type,
+      title: input.title,
+      color,
+      completed: false,
+      payload,
+      createdAt: now,
+    })
 
     return {
       id,
@@ -201,18 +244,58 @@ export function updateNote(
     }
     if (setClauses.length === 0) return
 
+    // Diary: diff the tracked fields against the current row, and log only real
+    // changes (no event for a no-op save). Every tracked field goes through the same
+    // `trackedNoteFields` encoding as creation, so "changed" means the logged value
+    // actually differs (e.g. a counter step edit doesn't log a counter change).
+    const tracksChange = ['groupId', 'title', 'color', 'completed', 'payload', 'type'].some((k) => k in patch)
+    const before = tracksChange ? await readTrackedFields(db, id) : null
+
+    const now = Date.now()
     setClauses.push('updated_at = ?')
-    params.push(Date.now())
+    params.push(now)
     params.push(id)
 
     await db.run(`UPDATE notes SET ${setClauses.join(', ')} WHERE id = ?`, params)
+
+    if (before) {
+      const base = { workspaceId: before.workspace_id, entityType: 'note' as const, entityId: id, createdAt: now }
+      // `moved` first: the replay folds a same-timestamp automatic reset (On Check Move
+      // To + reset on move) into the move instead of listing it as a separate uncheck.
+      if ('groupId' in patch && patch.groupId !== undefined && patch.groupId !== before.group_id) {
+        await logEvent(db, { ...base, action: 'moved', fromGroupId: before.group_id, toGroupId: patch.groupId })
+      }
+      const after = {
+        type: patch.type ?? before.type,
+        title: patch.title ?? before.title,
+        color: 'color' in patch ? (patch.color ?? null) : before.color,
+        completed: 'completed' in patch ? !!patch.completed : before.completed === 1,
+        payload: 'payload' in patch ? patch.payload : before.payload,
+      }
+      const beforeValues = new Map(trackedNoteFields(before))
+      for (const [field, value] of trackedNoteFields(after)) {
+        if (beforeValues.get(field) !== value) {
+          await logEvent(db, { ...base, action: 'field_changed', field, newValue: value })
+        }
+      }
+    }
   })
 }
 
 export function deleteNote(id: string): Promise<void> {
   return withDb(async (db) => {
     const now = Date.now()
+    const before = await readTrackedFields(db, id)
     await db.run('UPDATE notes SET deleted_at = ?, updated_at = ? WHERE id = ?', [now, now, id])
+    if (before) {
+      await logEvent(db, {
+        workspaceId: before.workspace_id,
+        entityType: 'note',
+        entityId: id,
+        action: 'deleted',
+        createdAt: now,
+      })
+    }
   })
 }
 
@@ -225,12 +308,26 @@ export function reorderNotes(updates: { id: string; groupId: string; position: n
   return withDb(async (db) => {
     const now = Date.now()
     for (const update of updates) {
+      // Drag-and-drop between columns comes through here, not `updateNote`, so this is
+      // where a dragged move gets logged for the Diary. Same-column reorders aren't logged.
+      const before = await readTrackedFields(db, update.id)
       await db.run('UPDATE notes SET group_id = ?, position = ?, updated_at = ? WHERE id = ?', [
         update.groupId,
         update.position,
         now,
         update.id,
       ])
+      if (before && before.group_id !== update.groupId) {
+        await logEvent(db, {
+          workspaceId: before.workspace_id,
+          entityType: 'note',
+          entityId: update.id,
+          action: 'moved',
+          fromGroupId: before.group_id,
+          toGroupId: update.groupId,
+          createdAt: now,
+        })
+      }
     }
   })
 }

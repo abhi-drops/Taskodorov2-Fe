@@ -36,6 +36,18 @@ This follows the same split Settings uses (see `feat-power-tools.md`):
 
 ## Diary
 
-`DiaryPage.tsx` is currently a placeholder: a "Diary" header and a "coming soon" panel.
-Phase 2.8 replaces the body with the calendar and day scrubber described in
-`phase2-apps-diary-plan.md`.
+Built in Phase 2.8 (2026-10-03):
+- `/apps/diary` is a month calendar of activity.
+- `/apps/diary/:date` opens one day: a smooth board replay with a scrubber on desktop,
+  and a summary of the day's changes on mobile.
+
+On desktop, the Apps list rail is a `SidePanel` (opt-in `sidePanel` prop on
+`SidebarPanelLayout`; Settings' rail stays fixed). It can be resized by dragging its
+edge, and it is hidden or shown by a ☰ `SidebarToggle` placed in the app's own toolbar
+(the Diary header's far left). The toggle and the panel share state by the key
+`APPS_PANEL_KEY` (`appsList.ts`). A new app that uses this layout should put the same
+toggle in its toolbar.
+
+Both use the shared `DiaryShell`. Desktop renders inside `AppsDesktopLayout`, which
+gained a `wide` prop for the day view's replay board. Both routes are lazy-loaded. Full
+detail: `feat-diary.md`.

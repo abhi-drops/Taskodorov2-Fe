@@ -7,7 +7,6 @@ import PowerToolsPage from '../pages/PowerToolsPage'
 import GroupSettingsPage from '../pages/GroupSettingsPage'
 import NoteEditorPage from '../pages/NoteEditorPage'
 import AppsPage from '../pages/AppsPage'
-import DiaryPage from '../pages/DiaryPage'
 import { installPageTransitions } from '../lib/motion/pageTransitions'
 
 export const router = createBrowserRouter([
@@ -21,7 +20,15 @@ export const router = createBrowserRouter([
   { path: '/power-tools', loader: () => redirect('/settings') },
   { path: '/power-tools/groups/:groupId', loader: ({ params }) => redirect(`/settings/groups/${params.groupId}`) },
   { path: '/apps', element: <AppsPage /> },
-  { path: '/apps/diary', element: <DiaryPage /> },
+  // Diary is lazy-loaded: its calendar, animation and slider libraries (react-day-picker,
+  // date-fns, Motion, Radix) would otherwise add ~270 kB to every app start. The chunks
+  // are bundled locally (still offline-first), and the router waits for them before
+  // committing the navigation, so page transitions are unaffected.
+  { path: '/apps/diary', lazy: async () => ({ Component: (await import('../pages/DiaryPage')).default }) },
+  {
+    path: '/apps/diary/:date',
+    lazy: async () => ({ Component: (await import('../pages/DiaryDayPage')).default }),
+  },
   { path: '/notes/new', element: <NoteEditorPage /> },
   { path: '/notes/:id/edit', element: <NoteEditorPage /> },
   { path: '*', element: <Navigate to="/" replace /> },

@@ -301,6 +301,28 @@ several in the sidebar's count breakdown rather than its own dedicated UI elemen
 
 ---
 
+### Status: built (2026-10-03)
+
+Decided in-session:
+- **Libraries:** react-day-picker v9 (calendar, its CSS not imported) + date-fns v4;
+  Motion (replay animation); Radix Slider (scrubber).
+- **Scrubber:** one stop per change; frame 0 is the start of the day. A day opens on the
+  **last frame**, which answers the open item about the date control (stepping days also
+  lands on the last frame). Play restarts from 0 at the end.
+- **Desktop** lands on the month calendar first.
+- **Mobile** has **no scrubber**: calendar → day summary (counts + change list) only.
+- **History seeded** from existing rows via a one-time backfill (no past moves or
+  renames).
+
+Beyond this doc:
+- `reorderNotes` (drag moves), `deleteGroup`'s cascade and `seedIfEmpty` also log.
+- Note cards gained a `readOnly` mode for the replay.
+- Diary routes are lazy-loaded to keep the libraries out of the startup bundle.
+
+Current-state documentation: `feat-diary.md`.
+
+---
+
 ## Phase 3 (backend/sync) implications — not built now, noted for `phase3-sync-plan.md`
 
 - `notes.statuses` (new since that doc was written) needs a matching column in the

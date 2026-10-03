@@ -1,58 +1,36 @@
-import { Link } from 'react-router'
-import { AppShell } from '../components/AppShell'
-import { AppsDesktopLayout } from '../components/AppsSidebar'
-import { WorkspaceSwitcher } from '../components/WorkspaceSwitcher'
-import { Icon } from '../components/ui/Icon'
-import { BookIcon } from '../components/ui/NavIcons'
-import { usePlatform } from '../lib/platform/usePlatform'
-import searchIcon from '../assets/search.png'
+import { useNavigate } from 'react-router'
+import { Calendar } from '../components/ui/Calendar'
+import { DayActivityChips, DiaryHeader, DiaryShell } from '../components/DiaryShell'
+import { useDiaryCalendar } from '../common_logics/useDiaryCalendar'
+import { useTransitionReady } from '../lib/motion/pageTransitions'
+import { dayKey } from '../lib/diary/replay'
 
 /**
- * `/apps/diary`. Placeholder shell for Phase 2.8 — the calendar/scrubber described in
- * `docs/phase2-apps-diary-plan.md` replaces the body below.
+ * `/apps/diary`: the Diary's landing page on both platforms, a month calendar with
+ * Created / Moved / Changes chips per day. Tapping a day opens `/apps/diary/:date`:
+ * the replay scrubber on desktop, a day summary on mobile. See `docs/feat-diary.md`.
  */
 export default function DiaryPage() {
-  const { isNative } = usePlatform()
-
-  const header = (
-    <div className="flex items-center gap-2 text-nav-dark">
-      <BookIcon className="h-5 w-5" />
-      <h1 className="font-display text-lg font-bold">Diary</h1>
-    </div>
-  )
-  const placeholder = (
-    <div className="flex flex-1 flex-col items-center justify-center gap-2 border border-neutral-300 bg-white px-6 py-16 text-center">
-      <p className="font-medium text-ink">Diary is coming soon.</p>
-      <p className="text-sm text-slate-600">A day-by-day timeline of what happened on your board.</p>
-    </div>
-  )
-
-  if (isNative) {
-    return (
-      <AppShell>
-        <div className="mx-auto flex w-full max-w-sm flex-1 flex-col gap-6">
-          {header}
-          {placeholder}
-        </div>
-      </AppShell>
-    )
-  }
+  const navigate = useNavigate()
+  const { month, setMonth, counts, loaded } = useDiaryCalendar()
+  useTransitionReady(loaded)
 
   return (
-    <AppShell
-      headerStart={<WorkspaceSwitcher />}
-      headerEnd={
-        <Link to="/search" viewTransition aria-label="Search">
-          <Icon src={searchIcon} alt="" size={20} />
-        </Link>
-      }
-    >
-      <AppsDesktopLayout activeApp="diary">
-        <div className="flex flex-col gap-4">
-          {header}
-          {placeholder}
-        </div>
-      </AppsDesktopLayout>
-    </AppShell>
+    <DiaryShell>
+      <DiaryHeader />
+      <Calendar
+        month={month}
+        onMonthChange={setMonth}
+        onDayClick={(date) => navigate(`/apps/diary/${dayKey(date)}`, { viewTransition: true })}
+        renderDay={(date) => {
+          const c = counts.get(dayKey(date))
+          return c ? <DayActivityChips {...c} /> : null
+        }}
+      />
+      <p className="text-xs text-slate-600">
+        <span className="font-bold text-ink">+</span> created · <span className="font-bold text-ink">↔</span> moved ·{' '}
+        <span className="font-bold text-ink">✎</span> edits, statuses &amp; deletions
+      </p>
+    </DiaryShell>
   )
 }

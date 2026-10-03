@@ -29,7 +29,7 @@ Copy `.env.example` to `.env.local` (gitignored) and fill in:
 
 ## Documentation
 
-- **`docs/feat-*.md`** — one file per major feature (auth, offline-data-layer, navigation, workspaces, groups, power-tools (= Settings), apps, notes, search-filter, design-system). This is where feature *behavior and rationale* lives in depth; this file (`CLAUDE.md`) stays a high-level map plus the gotchas sharp enough to bite someone.
+- **`docs/feat-*.md`** — one file per major feature (auth, offline-data-layer, navigation, workspaces, groups, power-tools (= Settings), apps, diary, notes, search-filter, design-system). This is where feature *behavior and rationale* lives in depth; this file (`CLAUDE.md`) stays a high-level map plus the gotchas sharp enough to bite someone.
 - **`docs/changelog.md`** — running log of what changed and when, newest entry first.
   **After any meaningful change to this codebase (a new feature, a real bug fix, a
   behavior change — not a typo fix or a pure refactor with no behavior change), add an

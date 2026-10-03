@@ -48,6 +48,29 @@ export function createWorkspace(input: { name: string }): Promise<Workspace> {
   })
 }
 
+/**
+ * The workspace's "Completed Group" (Diary 2.8): moves or creations into it count as
+ * "Completed" in the Diary. `null` when unset, which means a Completed count of 0, with
+ * no fallback guessing.
+ */
+export function getCompletedGroupId(workspaceId: string): Promise<string | null> {
+  return withDb(async (db) => {
+    const result = await db.query('SELECT completed_group_id FROM workspaces WHERE id = ?', [workspaceId])
+    const row = (result.values ?? [])[0] as { completed_group_id: string | null } | undefined
+    return row?.completed_group_id ?? null
+  })
+}
+
+export function setCompletedGroupId(workspaceId: string, groupId: string | null): Promise<void> {
+  return withDb(async (db) => {
+    await db.run('UPDATE workspaces SET completed_group_id = ?, updated_at = ? WHERE id = ?', [
+      groupId,
+      Date.now(),
+      workspaceId,
+    ])
+  })
+}
+
 export function renameWorkspace(id: string, name: string): Promise<void> {
   return withDb(async (db) => {
     await db.run('UPDATE workspaces SET name = ?, updated_at = ? WHERE id = ?', [name, Date.now(), id])

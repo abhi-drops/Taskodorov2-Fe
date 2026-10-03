@@ -1,5 +1,6 @@
 import type { ComponentType, ReactNode } from 'react'
 import { Link } from 'react-router'
+import { SidePanel } from './ui/SidePanel'
 
 /** Row-chip look shared by Settings' rows and the mobile Apps list. See `docs/style-guide.md`. */
 export const CHIP = 'flex items-center gap-3 rounded-card border-[3px] border-ink bg-white px-4 py-3 shadow-card'
@@ -39,29 +40,53 @@ export function SidebarPanelLayout({
   activeId,
   children,
   className = 'max-w-4xl',
+  sidePanel,
 }: {
   items: SidebarItem[]
   activeId: string
   children: ReactNode
   className?: string
+  /**
+   * Opt-in: make the rail a collapsible, drag-resizable `SidePanel` whose layout is
+   * remembered under `storageKey`. Apps uses it; Settings keeps its fixed rail.
+   */
+  sidePanel?: { storageKey: string; label: string }
 }) {
+  const nav = (
+    <nav className={`flex shrink-0 flex-col gap-1 pt-1 ${sidePanel ? 'w-full' : 'w-44'}`}>
+      {items.map((item) =>
+        item.disabled || !item.to ? (
+          <span key={item.id} aria-disabled="true" className={`${INACTIVE_ITEM} cursor-default opacity-50 hover:text-slate-600`}>
+            <SidebarItemContent item={item} />
+          </span>
+        ) : (
+          <Link key={item.id} to={item.to} className={item.id === activeId ? ACTIVE_ITEM : INACTIVE_ITEM}>
+            <SidebarItemContent item={item} />
+          </Link>
+        ),
+      )}
+    </nav>
+  )
+
   return (
-    <div className={`mx-auto flex w-full items-start gap-8 ${className}`}>
-      <div className="border border-neutral-300 bg-surface p-4 shadow-card">
-        <nav className="flex w-44 shrink-0 flex-col gap-1 pt-1">
-          {items.map((item) =>
-            item.disabled || !item.to ? (
-              <span key={item.id} aria-disabled="true" className={`${INACTIVE_ITEM} cursor-default opacity-50 hover:text-slate-600`}>
-                <SidebarItemContent item={item} />
-              </span>
-            ) : (
-              <Link key={item.id} to={item.to} className={item.id === activeId ? ACTIVE_ITEM : INACTIVE_ITEM}>
-                <SidebarItemContent item={item} />
-              </Link>
-            ),
-          )}
-        </nav>
-      </div>
+    // With a SidePanel the panel owns the gap (as a margin), so it can close the gap
+    // when collapsed; no flex gap here then.
+    <div className={`mx-auto flex w-full items-start ${sidePanel ? '' : 'gap-8'} ${className}`}>
+      {sidePanel ? (
+        <SidePanel
+          side="left"
+          storageKey={sidePanel.storageKey}
+          label={sidePanel.label}
+          defaultWidth={210}
+          minWidth={160}
+          maxWidth={360}
+          panelClassName="border border-neutral-300 bg-surface p-4 shadow-card"
+        >
+          {nav}
+        </SidePanel>
+      ) : (
+        <div className="border border-neutral-300 bg-surface p-4 shadow-card">{nav}</div>
+      )}
       <div className="min-w-0 flex-1 border border-neutral-300 bg-surface p-6 shadow-card">{children}</div>
     </div>
   )

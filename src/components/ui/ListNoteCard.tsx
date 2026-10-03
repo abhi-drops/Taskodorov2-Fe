@@ -12,9 +12,16 @@ interface ListNoteCardProps {
   note: Note
   group: Group
   onChange: () => void
+  /**
+   * Diary replay (`DiaryReplayBoard`): render-only. Its interactive parts become `inert`
+   * (no clicks, no focus, nothing written to the DB), clicking the card calls
+   * `onSelect` instead of opening the editor, and it takes no morph name.
+   */
+  readOnly?: boolean
+  onSelect?: () => void
 }
 
-export function ListNoteCard({ note, group, onChange }: ListNoteCardProps) {
+export function ListNoteCard({ note, group, onChange, readOnly = false, onSelect }: ListNoteCardProps) {
   const openNote = useOpenNote()
   const color = resolveNoteColor(note, group)
   const payload = note.payload as ListPayload
@@ -32,21 +39,21 @@ export function ListNoteCard({ note, group, onChange }: ListNoteCardProps) {
 
   return (
     <div
-      onClick={(e) => openNote(e, note.id, color)}
-      style={{ viewTransitionName: noteMorphName(note.id) }}
+      onClick={(e) => (readOnly ? onSelect?.() : openNote(e, note.id, color))}
+      style={{ viewTransitionName: readOnly ? undefined : noteMorphName(note.id) }}
       className="flex cursor-pointer flex-col"
     >
       <p
-        className={`rounded-card px-4 pb-3 pt-4 text-sm font-medium text-black shadow-card ${SWATCH_CLASSES[color]}`}
+        className={`rounded-card px-4 pb-3 pt-4 text-sm font-medium text-black shadow-card transition-colors duration-300 ${SWATCH_CLASSES[color]}`}
       >
         {note.title}
       </p>
       <ul
-        className={`ml-4 flex flex-col gap-1.5 rounded-card px-4 pb-4 pt-3 shadow-card ${SWATCH_CLASSES[color]}`}
+        className={`ml-4 flex flex-col gap-1.5 rounded-card px-4 pb-4 pt-3 shadow-card transition-colors duration-300 ${SWATCH_CLASSES[color]}`}
       >
         {payload.items.map((item) => (
           <li key={item.id} className="flex items-start gap-2">
-            <div className="mt-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+            <div className="mt-0.5 shrink-0" inert={readOnly} onClick={(e) => e.stopPropagation()}>
               <CheckCircle checked={item.completed} onChange={() => toggleItem(item.id)} size={18} />
             </div>
             <span className={`min-w-0 text-sm text-black ${item.completed ? 'line-through opacity-70' : ''}`}>

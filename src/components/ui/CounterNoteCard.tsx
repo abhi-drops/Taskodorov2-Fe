@@ -13,9 +13,16 @@ interface CounterNoteCardProps {
   note: Note
   group: Group
   onChange: () => void
+  /**
+   * Diary replay (`DiaryReplayBoard`): render-only. Its interactive parts become `inert`
+   * (no clicks, no focus, nothing written to the DB), clicking the card calls
+   * `onSelect` instead of opening the editor, and it takes no morph name.
+   */
+  readOnly?: boolean
+  onSelect?: () => void
 }
 
-export function CounterNoteCard({ note, group, onChange }: CounterNoteCardProps) {
+export function CounterNoteCard({ note, group, onChange, readOnly = false, onSelect }: CounterNoteCardProps) {
   const openNote = useOpenNote()
   const color = resolveNoteColor(note, group)
   const payload = note.payload as CounterPayload
@@ -37,18 +44,19 @@ export function CounterNoteCard({ note, group, onChange }: CounterNoteCardProps)
 
   return (
     <div
-      onClick={(e) => openNote(e, note.id, color)}
-      style={{ viewTransitionName: noteMorphName(note.id) }}
-      className={`flex cursor-pointer flex-col rounded-card shadow-card ${SWATCH_CLASSES[color]}`}
+      onClick={(e) => (readOnly ? onSelect?.() : openNote(e, note.id, color))}
+      style={{ viewTransitionName: readOnly ? undefined : noteMorphName(note.id) }}
+      className={`flex cursor-pointer flex-col rounded-card shadow-card transition-colors duration-300 ${SWATCH_CLASSES[color]}`}
     >
       <div className="flex flex-col gap-3 p-4">
         <div className="flex items-start justify-between gap-2">
           <p className="line-clamp-2 min-w-0 flex-1 text-sm font-medium text-black">{note.title}</p>
-          <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+          <div className="shrink-0" inert={readOnly} onClick={(e) => e.stopPropagation()}>
             <CheckCircle checked={note.completed} onChange={toggleCompleted} size={22} />
           </div>
         </div>
         <div
+          inert={readOnly}
           onClick={(e) => e.stopPropagation()}
           className="flex items-stretch rounded-card border-[3px] border-ink divide-x-[3px] divide-ink overflow-hidden"
         >

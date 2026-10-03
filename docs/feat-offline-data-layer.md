@@ -78,6 +78,23 @@ plain `SELECT *`.
   `description`, `color`, `priority` (`low|normal|medium|high`), `position`,
   `completed` (`INTEGER` 0/1), `payload` (`TEXT`, JSON — type-specific shape, see
   `feat-notes.md`).
+- **`workspaces.completed_group_id`** (Diary, 2.8): nullable, no FK. Added via
+  `ensureColumn`.
+- **`activity_events`** (Diary, 2.8): an **append-only** log, the one table that is
+  never soft-deleted or updated.
+  - Columns: `workspace_id`, `entity_type` (`note|group`), `entity_id`, `action`
+    (`created|moved|deleted|field_changed`), `from_group_id`, `to_group_id`, `field`
+    (`title|color|completed|counter|list`), `new_value`, `created_at`.
+  - Indexes on `(workspace_id, created_at)` and `(entity_id, field, created_at)`.
+  - Schema and write helpers are in `eventLog.ts` (no `sqlite.ts` import, so `sqlite.ts`
+    can use it without a cycle); reads are in `events.ts`.
+  - **Every note/group write logs inside the same `withDb` call**, including
+    `reorderNotes` (drag moves), `deleteGroup`'s note cascade, and `seedIfEmpty`.
+  - `backfillTrackedStateIfMissing` (idempotent, every start-up) adds starting values
+    for `completed`/`counter`/`list` to notes whose history predates tracking them.
+  - `backfillEventsIfEmpty` seeds it once from existing rows on upgrade; `initDb` runs
+    it *before* `seedIfEmpty`.
+  - See `feat-diary.md`.
 
 `lastSyncedAt` — deliberately **not implemented**, despite an early planning doc
 listing it as a "scaffold to add." It's specified as a single app-level timestamp (not

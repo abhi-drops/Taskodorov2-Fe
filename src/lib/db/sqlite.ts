@@ -6,6 +6,13 @@ import { defineCustomElements } from 'jeep-sqlite/loader'
 import { Capacitor } from '@capacitor/core'
 import { CapacitorSQLite, SQLiteConnection } from '@capacitor-community/sqlite'
 import type { SQLiteDBConnection } from '@capacitor-community/sqlite'
+import {
+  ACTIVITY_EVENTS_SQL,
+  backfillEventsIfEmpty,
+  backfillTrackedStateIfMissing,
+  logGroupCreated,
+  logNoteCreated,
+} from './eventLog'
 
 const DB_NAME = 'taskodoro'
 
@@ -114,6 +121,9 @@ export async function seedIfEmpty(db: SQLiteDBConnection): Promise<void> {
        VALUES (?, ?, ?, ?, 'manual', 'manual', ?, ?, ?, ?, NULL)`,
       [group.id, workspaceId, group.name, i, group.moveTo, group.resetOnMove, now, now],
     )
+    // Logged here too (not only via backfill): after "Reset to Default" the activity log
+    // is no longer empty, so the backfill wouldn't pick the re-seeded data up.
+    await logGroupCreated(db, { id: group.id, workspaceId, createdAt: now })
   }
 
   // Walks a new user through the "On Check Move To" chain wired above, right in the
@@ -131,12 +141,24 @@ export async function seedIfEmpty(db: SQLiteDBConnection): Promise<void> {
 
   for (let i = 0; i < todoNotes.length; i++) {
     const note = todoNotes[i]
+    const noteId = crypto.randomUUID()
     await db.run(
       `INSERT INTO notes
         (id, workspace_id, group_id, type, title, description, color, priority, position, completed, payload, created_at, updated_at, deleted_at)
        VALUES (?, ?, ?, 'basic', ?, ?, ?, 'normal', ?, 0, '{}', ?, ?, NULL)`,
-      [crypto.randomUUID(), workspaceId, todoId, note.title, note.description, note.color, i, now, now],
+      [noteId, workspaceId, todoId, note.title, note.description, note.color, i, now, now],
     )
+    await logNoteCreated(db, {
+      id: noteId,
+      workspaceId,
+      groupId: todoId,
+      type: 'basic',
+      title: note.title,
+      color: note.color,
+      completed: false,
+      payload: {},
+      createdAt: now,
+    })
   }
 }
 
@@ -175,12 +197,27 @@ async function migrateSchema(db: SQLiteDBConnection): Promise<void> {
     'statuses',
     "ALTER TABLE notes ADD COLUMN statuses TEXT NOT NULL DEFAULT '[]'",
   )
+  // Diary (2.8): which group counts as "completed" for the day's Completed count.
+  // Nullable, no foreign key (same reasoning as on_check_move_to_group_id); unset means
+  // a Completed count of 0, no fallback guessing.
+  await ensureColumn(
+    db,
+    'workspaces',
+    'completed_group_id',
+    'ALTER TABLE workspaces ADD COLUMN completed_group_id TEXT',
+  )
 }
 
 async function initDb(): Promise<SQLiteDBConnection> {
   const db = await openConnection()
   await db.execute(SCHEMA_SQL)
+  await db.execute(ACTIVITY_EVENTS_SQL)
   await migrateSchema(db)
+  // Before seeding: an upgrading install backfills its existing data, while a fresh
+  // install has nothing to backfill and the seed logs its own events (eventLog.ts).
+  await backfillEventsIfEmpty(db)
+  // Logs from before checked/counter/list were tracked get those fields' starting values.
+  await backfillTrackedStateIfMissing(db)
   await seedIfEmpty(db)
   return db
 }

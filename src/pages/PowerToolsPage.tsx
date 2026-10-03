@@ -13,6 +13,8 @@ import { useAddButtonSettings } from '../common_logics/useAddButtonSettings'
 import { Tabs } from '../components/ui/Tabs'
 import { ADD_BUTTON_POSITIONS, type AddButtonPosition } from '../lib/storage/preferences'
 import { listGroups, deleteGroup } from '../lib/db/groups'
+import { getCompletedGroupId, setCompletedGroupId } from '../lib/db/workspaces'
+import { Select } from '../components/ui/Select'
 import { resetToDefault } from '../lib/db/reset'
 import type { Group } from '../types/group'
 import type { AuthState } from '../lib/auth/authContext'
@@ -76,12 +78,16 @@ function GroupsSection({
   setName,
   handleCreate,
   onDeleteRequest,
+  completedGroupId,
+  onCompletedGroupChange,
 }: {
   groups: Group[]
   name: string
   setName: (value: string) => void
   handleCreate: () => void
   onDeleteRequest: (group: Group) => void
+  completedGroupId: string | null
+  onCompletedGroupChange: (groupId: string | null) => void
 }) {
   return (
     <div className="flex flex-col gap-3">
@@ -125,6 +131,25 @@ function GroupsSection({
         >
           Add
         </button>
+      </div>
+
+      {/* Diary: notes moved or created into this group count as "Completed" for the day. */}
+      <div className="flex flex-col gap-1.5 pt-2">
+        <Select
+          label="Completed Group"
+          value={completedGroupId ?? 'none'}
+          onChange={(e) => onCompletedGroupChange(e.target.value === 'none' ? null : e.target.value)}
+        >
+          <option value="none">None</option>
+          {groups.map((group) => (
+            <option key={group.id} value={group.id}>
+              {group.name}
+            </option>
+          ))}
+        </Select>
+        <p className="px-1 text-xs text-slate-600">
+          Notes moved into this group count as Completed in the Diary.
+        </p>
       </div>
     </div>
   )
@@ -181,6 +206,7 @@ export default function PowerToolsPage() {
   const activeTab = searchParams.get('tab') === 'account' ? 'account' : 'groups'
 
   const [groups, setGroups] = useState<Group[]>([])
+  const [completedGroupId, setCompletedGroupIdState] = useState<string | null>(null)
   const [confirmDeleteGroup, setConfirmDeleteGroup] = useState<Group | null>(null)
   const [confirmReset, setConfirmReset] = useState(false)
 
@@ -189,8 +215,13 @@ export default function PowerToolsPage() {
 
     async function load() {
       if (!activeWorkspaceId) return
-      const loaded = await listGroups(activeWorkspaceId)
-      if (!cancelled) setGroups(loaded)
+      const [loaded, completed] = await Promise.all([
+        listGroups(activeWorkspaceId),
+        getCompletedGroupId(activeWorkspaceId),
+      ])
+      if (cancelled) return
+      setGroups(loaded)
+      setCompletedGroupIdState(completed)
     }
 
     load()
@@ -220,6 +251,12 @@ export default function PowerToolsPage() {
     window.location.reload()
   }
 
+  async function handleCompletedGroupChange(groupId: string | null) {
+    if (!activeWorkspaceId) return
+    setCompletedGroupIdState(groupId)
+    await setCompletedGroupId(activeWorkspaceId, groupId)
+  }
+
   const groupsSection = (
     <GroupsSection
       groups={groups}
@@ -227,6 +264,8 @@ export default function PowerToolsPage() {
       setName={setName}
       handleCreate={handleCreate}
       onDeleteRequest={setConfirmDeleteGroup}
+      completedGroupId={completedGroupId}
+      onCompletedGroupChange={handleCompletedGroupChange}
     />
   )
   const accountSection = <AccountSection auth={auth} onResetRequest={() => setConfirmReset(true)} />

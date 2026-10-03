@@ -12,9 +12,16 @@ interface BasicNoteCardProps {
   note: Note
   group: Group
   onChange: () => void
+  /**
+   * Diary replay (`DiaryReplayBoard`): render-only. Its interactive parts become `inert`
+   * (no clicks, no focus, nothing written to the DB), clicking the card calls
+   * `onSelect` instead of opening the editor, and it takes no morph name.
+   */
+  readOnly?: boolean
+  onSelect?: () => void
 }
 
-export function BasicNoteCard({ note, group, onChange }: BasicNoteCardProps) {
+export function BasicNoteCard({ note, group, onChange, readOnly = false, onSelect }: BasicNoteCardProps) {
   const openNote = useOpenNote()
   const color = resolveNoteColor(note, group)
 
@@ -27,9 +34,9 @@ export function BasicNoteCard({ note, group, onChange }: BasicNoteCardProps) {
 
   return (
     <div
-      onClick={(e) => openNote(e, note.id, color)}
-      style={{ viewTransitionName: noteMorphName(note.id) }}
-      className={`flex cursor-pointer flex-col rounded-card shadow-card ${SWATCH_CLASSES[color]}`}
+      onClick={(e) => (readOnly ? onSelect?.() : openNote(e, note.id, color))}
+      style={{ viewTransitionName: readOnly ? undefined : noteMorphName(note.id) }}
+      className={`flex cursor-pointer flex-col rounded-card shadow-card transition-colors duration-300 ${SWATCH_CLASSES[color]}`}
     >
       <div className="flex items-start justify-between gap-2 p-4">
         <p
@@ -39,7 +46,7 @@ export function BasicNoteCard({ note, group, onChange }: BasicNoteCardProps) {
         >
           {note.title}
         </p>
-        <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+        <div className="shrink-0" inert={readOnly} onClick={(e) => e.stopPropagation()}>
           <CheckCircle checked={note.completed} onChange={toggleCompleted} size={22} />
         </div>
       </div>

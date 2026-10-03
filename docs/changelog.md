@@ -4,6 +4,178 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-03 — Diary tracks checked/unchecked, counter values and list changes
+
+**What it tracks now**
+- The activity log now records three more note fields:
+  - `completed` (checked/unchecked);
+  - `counter` (the value);
+  - `list` (a snapshot of the items).
+- `updateNote` diffs them like title and colour, using one shared encoding
+  (`trackedNoteFields`), so only real changes log. A step/target edit doesn't log a
+  counter change.
+- Creating a note logs their starting values.
+- A one-time catch-up (`backfillTrackedStateIfMissing`) gives existing notes those
+  starting values, at their creation time, so the first change after this update shows
+  "from → to" and nothing appears as a fake change today.
+
+**How it shows up**
+- **Counter:** a burst of taps (each within 60 s, nothing in between) is **one entry and
+  one scrubber stop**, e.g. `3 → 8 +5`. A "▸ Show N taps" toggle expands it to every tap
+  with its time, value and delta. Every tap is still stored.
+- **List:** each update is diffed into item-level lines: ✓ checked, ○ unchecked,
+  + added, − removed, ✎ renamed. A reorder-only update shows nothing.
+- **Checked / Unchecked:** their own chips.
+- **Reset on move:** On Check Move To's automatic "reset to unchecked" is folded into the
+  move entry ("↺ reset to unchecked") instead of appearing as a separate uncheck.
+- **Replay:** cards now show the historical checkmark, counter value and list ticks at
+  each frame, not current values.
+- **Counts:** new tiles for Checked, Unchecked, Counter and List updates.
+- **Calendar:** the "changes" rollup applies the same merging and folding, so it agrees
+  with the day view.
+
+Verified with a second check script (20 checks), and the original 20 still pass. See
+`feat-diary.md`.
+
+## 2026-10-03 — Diary: clearer change list (chips, swatches, better wording)
+
+The Diary's list of changes (desktop sidebar and mobile summary) was reworked from flat
+sentences like `Moved 'X': Todo → In Progress` into a scannable layout:
+
+- **Top line:** a colour-coded action chip (Created / Moved / Renamed / Color / Status /
+  Deleted, matching the count tiles), a **✓ Completed** chip on moves into the Completed
+  group, and the time.
+- **Title:** the note's title in bold.
+- **Detail line:**
+  - group chips for moves (`[Todo] → [In Progress]`);
+  - before → after swatches for colour changes;
+  - "was ~~old title~~" for renames;
+  - the status in the same dark strip notes use.
+- **Wording:**
+  - grammatical sentences kept as each entry's accessible name, for example
+    `Moved “X” from Todo to In Progress`;
+  - "Renamed" and "Color" instead of "Retitled" and "Recoloured", matching the app's
+    spelling;
+  - the count tiles read "Renamed" and "Color changes".
+- **Times:** shown in the device's own format (e.g. 3:53 PM), and the scrubber's first
+  stop reads "Start".
+- **Code:** `FeedEntry` gained structured fields (`title`, `fromGroup`, `toGroup`,
+  `previousTitle`, `previousColor`, `statusText`). The replay check script was re-run
+  (20 checks, all passing).
+
+See `feat-diary.md`.
+
+## 2026-10-03 — Diary (mobile): backdrop card behind the change list
+
+On the mobile day summary, the list of changes now sits in a light backdrop card with a
+"Changes" heading. It is the same `border-neutral-300 bg-surface shadow-card` treatment
+as the board's group columns and the desktop day sidebar, instead of floating on the
+grid background. See `feat-diary.md`.
+
+## 2026-10-03 — Fix: Diary day page had a whole-page scrollbar
+
+- **Cause:** the replay board's height was a guess, `calc(100svh − 13rem)`, about 40px
+  short of the real chrome around it (top nav, card padding and borders, toolbar row).
+  So the page came out slightly taller than the screen.
+- **Fix:** new `lib/layout/useFillViewportHeight.ts` **measures** the space instead. It
+  takes the screen height minus what's above the board panel and what's below it, and
+  re-measures on resize and layout changes.
+  - The board now fills exactly the rest of the screen and scrolls inside.
+  - The page doesn't scroll.
+  - The details sidebar is capped to the same height.
+- `SidePanel`'s `viewportOffset` prop became `maxHeight` (px or any CSS length).
+
+See `feat-diary.md`.
+
+## 2026-10-03 — Diary replay board fills the screen height and scrolls
+
+- **Height:** the desktop replay board is now exactly screen-height. Its bottom lines up
+  with the day-details sidebar.
+- **Scroll:** it scrolls inside, both directions in one scroll box, when the columns are
+  taller or wider than that.
+- **Fix:** the scroll box is marked `layoutScroll` for Motion, so cards still glide from
+  the correct place after you've scrolled. This was already latent with horizontal
+  scrolling on many columns.
+- **Padding:** the board's padding moved *inside* the scroll box (`p-6`). There is room
+  on every side, including at the scrolled ends, and the scrollbars sit flush with the
+  panel border.
+
+See `feat-diary.md`.
+
+## 2026-10-03 — Sidebar toggles move to the Diary toolbar as ☰ buttons
+
+The «/» collapse buttons floated in the gap beside each sidebar. They looked misaligned
+and moved between the open and closed states. Collapsing also left a thin border line and
+an empty gap behind.
+
+- **New toggles:** two ☰ `SidebarToggle` buttons in the Diary header:
+  - far left: the Apps list (both Diary pages);
+  - far right: day details (day page only).
+
+  They are square ink-bordered like the other toolbar controls, and ink-filled while
+  their sidebar is open.
+- **`SidePanel` changes:**
+  - it no longer has its own button;
+  - collapsing now animates it to exactly zero width and closes the gap beside it (the
+    panel owns the gap as a margin), so nothing is left behind.
+- **Shared state:** toggle and panel share state through a small store in
+  `lib/storage/panelLayout.ts` keyed per sidebar. It is still remembered across reloads.
+
+See `style-guide.md` and `feat-diary.md`.
+
+## 2026-10-03 — Desktop: collapsible, resizable sidebars; height fix in the Diary
+
+New `components/ui/SidePanel.tsx`, used for the Apps list and the Diary's day-details
+sidebar:
+
+- **Collapse/expand** with a small square «/» button in the gap beside each sidebar. The
+  width animates, and the content doesn't re-wrap.
+- **Drag the inner edge to resize.** Keyboard ←/→ also works, and a double-click resets.
+- **Remembered:** width and collapsed state are saved per sidebar
+  (`lib/storage/panelLayout.ts`). It uses synchronous `localStorage` instead of async
+  Preferences, so the saved width is there on first paint with no jump. These are
+  desktop-only, where Preferences is `localStorage` anyway.
+- **Height fix:** sidebars are capped to the screen height, stay in view while the page
+  scrolls, and scroll internally. Before, a busy day's change list stretched the Diary
+  page.
+- **Re-expand:** clicking a card in the replay re-expands a collapsed details sidebar.
+
+Settings' sidebar is unchanged, because the behaviour is opt-in through
+`SidebarPanelLayout`'s `sidePanel` prop. See `feat-diary.md` and `style-guide.md`.
+
+## 2026-10-03 — Phase 2.8: Diary
+
+Apps → Diary is built. It is a workspace history: a month calendar of activity, and per
+day a smooth board replay (desktop) or a summary of changes (mobile).
+
+- **Calendar** (`/apps/diary`, both platforms):
+  - react-day-picker v9 styled with the app's tokens (no library CSS): square ink-border
+    cells, today in yellow, yellow square ‹ › month buttons;
+  - each day shows `+` created, `↔` moved and `✎` changes chips.
+- **Day** (`/apps/diary/:date`):
+  - **Desktop:** a Radix scrubber (one stop per change, ticks, Play/Pause, a yellow round
+    thumb per the wireframe) drives a read-only board animated with Motion. Cards glide
+    between columns on a move and fade in or out on create or delete, interruptibly, so
+    fast scrubbing stays smooth. Frames are precomputed, so dragging never queries
+    SQLite.
+  - **Desktop sidebar:** the day's counts and change list; click an entry to jump to it,
+    or click a card for that note's changes.
+  - **Mobile:** no scrubber, just the counts and change list; tap an entry to open the
+    note.
+  - The ‹ › day stepper moves between days.
+- **Data:**
+  - new append-only `activity_events` table, logged inside every note/group write,
+    including drag moves, group-delete cascades and the seed;
+  - a one-time backfill from existing rows, so past days aren't empty (it can't recover
+    past moves or renames);
+  - new `workspaces.completed_group_id`, set in Settings → Groups as "Completed Group".
+- **Note cards:** gained a `readOnly` mode.
+- **Bundle:** Diary routes are lazy-loaded, so the new libraries (react-day-picker,
+  date-fns, Motion, Radix Slider) don't grow app start-up. The main bundle is about
+  477 kB.
+
+See `feat-diary.md`.
+
 ## 2026-10-03 — Fix: glitchy note-card morph; search gets a fade
 
 - **"Doesn't morph the first time" fixed:**
