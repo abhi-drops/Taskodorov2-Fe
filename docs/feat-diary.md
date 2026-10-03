@@ -14,8 +14,8 @@ against the wireframes `docs/design-references/web/diary.png`, `diary_sidebar.pn
 | `/apps/diary/:date` (`DiaryDayPage`, `yyyy-MM-dd`) | **Replay:** scrubber + read-only board + day sidebar | **Summary only:** counts + list of changes, no scrubber |
 
 - **Calendar:**
-  - each day cell shows small chips: green `+N` created, blue `↔N` moved, coral `✎N`
-    changes;
+  - each day cell shows small chips in the Diary colour scheme (below): violet `+N`
+    created, blue `↔N` moved, yellow `✎N` changes;
   - "changes" is a rollup of title/colour edits, status entries and deletions;
   - days with no activity show no chips, and today is yellow;
   - the yellow square ‹ › buttons change month, and tapping a day opens it;
@@ -37,7 +37,9 @@ against the wireframes `docs/design-references/web/diary.png`, `diary_sidebar.pn
     highlighted, and changes still ahead of the scrubber are dimmed.
   - Clicking a list entry jumps to its frame.
   - Clicking a card swaps the sidebar to **that note's changes for the day**, with a ×
-    to go back and "Open note" if it still exists.
+    to go back and an "Open note →" button if the note still exists. The button is
+    full-width, square with an ink border and hard shadow, `font-display` uppercase, in
+    sticky yellow, and presses down on click.
   - **Both desktop sidebars** (the Apps list on the left, day details on the right) are
     `SidePanel`s (see `style-guide.md`):
     - shown or hidden with **☰ buttons in the Diary toolbar** (`DiaryHeader`): the Apps
@@ -55,14 +57,20 @@ against the wireframes `docs/design-references/web/diary.png`, `diary_sidebar.pn
   summary) renders each change from **structured fields** on `FeedEntry` (title,
   from/to group names, previous title/colour, status text, counter values and taps,
   item-level list changes, `resetOnMove`), not a pre-built string:
-  - top line: a colour-coded **action chip** and the time. Chips match the count tiles:
-    - green Created and ✓ Checked;
-    - blue Moved;
-    - white ○ Unchecked, Counter, List, Renamed and Color;
-    - ink Status;
-    - coral Deleted.
+  - top line: a colour-coded **action chip** and the time. **The Diary colour scheme** is
+    shared by action chips, count tiles and the calendar's day chips (constants at the
+    top of `DiarySidebar.tsx`):
 
-    Moves or creations into the Completed group also get a yellow **✓ Completed** chip;
+    | Colour | Kinds |
+    |---|---|
+    | violet (`accent-purple`, white text) | Created |
+    | green | ✓ Checked, ✓ Completed |
+    | yellow | content updates: Counter, Renamed, Color, List, ○ Unchecked |
+    | black with yellow text | Status |
+    | blue | Moved |
+    | coral | Deleted |
+
+    Moves or creations into the Completed group also get a green **✓ Completed** chip;
   - the note's **title in bold** (struck through for deletions);
   - a visual detail line per kind:
     - **Moved:** grey group chips, `[Todo] → [In Progress]`, plus "↺ reset to

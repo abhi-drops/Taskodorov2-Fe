@@ -182,12 +182,15 @@ export default function DiaryDayPage() {
                 empty="No changes to this note on this day."
               />
               {replay.liveNoteIds.has(diary.selectedNoteId) && (
+                // Primary action of the panel: the app's chip-button shape (ink border, hard
+                // shadow) in sticky yellow, like the toolbar's other yellow controls.
                 <button
                   type="button"
                   onClick={() => openNote(diary.selectedNoteId!)}
-                  className="self-start font-medium text-accent-purple hover:underline"
+                  className="flex w-full items-center justify-center gap-2 rounded-card border-2 border-ink bg-sticky-yellow px-3 py-2 font-display text-xs font-bold uppercase tracking-wide text-ink shadow-card transition hover:opacity-90 active:translate-y-px active:shadow-none"
                 >
                   Open note
+                  <span aria-hidden="true">→</span>
                 </button>
               )}
             </>

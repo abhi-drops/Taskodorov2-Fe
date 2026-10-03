@@ -4,6 +4,28 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-03 — Diary colour scheme
+
+One colour scheme for the Diary's action chips, count tiles and calendar day chips:
+- **violet:** Created;
+- **green:** ✓ Checked and ✓ Completed;
+- **yellow:** content updates (Counter, Renamed, Color, List, ○ Unchecked);
+- **black with yellow text:** Status;
+- **unchanged:** blue Moved and coral Deleted.
+
+The "Open note" button is now sticky yellow. Text colours are set per chip instead of
+being stacked on a shared class, because two `text-*` utilities on one element have no
+guaranteed winner in Tailwind. See `feat-diary.md`.
+
+## 2026-10-03 — Diary: restyled "Open note" button
+
+In the desktop day-details sidebar, "Open note" was a plain purple text link. It is now
+a full-width button in the app's chip style:
+- square, `border-2 border-ink`, `shadow-card`;
+- `font-display` uppercase "OPEN NOTE →";
+- the add-note purple;
+- a small press-down effect.
+
 ## 2026-10-03 — Diary tracks checked/unchecked, counter values and list changes
 
 **What it tracks now**

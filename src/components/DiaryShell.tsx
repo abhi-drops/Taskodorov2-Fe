@@ -70,26 +70,29 @@ export function DiaryHeader({ detailsToggle = false, children }: { detailsToggle
 }
 
 /**
- * The small Created / Moved / Changes chips in a calendar day cell, in sticky colours.
+ * The small Created / Moved / Changes chips in a calendar day cell, in the Diary's colour
+ * scheme: violet created, blue moved, yellow changes (see `DiarySidebar`).
  * Renders nothing for a day with no activity, so a quiet month isn't a wall of zeros.
  */
 export function DayActivityChips({ created, moved, changes }: { created: number; moved: number; changes: number }) {
   if (created + moved + changes === 0) return null
-  const chip = 'rounded-card border border-ink px-1 font-display text-[10px] font-bold leading-4 text-ink'
+  // Text colour is set per chip (not here): two text-* utilities on one element have no
+  // guaranteed winner in Tailwind.
+  const chip = 'rounded-card border border-ink px-1 font-display text-[10px] font-bold leading-4'
   return (
     <div className="flex flex-wrap gap-0.5">
       {created > 0 && (
-        <span className={`${chip} bg-sticky-green`} title={`${created} created`}>
+        <span className={`${chip} bg-accent-purple text-white`} title={`${created} created`}>
           +{created}
         </span>
       )}
       {moved > 0 && (
-        <span className={`${chip} bg-sticky-blue`} title={`${moved} moved`}>
+        <span className={`${chip} bg-sticky-blue text-ink`} title={`${moved} moved`}>
           ↔{moved}
         </span>
       )}
       {changes > 0 && (
-        <span className={`${chip} bg-sticky-coral`} title={`${changes} changes`}>
+        <span className={`${chip} bg-sticky-yellow text-ink`} title={`${changes} changes`}>
           ✎{changes}
         </span>
       )}

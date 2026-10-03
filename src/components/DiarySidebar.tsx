@@ -13,18 +13,29 @@ import {
  * the mobile day page (which is *only* this summary, no scrubber).
  */
 
+/**
+ * Colour scheme (shared by count tiles, action chips and the calendar chips):
+ * violet = created · green = checked / completed · yellow = content updates (counter,
+ * rename, color, list, unchecked) · black with yellow text = status · blue = moved ·
+ * coral = deleted.
+ */
+const VIOLET = 'bg-accent-purple text-white'
+const GREEN = 'bg-sticky-green text-ink'
+const YELLOW = 'bg-sticky-yellow text-ink'
+const STATUS = 'bg-ink text-sticky-yellow'
+
 const COUNT_TILES: { key: keyof DayCountsDetailed; label: string; tone: string }[] = [
-  { key: 'created', label: 'Created', tone: 'bg-sticky-green' },
-  { key: 'moved', label: 'Moved', tone: 'bg-sticky-blue' },
-  { key: 'completed', label: 'Completed', tone: 'bg-sticky-yellow' },
-  { key: 'checked', label: 'Checked', tone: 'bg-sticky-green' },
-  { key: 'unchecked', label: 'Unchecked', tone: 'bg-white' },
-  { key: 'counterChanges', label: 'Counter', tone: 'bg-white' },
-  { key: 'listChanges', label: 'List updates', tone: 'bg-white' },
-  { key: 'titleEdits', label: 'Renamed', tone: 'bg-white' },
-  { key: 'colorChanges', label: 'Color changes', tone: 'bg-white' },
-  { key: 'statuses', label: 'Statuses', tone: 'bg-white' },
-  { key: 'deleted', label: 'Deleted', tone: 'bg-sticky-coral' },
+  { key: 'created', label: 'Created', tone: VIOLET },
+  { key: 'moved', label: 'Moved', tone: 'bg-sticky-blue text-ink' },
+  { key: 'completed', label: 'Completed', tone: GREEN },
+  { key: 'checked', label: 'Checked', tone: GREEN },
+  { key: 'unchecked', label: 'Unchecked', tone: YELLOW },
+  { key: 'counterChanges', label: 'Counter', tone: YELLOW },
+  { key: 'listChanges', label: 'List updates', tone: YELLOW },
+  { key: 'titleEdits', label: 'Renamed', tone: YELLOW },
+  { key: 'colorChanges', label: 'Color changes', tone: YELLOW },
+  { key: 'statuses', label: 'Statuses', tone: STATUS },
+  { key: 'deleted', label: 'Deleted', tone: 'bg-sticky-coral text-ink' },
 ]
 
 /** Per-action counts as small square tiles. Zero tiles are hidden; Completed only shows when set up. */
@@ -35,8 +46,8 @@ export function DiaryCounts({ counts }: { counts: DayCountsDetailed }) {
     <div className="grid grid-cols-3 gap-2">
       {tiles.map((t) => (
         <div key={t.key} className={`rounded-card border-2 border-ink px-2 py-1.5 shadow-card ${t.tone}`}>
-          <div className="font-display text-lg font-bold leading-none text-ink">{counts[t.key]}</div>
-          <div className="mt-0.5 text-[11px] leading-tight text-ink">{t.label}</div>
+          <div className="font-display text-lg font-bold leading-none">{counts[t.key]}</div>
+          <div className="mt-0.5 text-[11px] leading-tight">{t.label}</div>
         </div>
       ))}
     </div>
@@ -45,17 +56,17 @@ export function DiaryCounts({ counts }: { counts: DayCountsDetailed }) {
 
 // ---------------------------------------------------------------- change list
 
-/** Action chip per kind: the same sticky colours as the count tiles, so they read together. */
+/** Action chip per kind, in the same colour scheme as the count tiles (see above). */
 const KIND_CHIP: Record<FeedKind, { label: string; tone: string }> = {
-  created: { label: 'Created', tone: 'bg-sticky-green text-ink' },
+  created: { label: 'Created', tone: VIOLET },
   moved: { label: 'Moved', tone: 'bg-sticky-blue text-ink' },
-  checked: { label: '✓ Checked', tone: 'bg-sticky-green text-ink' },
-  unchecked: { label: '○ Unchecked', tone: 'bg-white text-ink' },
-  counter: { label: 'Counter', tone: 'bg-white text-ink' },
-  list: { label: 'List', tone: 'bg-white text-ink' },
-  title: { label: 'Renamed', tone: 'bg-white text-ink' },
-  color: { label: 'Color', tone: 'bg-white text-ink' },
-  status: { label: 'Status', tone: 'bg-ink text-white' },
+  checked: { label: '✓ Checked', tone: GREEN },
+  unchecked: { label: '○ Unchecked', tone: YELLOW },
+  counter: { label: 'Counter', tone: YELLOW },
+  list: { label: 'List', tone: YELLOW },
+  title: { label: 'Renamed', tone: YELLOW },
+  color: { label: 'Color', tone: YELLOW },
+  status: { label: 'Status', tone: STATUS },
   deleted: { label: 'Deleted', tone: 'bg-sticky-coral text-ink' },
 }
 
@@ -259,7 +270,7 @@ export function DiaryFeedList({ feed, frame, onSelect, empty = 'Nothing happened
             >
               <span className="flex items-center gap-1.5">
                 <Chip className={chip.tone}>{chip.label}</Chip>
-                {entry.completed && <Chip className="bg-sticky-yellow text-ink">✓ Completed</Chip>}
+                {entry.completed && <Chip className={GREEN}>✓ Completed</Chip>}
                 <span className="ml-auto shrink-0 font-display text-[11px] text-slate-600">
                   {formatTimeOfDay(entry.time)}
                 </span>
