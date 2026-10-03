@@ -4,6 +4,36 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-03 — Smooth sidebar collapse/expand
+
+Collapsing and expanding the desktop sidebars (Apps list, Diary day details) was jumpy:
+- the content swapped on the first frame;
+- the height snapped between content height and stretched;
+- the easing was generic.
+
+Now:
+- **Cross-fade:** the full panel and the icon rail are two layers that cross-fade while
+  the width animates.
+- **No height snap:** the sidebar is always stretched to the content's height, with the
+  panel sticky at its top.
+- **Motion:** 250 ms on the same curve as the page transitions, and off under reduced
+  motion.
+
+The clip box now uses `overflow-clip`, because `overflow-hidden` would break the inner
+`sticky`. The resize handle moved inside the panel, so it is the panel's height and fades
+with it. See `style-guide.md`.
+
+## 2026-10-03 — Desktop: collapsed Apps list becomes an icon rail
+
+Collapsing the Apps list with its ☰ toggle now leaves a slim strip of app icons instead
+of hiding it completely:
+- the active app is in its ink-bordered chip, and disabled apps are dimmed;
+- each icon has a tooltip and is clickable;
+- the strip is stretched to the active app's panel height.
+
+This is a new optional `rail` prop on `SidePanel`. The Diary's day-details sidebar
+doesn't use it, so it still collapses fully. See `feat-apps.md` and `style-guide.md`.
+
 ## 2026-10-03 — Diary colour scheme
 
 One colour scheme for the Diary's action chips, count tiles and calendar day chips:

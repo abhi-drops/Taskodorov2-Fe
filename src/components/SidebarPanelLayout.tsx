@@ -68,6 +68,53 @@ export function SidebarPanelLayout({
     </nav>
   )
 
+  // Collapsed state of the side panel: a slim strip of the items' icons, stretched to the
+  // content panel's height. The active item gets the same ink-bordered chip it has in
+  // the full list; disabled items are dimmed; each has a tooltip and accessible name.
+  const rail = (
+    <nav
+      aria-label={sidePanel?.label}
+      className="flex h-full flex-col items-center gap-2 border border-neutral-300 bg-surface py-3 shadow-card"
+    >
+      {items.map((item) => {
+        const ItemIcon = item.icon
+        // Items without an icon fall back to their first letter.
+        const glyph = ItemIcon ? (
+          <ItemIcon className="h-5 w-5" />
+        ) : (
+          <span className="font-display text-sm font-bold">{item.label[0]}</span>
+        )
+        const box = 'flex h-9 w-9 items-center justify-center rounded-card'
+        if (item.disabled || !item.to) {
+          return (
+            <span
+              key={item.id}
+              aria-disabled="true"
+              aria-label={item.label}
+              title={item.label}
+              className={`${box} text-slate-600 opacity-50`}
+            >
+              {glyph}
+            </span>
+          )
+        }
+        const active = item.id === activeId
+        return (
+          <Link
+            key={item.id}
+            to={item.to}
+            aria-label={item.label}
+            aria-current={active ? 'page' : undefined}
+            title={item.label}
+            className={`${box} ${active ? 'border-[3px] border-ink bg-white text-ink shadow-card' : 'text-slate-600 hover:text-ink'}`}
+          >
+            {glyph}
+          </Link>
+        )
+      })}
+    </nav>
+  )
+
   return (
     // With a SidePanel the panel owns the gap (as a margin), so it can close the gap
     // when collapsed; no flex gap here then.
@@ -81,6 +128,7 @@ export function SidebarPanelLayout({
           minWidth={160}
           maxWidth={360}
           panelClassName="border border-neutral-300 bg-surface p-4 shadow-card"
+          rail={rail}
         >
           {nav}
         </SidePanel>

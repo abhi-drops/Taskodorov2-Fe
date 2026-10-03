@@ -45,8 +45,9 @@ against the wireframes `docs/design-references/web/diary.png`, `diary_sidebar.pn
     - shown or hidden with **☰ buttons in the Diary toolbar** (`DiaryHeader`): the Apps
       list's toggle at the far left (both Diary pages), the day details' at the far
       right (day page only). The toggles are ink-filled while their sidebar is open;
-    - collapsing removes a sidebar completely, including the gap beside it, so the board
-      takes the full width with no stray borders;
+    - collapsing the **day details** removes it completely, including the gap beside it,
+      so the board takes the full width with no stray borders. Collapsing the **Apps
+      list** leaves a slim icon rail at the content's height (see `feat-apps.md`);
     - resizable by dragging their inner edge, with width and collapsed state remembered
       (keys `APPS_PANEL_KEY` = `apps`, `DIARY_DETAILS_PANEL_KEY` = `diary-day-details`);
     - capped to the screen height with their own scrollbar, so a long day's change list

@@ -48,6 +48,15 @@ edge, and it is hidden or shown by a ☰ `SidebarToggle` placed in the app's own
 `APPS_PANEL_KEY` (`appsList.ts`). A new app that uses this layout should put the same
 toggle in its toolbar.
 
+**Collapsed, the Apps list becomes a slim icon rail** (`SidePanel`'s `rail` prop,
+built in `SidebarPanelLayout`) rather than disappearing:
+- one icon per app, so you can still switch apps;
+- the active app in the same ink-bordered white chip it has in the full list;
+- disabled apps dimmed;
+- tooltips and accessible names on each icon;
+- items without an icon show their first letter;
+- the rail stretches to the active app's panel height, so they line up.
+
 Both use the shared `DiaryShell`. Desktop renders inside `AppsDesktopLayout`, which
 gained a `wide` prop for the day view's replay board. Both routes are lazy-loaded. Full
 detail: `feat-diary.md`.

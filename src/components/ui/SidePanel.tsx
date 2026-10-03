@@ -44,6 +44,14 @@ interface SidePanelProps {
    * screen offset. The default suits a short panel right under the top nav.
    */
   maxHeight?: number | string
+  /**
+   * Optional slim strip shown **instead of disappearing** when collapsed (e.g. the Apps
+   * list's icon rail). It stretches to the height of the content beside it, so the two
+   * line up. Without it, collapsing removes the panel entirely.
+   */
+  rail?: ReactNode
+  /** Width of the `rail`, in px. */
+  railWidth?: number
   children: ReactNode
 }
 
@@ -62,6 +70,8 @@ export function SidePanel({
   panelClassName = '',
   openRequest = null,
   maxHeight = 'calc(100svh - 8rem)',
+  rail,
+  railWidth = 52,
   children,
 }: SidePanelProps) {
   const clamp = (w: number) => Math.min(maxWidth, Math.max(minWidth, Math.round(w)))
@@ -124,61 +134,97 @@ export function SidePanel({
     updatePanelLayout(storageKey, { width: clamp(width + direction * grow * KEY_STEP) })
   }
 
-  const animate = dragging ? '' : 'transition-[width,margin] duration-200 ease-out'
+  // One motion language with the page transitions: same decelerating curve, 250ms.
+  // Off while dragging (resizing tracks the pointer exactly) and under reduced motion.
+  const EASE = 'ease-[cubic-bezier(0.2,0,0,1)] duration-[250ms] motion-reduce:transition-none'
+  const animate = dragging ? '' : `transition-[width,margin] ${EASE}`
+  const fade = `transition-opacity ${EASE}`
+  const showRail = collapsed && !!rail
+  // Collapsed without a rail: no gap at all. With a rail: a half gap beside the strip.
+  const margin = !collapsed ? gap : rail ? gap / 2 : 0
+  const clipWidth = !collapsed ? width + SHADOW_ROOM : rail ? railWidth + SHADOW_ROOM : 0
 
   return (
     <div
-      className={`sticky top-6 shrink-0 self-start ${animate}`}
+      // Always stretched to the height of the content beside it, so collapsing never
+      // changes the sidebar's height (no snap): the rail fills that height, and the full
+      // panel sits at its top (sticky, capped by `maxHeight`).
+      className={`relative shrink-0 self-stretch ${animate}`}
       // The gap belongs to the panel so it closes along with it.
-      style={side === 'left' ? { marginRight: collapsed ? 0 : gap } : { marginLeft: collapsed ? 0 : gap }}
+      style={side === 'left' ? { marginRight: margin } : { marginLeft: margin }}
     >
-      {/* Clip box: exactly 0 wide when collapsed (no padding), so nothing peeks out. */}
+      {/* Clip box: its width animates; exactly 0 wide when collapsed without a rail (no
+          padding), so nothing peeks out. `overflow-clip`, not `overflow-hidden`: hidden
+          would make this a scroll container and silently break the panel's `sticky`. */}
       <div
         id={panelId}
-        inert={collapsed}
-        className={`flex overflow-hidden ${side === 'right' ? 'justify-end' : ''} ${animate}`}
+        className={`flex h-full overflow-clip ${side === 'right' ? 'justify-end' : ''} ${animate}`}
         style={{
-          width: collapsed ? 0 : width + SHADOW_ROOM,
-          paddingRight: collapsed ? 0 : SHADOW_ROOM,
+          width: clipWidth,
+          paddingRight: collapsed && !rail ? 0 : SHADOW_ROOM,
           paddingBottom: SHADOW_ROOM,
         }}
       >
-        <div
-          className={`shrink-0 overflow-y-auto overscroll-contain ${panelClassName}`}
-          style={{ width, maxHeight }}
-        >
-          {children}
+        {/* Both layers stay mounted and cross-fade while the width animates: the full
+            panel fades out as the rail fades in (and the reverse on expand), instead of
+            swapping content on the first frame. */}
+        <div className="relative h-full shrink-0" style={{ width }}>
+          {/* Sticky wrapper (not itself scrolling) holds the panel and its resize handle,
+              so the handle is exactly the panel's height, not the stretched sidebar's,
+              and fades with it. */}
+          <div
+            inert={collapsed}
+            className={`sticky top-6 ${fade} ${collapsed ? 'opacity-0' : 'opacity-100'}`}
+            style={{ width }}
+          >
+            <div className={`overflow-y-auto overscroll-contain ${panelClassName}`} style={{ maxHeight }}>
+              {children}
+            </div>
+            {!collapsed && (
+              <div
+                role="separator"
+                aria-orientation="vertical"
+                aria-label={`Resize ${label} sidebar`}
+                aria-controls={panelId}
+                aria-valuenow={width}
+                aria-valuemin={minWidth}
+                aria-valuemax={maxWidth}
+                tabIndex={0}
+                onPointerDown={onPointerDown}
+                onPointerMove={onPointerMove}
+                onPointerUp={endDrag}
+                onPointerCancel={endDrag}
+                onKeyDown={onHandleKeyDown}
+                onDoubleClick={() => updatePanelLayout(storageKey, { width: clamp(defaultWidth) })}
+                title="Drag to resize · double-click to reset"
+                // Must stay inside the clip box: a left panel's clip has 4px of shadow
+                // room past its edge (-right-1 fits), a right panel's has none (left-0).
+                className={`group absolute inset-y-0 z-10 flex w-3 cursor-col-resize touch-none justify-center focus-visible:outline-none ${
+                  side === 'left' ? '-right-1' : 'left-0'
+                }`}
+              >
+                <span
+                  className={`h-full w-[3px] transition-colors group-hover:bg-ink/40 group-focus-visible:bg-accent-purple ${
+                    dragging ? 'bg-ink/60' : 'bg-transparent'
+                  }`}
+                />
+              </div>
+            )}
+          </div>
+          {rail && (
+            <div
+              inert={!showRail}
+              aria-hidden={!showRail}
+              className={`absolute inset-y-0 ${side === 'left' ? 'left-0' : 'right-0'} ${fade} ${
+                showRail ? 'opacity-100' : 'pointer-events-none opacity-0'
+              }`}
+              style={{ width: railWidth }}
+            >
+              {rail}
+            </div>
+          )}
         </div>
       </div>
-
-      {!collapsed && (
-        <div
-          role="separator"
-          aria-orientation="vertical"
-          aria-label={`Resize ${label} sidebar`}
-          aria-controls={panelId}
-          aria-valuenow={width}
-          aria-valuemin={minWidth}
-          aria-valuemax={maxWidth}
-          tabIndex={0}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={endDrag}
-          onPointerCancel={endDrag}
-          onKeyDown={onHandleKeyDown}
-          onDoubleClick={() => updatePanelLayout(storageKey, { width: clamp(defaultWidth) })}
-          title="Drag to resize · double-click to reset"
-          className={`group absolute bottom-1 top-0 z-10 flex w-3 cursor-col-resize touch-none justify-center focus-visible:outline-none ${
-            side === 'left' ? '-right-2' : '-left-2'
-          }`}
-        >
-          <span
-            className={`h-full w-[3px] transition-colors group-hover:bg-ink/40 group-focus-visible:bg-accent-purple ${
-              dragging ? 'bg-ink/60' : 'bg-transparent'
-            }`}
-          />
-        </div>
-      )}
     </div>
   )
 }
