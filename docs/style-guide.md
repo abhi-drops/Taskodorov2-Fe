@@ -181,6 +181,23 @@ renders its own `WorkspaceSwitcher` + search row inline as page content for that
 unchanged from before. If you add a new page that needs left/right header content on web,
 reuse this prop pair rather than inventing a page-local header row.
 
+### Motion
+
+Page transitions follow the same rules as the static design: **square edges, hard
+edges, hard offset shadows, no blur, no overshoot.**
+
+- A page entering on mobile is a paper "sheet" with a 3px `ink` edge plus the card
+  shadow.
+- Opening a note morphs the card itself into the editor's note card, so the motion is
+  built from the board's own shapes and colours rather than a new visual element.
+- Durations stay short (200–320 ms, ease-out) so motion feels polished but never slows
+  down everyday use.
+- Soft or round effects (feathered masks, blur, springy overshoot on page changes) were
+  tried and rejected as off-style. The springy overshoot is still fine on small
+  elements like the floating "+".
+
+Full system: `feat-navigation.md` ("Page transitions").
+
 ## Shared primitives (`src/components/ui/`)
 
 All follow the same shape: extend the matching native HTML element's attributes
@@ -200,7 +217,7 @@ system" above).
 | `ProgressBar.tsx` | Simple track + fill, optional `%` label. No longer used on the board (removed from `GroupColumn` in 2.7 — the reference design never shows it on the default view); still a generic primitive, may be reused elsewhere. |
 | `BasicNoteCard.tsx`, `CounterNoteCard.tsx`, `ListNoteCard.tsx` | The three note-type cards rendered by `GroupColumn`. Share the `shadow-card`/`text-black`/`SWATCH_CLASSES[color]` treatment (see above); `CounterNoteCard`'s `+`/`−` row order matters — `+` left, `−` right, matching the reference (easy to get backwards). `ListNoteCard` has its own two-piece shape, see above. All three (plus `SearchPage`'s reuse of them) render `NoteStatusStrip` as their last child — see `docs/feat-notes.md`'s "Statuses" section for the full behavior; the one style-system point worth repeating here is that its dark `bg-ink` background is a deliberate departure from every other note-card-adjacent chrome, which uses the note's own swatch color, not a fixed dark token. |
 | `TopNav.tsx` (web) / `BottomNav.tsx` (mobile) | Home (`sticky-yellow`) / Settings (`nav-dark`, yellow gear) / Apps (`sticky-blue`, grid) on web, labelled; Home / Apps / Settings on mobile, icon-only with `aria-label`s — order follows each platform's wireframe. `TopNav` has the backdrop card treatment described above; `BottomNav` doesn't. |
-| `FloatingAddButton.tsx` | Mobile quick-add: a 34×100px bell-curve bump fixed flush to the right screen edge, drawn as an inline SVG using the exact path from the mobile Penpot export (`newdesktoplayloutMobile.html`), translated to the origin. The export closes the shape outside the viewBox, which is why there is no outline along the screen edge. `accent-purple` fill (the export uses a lighter `#d47cff`, but the app's existing purple was kept deliberately); the export's inner stroke is reproduced as a 10-wide `stroke-ink` clipped to the shape, so 5px is visible. It has a white bold `font-display` "+" glyph (not `pluse.png`; white rather than the export's dark glyph, for contrast on the darker purple) and `shadow-card` done as a CSS `drop-shadow`, so it follows the curve. Generic (`to`, `tiltToMove`, `tiltMaxFraction` props); `HomePage` decides the target and visibility. See `feat-navigation.md`. |
+| `FloatingAddButton.tsx` | Mobile quick-add: a 34×100px bell-curve bump fixed flush to the right screen edge, drawn as an inline SVG using the exact path from the mobile Penpot export (`newdesktoplayloutMobile.html`), translated to the origin. The export closes the shape outside the viewBox, which is why there is no outline along the screen edge. `accent-purple` fill (the export uses a lighter `#d47cff`, but the app's existing purple was kept deliberately); the export's inner stroke is reproduced as a 10-wide `stroke-ink` clipped to the shape, so 5px is visible. It has a white bold `font-display` "+" glyph (not `pluse.png`; white rather than the export's dark glyph, for contrast on the darker purple) and `shadow-card` done as a CSS `drop-shadow`, so it follows the curve. Generic (`to`, `position` and `dynamic` props; vertical position is set with `top`, never a transform); `HomePage` decides the target and visibility. See `feat-navigation.md`. |
 | `Icon.tsx` | Thin `<img>` wrapper used by everything above. |
 | `ExitToast.tsx` | Small fixed-position "Press back again to exit" pill, shown above `BottomNav` when the Android hardware back button/edge-swipe is pressed on Home with no more history — see `docs/feat-navigation.md`. Native-only in practice (driven by `useAndroidBackButton`), but the component itself has no platform branching of its own. |
 

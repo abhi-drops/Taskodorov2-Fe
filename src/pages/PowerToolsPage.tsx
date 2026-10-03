@@ -9,9 +9,9 @@ import { usePlatform } from '../lib/platform/usePlatform'
 import { Button } from '../components/ui/Button'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { useGroupForm } from '../common_logics/useGroupForm'
-import { useTiltAddButtonSetting } from '../common_logics/useTiltAddButtonSetting'
+import { useAddButtonSettings } from '../common_logics/useAddButtonSettings'
 import { Tabs } from '../components/ui/Tabs'
-import { TILT_TRAVEL_OPTIONS, type TiltTravelSixths } from '../lib/storage/preferences'
+import { ADD_BUTTON_POSITIONS, type AddButtonPosition } from '../lib/storage/preferences'
 import { listGroups, deleteGroup } from '../lib/db/groups'
 import { resetToDefault } from '../lib/db/reset'
 import type { Group } from '../types/group'
@@ -34,12 +34,11 @@ function SectionHeading({ children }: { children: string }) {
   return <h2 className="text-sm font-medium text-slate-600">{children}</h2>
 }
 
-/** 2/6, 3/6, 4/6 of the screen height — see `useTiltSlide`. */
-const TILT_TRAVEL_LABELS: Record<TiltTravelSixths, string> = { 2: 'Short', 3: 'Medium', 4: 'Long' }
+const ADD_BUTTON_POSITION_LABELS: Record<AddButtonPosition, string> = { high: 'High', medium: 'Medium', low: 'Low' }
 
-/** Mobile-only: web has no floating "+" to tilt. */
+/** Mobile-only: web has no floating "+". */
 function BoardSection() {
-  const { enabled, setEnabled, travel, setTravel } = useTiltAddButtonSetting()
+  const { dynamic: enabled, setDynamic: setEnabled, position, setPosition } = useAddButtonSettings()
 
   return (
     <div className="flex flex-col gap-3">
@@ -57,13 +56,13 @@ function BoardSection() {
           {enabled === null ? '' : enabled ? 'On' : 'Off'}
         </span>
       </button>
-      {enabled && travel !== null && (
+      {position !== null && (
         <div className={`${CHIP} flex-col items-stretch gap-2`}>
-          <span className="font-medium text-ink">Slide distance</span>
+          <span className="font-medium text-ink">Add Button Position</span>
           <Tabs
-            options={TILT_TRAVEL_OPTIONS.map((sixths) => ({ label: TILT_TRAVEL_LABELS[sixths], value: String(sixths) }))}
-            value={String(travel)}
-            onChange={(value) => setTravel(Number(value) as TiltTravelSixths)}
+            options={ADD_BUTTON_POSITIONS.map((p) => ({ label: ADD_BUTTON_POSITION_LABELS[p], value: p }))}
+            value={position}
+            onChange={(value) => setPosition(value as AddButtonPosition)}
           />
         </div>
       )}

@@ -38,7 +38,11 @@ export async function clearActiveWorkspaceId(): Promise<void> {
 
 const TILT_ADD_BUTTON_KEY = 'taskodoro.ui.tiltAddButton'
 
-/** Mobile "tilt to move the + button" — on unless explicitly turned off. */
+/**
+ * Mobile "Dynamic Add Button" (idle shrink + tilt to wake/tuck the floating "+"), on
+ * unless explicitly turned off. The key name predates the slide being removed and is
+ * kept so existing choices carry over.
+ */
 export async function loadTiltAddButtonEnabled(): Promise<boolean> {
   const { value } = await Preferences.get({ key: TILT_ADD_BUTTON_KEY })
   return value !== 'off'
@@ -48,19 +52,20 @@ export async function saveTiltAddButtonEnabled(enabled: boolean): Promise<void> 
   await Preferences.set({ key: TILT_ADD_BUTTON_KEY, value: enabled ? 'on' : 'off' })
 }
 
-const TILT_ADD_BUTTON_TRAVEL_KEY = 'taskodoro.ui.tiltAddButtonTravel'
+const ADD_BUTTON_POSITION_KEY = 'taskodoro.ui.addButtonPosition'
 
-/** How far down the + button may slide, in sixths of the screen height. */
-export type TiltTravelSixths = 2 | 3 | 4
-export const TILT_TRAVEL_OPTIONS: TiltTravelSixths[] = [2, 3, 4]
-const DEFAULT_TILT_TRAVEL: TiltTravelSixths = 3
+/** Vertical spot of the mobile floating "+". */
+export type AddButtonPosition = 'high' | 'medium' | 'low'
+export const ADD_BUTTON_POSITIONS: AddButtonPosition[] = ['high', 'medium', 'low']
+const DEFAULT_ADD_BUTTON_POSITION: AddButtonPosition = 'medium'
 
-export async function loadTiltAddButtonTravel(): Promise<TiltTravelSixths> {
-  const { value } = await Preferences.get({ key: TILT_ADD_BUTTON_TRAVEL_KEY })
-  const parsed = Number(value)
-  return TILT_TRAVEL_OPTIONS.includes(parsed as TiltTravelSixths) ? (parsed as TiltTravelSixths) : DEFAULT_TILT_TRAVEL
+export async function loadAddButtonPosition(): Promise<AddButtonPosition> {
+  const { value } = await Preferences.get({ key: ADD_BUTTON_POSITION_KEY })
+  return ADD_BUTTON_POSITIONS.includes(value as AddButtonPosition)
+    ? (value as AddButtonPosition)
+    : DEFAULT_ADD_BUTTON_POSITION
 }
 
-export async function saveTiltAddButtonTravel(sixths: TiltTravelSixths): Promise<void> {
-  await Preferences.set({ key: TILT_ADD_BUTTON_TRAVEL_KEY, value: String(sixths) })
+export async function saveAddButtonPosition(position: AddButtonPosition): Promise<void> {
+  await Preferences.set({ key: ADD_BUTTON_POSITION_KEY, value: position })
 }

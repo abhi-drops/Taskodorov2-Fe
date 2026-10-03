@@ -5,7 +5,8 @@
   --color-sticky-coral: #ff7c8f;
   --color-sticky-blue: #96c3f7;
   --color-sticky-green: #c0ff91;
-  --color-accent-purple: #8b5cf6;  --color-nav-dark: #1e1e2a;
+  --color-accent-purple: #8b5cf6;
+  --color-nav-dark: #1e1e2a;
   --color-surface: #f4f5f7;
   --color-ink: #3c3c3c;
   --radius-card: 0px;
@@ -33,6 +34,208 @@ body {
 
 .animate-marquee {
   animation: marquee 20s linear infinite;
+}
+
+/* ---------------------------------------------------------------------------------
+   Page transitions (View Transitions API). `lib/motion/pageTransitions.ts` sets
+   `<html data-pt="kind">` before each animated navigation; these rules style that
+   kind. The vocabulary matches the board's look: square edges, a hard ink edge and
+   hard offset shadow on paper "sheets", no blur, no overshoot, and short durations so
+   it stays calm for everyday use. See docs/feat-navigation.md ("Page transitions").
+   --------------------------------------------------------------------------------- */
+:root {
+  --pt-ease: cubic-bezier(0.2, 0, 0, 1); /* decelerate: quick start, soft landing */
+  --pt-sheet: 280ms;
+  --pt-sheet-back: 240ms;
+  --pt-tab: 200ms;
+  --pt-morph: 320ms;
+}
+
+/* The browser blends the old and new page snapshots with `mix-blend-mode: plus-lighter`
+   by default. That is right for a pure crossfade, but it *adds* colours wherever two
+   opaque pages overlap, so a sliding sheet would wash out to white in the overlap. The
+   page-level (root) snapshots always blend normally here; the note-morph group keeps
+   the default, since there it is a true crossfade of one shape. */
+html[data-pt]::view-transition-old(root),
+html[data-pt]::view-transition-new(root) {
+  mix-blend-mode: normal;
+}
+
+/* none: instant (e.g. re-tapping the current tab). */
+html[data-pt='none']::view-transition-group(*),
+html[data-pt='none']::view-transition-old(*),
+html[data-pt='none']::view-transition-new(*) {
+  animation: none;
+}
+
+/* fade: desktop default. The old page fades quickly; the new one fades in while
+   rising 8px. */
+html[data-pt='fade']::view-transition-old(root) {
+  animation: pt-fade-out 120ms ease-out both;
+}
+html[data-pt='fade']::view-transition-new(root) {
+  animation: pt-fade-rise-in 200ms var(--pt-ease) both;
+}
+
+/* sheet-in (mobile, into the editor): the new page slides in from the right like a
+   sheet of paper laid on top, with a hard 3px ink edge plus the card shadow. The old
+   page recedes 20% left and dims slightly. */
+html[data-pt='sheet-in']::view-transition-old(root) {
+  animation: pt-recede var(--pt-sheet) var(--pt-ease) both;
+}
+html[data-pt='sheet-in']::view-transition-new(root) {
+  animation: pt-sheet-enter var(--pt-sheet) var(--pt-ease) both;
+  box-shadow:
+    -3px 0 0 0 var(--color-ink),
+    -6px 0 0 0 rgb(0 0 0 / 0.15);
+}
+
+/* sheet-out (mobile, back out of the editor): the reverse. The sheet, now the *old*
+   snapshot, sits on top and slides off to the right, and the page underneath returns
+   from the left. */
+html[data-pt='sheet-out']::view-transition-old(root) {
+  z-index: 1;
+  animation: pt-sheet-exit var(--pt-sheet-back) var(--pt-ease) both;
+  box-shadow:
+    -3px 0 0 0 var(--color-ink),
+    -6px 0 0 0 rgb(0 0 0 / 0.15);
+}
+html[data-pt='sheet-out']::view-transition-new(root) {
+  animation: pt-return var(--pt-sheet-back) var(--pt-ease) both;
+}
+
+/* slide-next / slide-prev (mobile, between bottom-nav tabs): a short 24px slide plus
+   fade in the direction of the tab, not a full-screen push. */
+html[data-pt='slide-next']::view-transition-old(root) {
+  animation: pt-slide-out-left var(--pt-tab) var(--pt-ease) both;
+}
+html[data-pt='slide-next']::view-transition-new(root) {
+  animation: pt-slide-in-right var(--pt-tab) var(--pt-ease) both;
+}
+html[data-pt='slide-prev']::view-transition-old(root) {
+  animation: pt-slide-out-right var(--pt-tab) var(--pt-ease) both;
+}
+html[data-pt='slide-prev']::view-transition-new(root) {
+  animation: pt-slide-in-left var(--pt-tab) var(--pt-ease) both;
+}
+
+/* note-open / note-close: the tapped card and the editor's note card share the name
+   `note-morph`. Rather than stretching screenshots of two very different cards (a
+   counter or list card into a title/description card looks broken), the morph is a
+   plain block: the group box itself is painted the note's sticky colour
+   (--pt-morph-color, set by pageTransitions.ts) with the hard card shadow, and it
+   animates from the card's box to the editor card's box. Both snapshots are shown at
+   their natural size, never scaled, and clipped to the block. The card's content fades
+   out in the first ~30% and the editor's content fades in over the last ~45%, so the
+   middle of the morph is a clean square-edged coloured shape. */
+html[data-pt='note-open']::view-transition-group(note-morph),
+html[data-pt='note-close']::view-transition-group(note-morph) {
+  animation-duration: var(--pt-morph);
+  animation-timing-function: var(--pt-ease);
+  background-color: var(--pt-morph-color, var(--color-sticky-yellow));
+  box-shadow: var(--shadow-card);
+}
+html[data-pt='note-open']::view-transition-image-pair(note-morph),
+html[data-pt='note-close']::view-transition-image-pair(note-morph) {
+  overflow: clip;
+}
+html[data-pt='note-open']::view-transition-old(note-morph),
+html[data-pt='note-open']::view-transition-new(note-morph),
+html[data-pt='note-close']::view-transition-old(note-morph),
+html[data-pt='note-close']::view-transition-new(note-morph) {
+  width: 100%;
+  height: 100%;
+  object-fit: none;
+  object-position: left top;
+}
+html[data-pt='note-open']::view-transition-old(note-morph),
+html[data-pt='note-close']::view-transition-old(note-morph) {
+  animation: pt-fade-out calc(var(--pt-morph) * 0.3) ease-out both;
+}
+html[data-pt='note-open']::view-transition-new(note-morph),
+html[data-pt='note-close']::view-transition-new(note-morph) {
+  animation: pt-morph-content-in var(--pt-morph) ease-out both;
+}
+html[data-pt='note-open']::view-transition-old(root),
+html[data-pt='note-open']::view-transition-new(root),
+html[data-pt='note-close']::view-transition-old(root),
+html[data-pt='note-close']::view-transition-new(root) {
+  animation-duration: 200ms;
+}
+
+@keyframes pt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes pt-morph-content-in {
+  0%,
+  55% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes pt-fade-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes pt-sheet-enter {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes pt-recede {
+  to {
+    transform: translateX(-20%);
+    filter: brightness(0.92);
+  }
+}
+@keyframes pt-sheet-exit {
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes pt-return {
+  from {
+    transform: translateX(-20%);
+    filter: brightness(0.92);
+  }
+}
+@keyframes pt-slide-out-left {
+  to {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+}
+@keyframes pt-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+@keyframes pt-slide-out-right {
+  to {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+@keyframes pt-slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
 }
 
 .bg-grid {

@@ -1,5 +1,5 @@
-import { useNavigate } from 'react-router'
 import { CheckCircle } from './CheckCircle'
+import { noteMorphName, useOpenNote } from '../../lib/motion/pageTransitions'
 import { NoteStatusStrip } from './NoteStatusStrip'
 import { SWATCH_CLASSES } from './swatchColors'
 import { updateNote } from '../../lib/db/notes'
@@ -15,7 +15,7 @@ interface BasicNoteCardProps {
 }
 
 export function BasicNoteCard({ note, group, onChange }: BasicNoteCardProps) {
-  const navigate = useNavigate()
+  const openNote = useOpenNote()
   const color = resolveNoteColor(note, group)
 
   async function toggleCompleted() {
@@ -27,7 +27,8 @@ export function BasicNoteCard({ note, group, onChange }: BasicNoteCardProps) {
 
   return (
     <div
-      onClick={() => navigate(`/notes/${note.id}/edit`)}
+      onClick={(e) => openNote(e, note.id, color)}
+      style={{ viewTransitionName: noteMorphName(note.id) }}
       className={`flex cursor-pointer flex-col rounded-card shadow-card ${SWATCH_CLASSES[color]}`}
     >
       <div className="flex items-start justify-between gap-2 p-4">

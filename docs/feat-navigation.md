@@ -47,102 +47,171 @@ add affordance per platform. Hidden during a note drag (so it can't cover
 `GroupDropTargets`) and when the workspace has no groups (the empty state points to
 Settings instead). Other pages have no quick-add on mobile anymore.
 
-#### Tilt to move
+Both of its settings live in Settings → Board (mobile only) and are read through
+`common_logics/useAddButtonSettings.ts`. `HomePage` doesn't render the button until
+they've loaded, so it never flashes at the wrong height.
 
-`FloatingAddButton`'s `tiltToMove` prop is driven by the stored preference
-(`common_logics/useTiltAddButtonSetting.ts`, key `taskodoro.ui.tiltAddButton`). It is on
-by default and toggled in Settings → Board, which only appears on mobile. The prop runs
-`lib/motion/useTiltSlide.ts`, which works like this:
+#### Position
 
-- **Sensor:** the web `deviceorientation` event's `beta` (front-back tilt). Capacitor's
-  Android WebView provides it without a permission prompt, and no plugin is used. The
-  reading is low-pass filtered (about 80 ms) to remove hand tremor.
-- **Neutral:** the angle the phone is held at when the board mounts becomes the
-  baseline. The baseline re-adjusts slowly (τ = 15 s) only while the phone is within 10°
-  of it. That way a new resting grip stops counting as tilt, but a deliberate tilt held
-  for a long time is not absorbed. The baseline is re-learned after the phone goes to
-  landscape or the app is backgrounded.
-- **Physics:**
-  - Tilts under 4° are ignored.
-  - Past that, acceleration is `3000px/s² × sin(tilt)`, with the tilt capped at 30°.
-  - Rolling drag always applies. Strong extra friction applies when the phone is back
-    inside the deadzone, so the button coasts to a stop and stays there; it does not
-    spring back.
-  - Top speed is 900 px/s.
-  - The ends of travel give a small damped bounce. The top end is the button's CSS
-    `top`; the bottom end is where the button's centre reaches the user-chosen
-    fraction of the viewport height — **2/6, 3/6 (default), or 4/6**, shown as **Short / Medium / Long**
-    in Settings → Board's "Slide distance" row (key `taskodoro.ui.tiltAddButtonTravel`, stored as the numerator;
-    unknown values fall back to 3). Passed as `FloatingAddButton`'s `tiltMaxFraction`.
-    Changing it while the button sits lower than the new limit clamps it up on the next
-    board mount.
-- **Direction:** positive `beta` delta (the bottom edge dips as the phone becomes more
-  upright) moves the button down.
-- **Runtime:**
-  - Position is written straight to `style.transform`, so React does not re-render each
-    frame.
-  - The rAF loop sleeps whenever the button is at rest and the phone is level.
-  - The offset is kept in a module variable, so it survives remounts (navigating away,
-    or hiding during a drag).
-  - It is disabled under `prefers-reduced-motion` and in landscape.
+The "Add Button Position" setting (`Tabs`: **High / Medium / Low**, key
+`taskodoro.ui.addButtonPosition`, unknown values fall back to `medium`) puts the
+button's centre at 30%, 50% (default) or 70% of the viewport height. It is applied as
+`top: calc(N% - 50px)` (the button is 100px tall), **not** with a `transform`. The idle
+shrink animates the CSS `scale` property, and CSS applies `scale` on top of `transform`,
+so a transform offset would be scaled too and the button would jump when it shrinks.
+That bug was hit once with the old slide.
 
-- **Idle shrink:**
-  - After 8 s without movement, the button springs down to 60% size. The spring is
-    anchored at the screen edge (`transform-origin: 100% 50%`), so it tucks in rather
-    than floating.
-  - It springs back to full size as soon as it slides again (speed over 20 px/s), or
-    when the phone is rolled **left** more than 12° past the grip baseline.
-    `deviceorientation`'s `gamma` gets the same smoothing and baseline treatment as
-    `beta`, and negative `gamma` means the left edge is down.
-  - Either of those restarts the 8 s countdown.
-  - Size uses the individual CSS `scale` property, and position uses the individual
-    `translate` property, not `transform`. That way a CSS transition can animate size
-    while position is still written every frame.
-  - **Gotcha (already hit once):** CSS composes these as
-    `translate · rotate · scale · transform`. An offset inside `transform` is
-    multiplied by `scale`, so shrinking to 60% also pulled the button's slide position
-    to 60% and it jumped up. `translate` sits outside `scale`, so keep position there.
-    Both properties need Chromium 104+. On older WebViews tilt is disabled entirely,
-    which is checked with `CSS.supports`.
-  - The easing is a real underdamped spring (ζ 0.45, 650 ms, about 20% overshoot)
-    sampled into a CSS `linear()` curve. Older WebViews without `linear()` fall back to
-    an overshooting cubic-bézier.
-  - **Manual tuck (roll right):**
-    - Rolling the phone's right edge down more than 12° past the grip baseline
-      (positive `gamma` delta) shrinks the button immediately.
-    - This only happens while it's full size and not sliding. A vertical speed under
-      60 px/s counts as still, so small drift is ignored.
-    - After a tuck, **every** wake trigger (sliding and roll-left) is ignored for 1.7 s.
-      Afterwards the normal rules apply again.
-    - The tuck is edge-triggered: the roll has to relax back under 6° before another
-      tuck can fire. So a phone that happens to be held rolled right doesn't re-tuck
-      the instant it wakes.
-    - It shares the shrink path, including the light haptic, with the idle shrink. An
-      idle timer that was already pending is a no-op if the button is already small.
-  - The idle timer is one self-re-arming `setTimeout`, not a timer reset every frame.
-  - The button is still tappable while small.
-  - When the tilt setting is off, the button never shrinks, because nothing could wake
-    it again.
+#### Dynamic Add Button
 
-- **Haptics** (`@capacitor/haptics`, wrapped by `lib/platform/haptics.ts`: native-only,
-  fire-and-forget, errors swallowed):
-  - Tapping the button: medium impact, set with `data-haptic="medium"`. It comes from
-    the app-wide tap haptics below, so it is always on, even when tilt is off.
-  - Shrinking to idle: light impact. Growing back: medium impact.
-  - Sliding itself has **no** haptic. Per-distance ticks were tried and removed as too
-    busy.
-  - Arriving at the topmost or bottommost point gives one thud, however gently it
-    arrives: heavy above 500 px/s, medium below that.
-    - It rearms only after the button moves 12 px away from that end, so a
-      bounce-and-settle, or holding the tilt against the end, is a single thud.
-    - If the button is already at an end when the board mounts, that end counts as
-      reached, so pushing further into it doesn't buzz.
-  - The plugin brings the `VIBRATE` permission through its own manifest merge, so no
-    manual `AndroidManifest.xml` change is needed. It does need `npx cap sync`, which
-    `npm run android` already runs.
+`FloatingAddButton`'s `dynamic` prop is driven by the stored preference (key
+`taskodoro.ui.tiltAddButton`; the key name predates the rename and is kept so existing
+choices carry over). It is on by default and toggled by the "Dynamic Add Button" switch.
+The prop runs `lib/motion/useTiltShrink.ts`.
 
-All tuning constants are at the top of `useTiltSlide.ts`. This can only be tested on a
+**The button never moves; only its size changes.** An earlier version slid the button
+up and down the screen with the phone's front-back tilt, with physics, a Short / Medium
+/ Long travel setting, and end-of-travel haptics. It was removed on 2026-10-02 as too
+much motion. That code is in git history (`useTiltSlide.ts`, last at `e1d9832`).
+
+- **Sensor:** the web `deviceorientation` event's `gamma` (left-right roll) and `beta`
+  (front-back tilt). Capacitor's Android WebView provides it without a permission
+  prompt, and no plugin is used. Chromium feeds it from Android's fused rotation sensor
+  (gyroscope + accelerometer). Each reading is low-pass filtered (about 80 ms) to remove
+  hand tremor.
+- **Neutral:** the angles the phone is held at when the board mounts become per-axis
+  baselines. Each re-adjusts slowly (τ = 15 s) only while the phone stays within 10° of
+  it, so a new resting grip stops counting as a tilt but a deliberate tilt is never
+  absorbed. They are re-learned after landscape or backgrounding.
+- **Idle shrink:** after 8 s with nothing happening, the button springs down to 60%
+  size, anchored at the screen edge (`transform-origin: 100% 50%`) so it tucks in
+  rather than floating.
+- **Wake (roll left, or tilt down):** either of these springs it back to full size and
+  restarts the 8 s countdown:
+  - rolling the left edge down more than 12° past the baseline (negative `gamma`
+    delta);
+  - tilting the bottom edge down more than 12°, so the phone is more upright (positive
+    `beta` delta). This is the same "down" direction the old slide used.
+- **Tuck (roll right):**
+  - Rolling the right edge down more than 12° while full size shrinks it immediately.
+  - Then **every** wake trigger is ignored for 1.7 s.
+  - It is edge-triggered: the roll has to relax back under 6° before another tuck can
+    fire, so a phone held rolled right doesn't re-tuck the instant it wakes.
+  - It shares the shrink path, including the light haptic, with the idle shrink. An
+    idle timer that is already pending does nothing if the button is already small.
+- **Spring:** size uses the individual CSS `scale` property with a CSS transition. The
+  easing is a real underdamped spring (ζ 0.45, 650 ms, about 20% overshoot) sampled into
+  a CSS `linear()` curve, with an overshooting cubic-bézier fallback for WebViews
+  without `linear()`.
+- **Off switches:** it is disabled when the setting is off, under
+  `prefers-reduced-motion`, in landscape, and on WebViews without the `scale` property
+  (Chromium < 104, checked with `CSS.supports`). In all of these the button simply stays
+  full size. With the setting off it never shrinks, because nothing could wake it.
+- The idle timer is one self-re-arming `setTimeout`. The button is still tappable while
+  small.
+- **Haptics** (`@capacitor/haptics`, through `lib/platform/haptics.ts`, which is
+  native-only, fire-and-forget, and swallows errors):
+  - Tapping the button: medium impact, set with `data-haptic="medium"` and handled by
+    the app-wide tap haptics below. It works even when the setting is off.
+  - Shrinking (idle or tuck): light impact. Growing back: medium impact.
+  - The plugin brings the `VIBRATE` permission through its own manifest merge; it needs
+    `npx cap sync`, which `npm run android` already runs.
+
+All tuning constants are at the top of `useTiltShrink.ts`. This can only be tested on a
 real device; desktop browsers do not fire `deviceorientation` with real data.
+
+## Page transitions
+
+One visual vocabulary, chosen by **kind of navigation**, built to match the board's
+neo-brutalist look (`style-guide.md`): square edges, a hard ink edge and hard offset
+shadow on paper "sheets", no blur, no overshoot. Durations are 200–320 ms so it stays
+calm for everyday use. Code: `lib/motion/pageTransitions.ts`; CSS: `index.css` under
+`html[data-pt=…]`.
+
+| Navigation | Mobile | Desktop |
+|---|---|---|
+| Open a note from its card | `note-open`: the card **morphs** into the editor's note card | same |
+| Leave that note (back, nav tab, …) | `note-close`: morphs back into its card | same |
+| Into the editor otherwise ("+" buttons) | `sheet-in`: a paper sheet slides in from the right with a 3px ink edge; the board recedes 20% and dims | `fade` |
+| Out of the editor otherwise (incl. after delete) | `sheet-out`: the sheet slides back off to the right | `fade` |
+| Between bottom-nav tabs | `slide-next` / `slide-prev`: a 24px slide plus fade in tab order (Home → Apps → Settings) | `fade` (8px rise plus fade) |
+| Search (board's or Diary's search icon), and back | `fade` | `fade` |
+| Same page (re-tapping the current tab) | `none` (instant) | same |
+| Anything else that animates | `fade` | `fade` |
+
+This replaced a feathered circle-reveal (2026-10-02), which was soft and round against
+an otherwise hard-edged UI and was removed as not fitting the aesthetic.
+
+### How it works
+
+- **Opt-in per navigation** with React Router's own `viewTransition`: `<Link
+  viewTransition>`/`<NavLink viewTransition>` (`BottomNav`, `TopNav`, the floating "+",
+  `GroupColumn`'s "+", the search icons on `HomePage` and `DiaryPage`) or `navigate(to, { viewTransition: true })` (note cards via
+  `useOpenNote`, the editor's delete).
+- **Back animates in reverse for free.** React Router replays a view transition on
+  POP (back/forward) to any page that has had an animated forward navigation
+  (`appliedViewTransitions`, persisted in sessionStorage). So Android back
+  (`useAndroidBackButton` → `history.back()`) and browser back get the reverse
+  animation, with no history interception. The kind is recomputed from the actual
+  from→to paths, so e.g. back from Settings to Home is `slide-prev`.
+- **Choosing the kind:** `installPageTransitions(router)` (called once in
+  `routes.tsx`) subscribes to the router. On each real location change (a new
+  `location.key`) it runs `pageTransitionKind(previousPath, nextPath)` and sets
+  `<html data-pt="kind">`. React Router starts the view transition in a later
+  effect, so the attribute is always in place before the browser snapshots.
+- **Ready gate:** the board (`useBoard`) and the editor (`useNoteForm`) load from SQLite
+  *after* mounting, so the browser's "after" snapshot would capture an empty board or
+  "Loading…", and the morph would have no target.
+  - `installPageTransitions` wraps `document.startViewTransition` so the update
+    callback also awaits the destination page's readiness, capped at 500 ms (a cold
+    first SQLite read can take a few hundred ms).
+  - Pages opt in with `useTransitionReady(isLoaded)`: `HomePage` passes `board.loaded`,
+    `NoteEditorPage` passes `status !== 'loading'`.
+  - A page with async content that should be captured loaded must call it too.
+- **Note morph:** the tapped card and the editor's note card share
+  `view-transition-name: note-morph`.
+  - `useOpenNote` names the clicked card *before* navigating, since the "before"
+    snapshot is taken next.
+  - `noteMorphName(id)` names the editor card, and the board's card again on the way
+    back, at render.
+  - Only that one note is ever named. `useOpenNote` and any unrelated navigation call
+    `clearNoteMorph()`, so the name can't leak into a tab slide.
+  - Delete calls `clearNoteMorph()` explicitly, because the card it would morph back
+    into is gone.
+  - **Gotcha (caused the "doesn't morph the first time" bug):** two elements with the
+    same `view-transition-name` make the browser **abort the whole transition**.
+    - After closing note A, the board re-renders A's card with the name through React
+      (`noteMorphName`), not through `useOpenNote`'s hand-set marker.
+    - The first version of `clearNoteMorph()` only stripped hand-set names, so tapping
+      card B then left two `note-morph` elements and no animation.
+    - It now strips the name from every element carrying it
+      (`[data-vt-morph], [style*="note-morph"]`).
+  - **The whole card is the morph source, deliberately.** Morphing only each card's main
+    colour block (title area or title strip, leaving the status strip and list body to
+    fade) was tried on 2026-10-03. It looked noticeably worse and was reverted.
+  - **The morph is a plain coloured block, not stretched screenshots.**
+    - The `::view-transition-group(note-morph)` box is painted the note's sticky colour
+      (`--pt-morph-color`, set by `useOpenNote` from the card's resolved colour and kept
+      current by the editor via `setNoteMorphColor`), with `--shadow-card`. It animates
+      from the card's box to the editor card's box.
+    - Both snapshots are shown unscaled (`object-fit: none`) and clipped to the block.
+    - The card's content fades out over the first 30%, and the editor's content fades
+      in over the last 45%.
+    - Earlier, stretching a counter, list or status card's snapshot into the editor's
+      title/description card looked glitchy, because the contents don't match. A plain
+      block morphs identically for every note type.
+- **Persistent chrome stays put:** `BottomNav` (`bottom-nav`) and `TopNav` (`top-nav`)
+  have their own `view-transition-name`, so pages slide or fade *under* them instead of
+  dragging the nav along.
+- **Gotcha:** the browser blends the old and new page snapshots with
+  `mix-blend-mode: plus-lighter`, which adds colours wherever two opaque pages overlap,
+  so a sliding sheet would wash out to white. The root snapshots are forced to
+  `mix-blend-mode: normal`; keep that if adding new kinds.
+- **Fallback:** without View Transitions support (Chromium < 111) React Router
+  navigates normally. Under `prefers-reduced-motion` all transition animations are
+  disabled in CSS.
+- **Not covered:** navigations without `viewTransition` (Settings sidebar links, Apps
+  tiles, auth redirects) don't animate on the way forward. They can get a `fade` on
+  the way back, through React Router's POP replay.
 
 ## Tap haptics (mobile, app-wide)
 

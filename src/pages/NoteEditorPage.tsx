@@ -16,6 +16,7 @@ import { Button } from '../components/ui/Button'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { Icon } from '../components/ui/Icon'
 import { useNoteForm } from '../common_logics/useNoteForm'
+import { noteMorphName, setNoteMorphColor, useTransitionReady } from '../lib/motion/pageTransitions'
 import deleteIcon from '../assets/delete.png'
 import type { CounterPayload, ListPayload } from '../types/note'
 
@@ -47,6 +48,19 @@ export default function NoteEditorPage() {
   const descriptionRef = useAutoGrowHeight(form.status === 'loading' ? '' : form.description)
   const newItemRef = useAutoGrowHeight(newItemText)
   const newStatusRef = useAutoGrowHeight(newStatusText)
+  useTransitionReady(form.status !== 'loading')
+
+  // Keep the morph block's colour in sync with the note, so closing morphs back in the
+  // current colour even if it was changed while editing (pageTransitions.ts).
+  const morphColor =
+    form.status === 'loading'
+      ? null
+      : form.group
+        ? resolveNoteColor({ color: form.color, priority: form.priority }, form.group)
+        : (form.color ?? 'yellow')
+  useLayoutEffect(() => {
+    if (morphColor && noteMorphName(id)) setNoteMorphColor(morphColor)
+  }, [morphColor, id])
 
   if (form.status === 'loading') {
     return (
@@ -68,7 +82,11 @@ export default function NoteEditorPage() {
     <AppShell>
       <div className="mx-auto flex w-full max-w-sm flex-1 flex-col gap-6 lg:max-w-6xl lg:grid lg:grid-cols-[2fr_3fr] lg:items-center lg:gap-12">
         <div className="flex flex-col gap-6">
-          <div className={`flex flex-col gap-2 rounded-card p-5 shadow-lg ${colorClass}`}>
+          {/* Morph target when this note was opened from its card (pageTransitions.ts). */}
+          <div
+            className={`flex flex-col gap-2 rounded-card p-5 shadow-lg ${colorClass}`}
+            style={{ viewTransitionName: noteMorphName(id) }}
+          >
             <div className="flex items-start justify-between gap-2">
               <textarea
                 ref={titleRef}

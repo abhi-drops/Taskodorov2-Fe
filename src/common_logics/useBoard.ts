@@ -34,6 +34,8 @@ export function useBoard() {
   const { activeWorkspaceId } = useWorkspace()
   const [groups, setGroups] = useState<Group[]>([])
   const [notes, setNotes] = useState<Note[]>([])
+  /** True once the first load has finished — gates page transitions into the board. */
+  const [loaded, setLoaded] = useState(false)
   const [activeGroupId, setActiveGroupIdState] = useState<string | null>(() => lastActiveGroupId)
 
   function setActiveGroupId(value: string | null | ((current: string | null) => string | null)) {
@@ -52,6 +54,7 @@ export function useBoard() {
         setGroups([])
         setNotes([])
         setActiveGroupId(null)
+        setLoaded(true)
         return
       }
       const [activeGroups, activeNotes] = await Promise.all([
@@ -64,6 +67,7 @@ export function useBoard() {
       setActiveGroupId((current) =>
         current && activeGroups.some((g) => g.id === current) ? current : (activeGroups[0]?.id ?? null),
       )
+      setLoaded(true)
     }
 
     load()
@@ -157,6 +161,7 @@ export function useBoard() {
   return {
     groups,
     notes,
+    loaded,
     activeGroupId,
     setActiveGroupId,
     notesForGroup,

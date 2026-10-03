@@ -170,6 +170,7 @@ export function GroupColumn({ group, notes, onChange, showHeader = true }: Group
         <GroupChip group={group} />
         <Link
           to={`/notes/new?group=${group.id}`}
+          viewTransition
           className="flex h-8 w-8 items-center justify-center rounded-card border-[3px] border-ink bg-accent-purple shadow-card"
           aria-label={`Add note to ${group.name}`}
         >

@@ -8,6 +8,7 @@ import GroupSettingsPage from '../pages/GroupSettingsPage'
 import NoteEditorPage from '../pages/NoteEditorPage'
 import AppsPage from '../pages/AppsPage'
 import DiaryPage from '../pages/DiaryPage'
+import { installPageTransitions } from '../lib/motion/pageTransitions'
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -25,3 +26,5 @@ export const router = createBrowserRouter([
   { path: '/notes/:id/edit', element: <NoteEditorPage /> },
   { path: '*', element: <Navigate to="/" replace /> },
 ])
+
+installPageTransitions(router)

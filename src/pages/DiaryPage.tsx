@@ -42,7 +42,7 @@ export default function DiaryPage() {
     <AppShell
       headerStart={<WorkspaceSwitcher />}
       headerEnd={
-        <Link to="/search" aria-label="Search">
+        <Link to="/search" viewTransition aria-label="Search">
           <Icon src={searchIcon} alt="" size={20} />
         </Link>
       }

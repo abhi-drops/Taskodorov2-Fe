@@ -11,7 +11,8 @@ import { FloatingAddButton } from '../components/ui/FloatingAddButton'
 import { SWATCH_CLASSES } from '../components/ui/swatchColors'
 import { usePlatform } from '../lib/platform/usePlatform'
 import { useBoard } from '../common_logics/useBoard'
-import { useTiltAddButtonSetting } from '../common_logics/useTiltAddButtonSetting'
+import { useAddButtonSettings } from '../common_logics/useAddButtonSettings'
+import { useTransitionReady } from '../lib/motion/pageTransitions'
 import { useBoardDnd, groupChipDragId } from '../common_logics/useBoardDnd'
 import { resolveNoteColor } from '../lib/notes/resolveNoteColor'
 import searchIcon from '../assets/search.png'
@@ -37,7 +38,8 @@ function DragGhost({ item, groups }: { item: NonNullable<ReturnType<typeof useBo
 export default function HomePage() {
   const { isNative } = usePlatform()
   const board = useBoard()
-  const { enabled: tiltAddButton, travel: tiltTravel } = useTiltAddButtonSetting()
+  useTransitionReady(board.loaded)
+  const { dynamic: dynamicAddButton, position: addButtonPosition } = useAddButtonSettings()
   const { groups, activeGroupId, setActiveGroupId, notesForGroup, refresh } = board
   const { sensors, activeDragItem, handleDragStart, handleDragEnd, handleDragCancel } = useBoardDnd(board, {
     // Mobile only: after dragging a note into a different group via GroupDropTargets,
@@ -49,7 +51,7 @@ export default function HomePage() {
 
   const workspaceSwitcher = <WorkspaceSwitcher />
   const searchLink = (
-    <Link to="/search" aria-label="Search">
+    <Link to="/search" viewTransition aria-label="Search">
       <Icon src={searchIcon} alt="" size={20} />
     </Link>
   )
@@ -92,12 +94,13 @@ export default function HomePage() {
               )}
               {/* Mobile's quick-add — adds to the active tab's group, same target the
                   web per-column "+" uses. Hidden mid-drag so it can't overlap the drop
-                  targets. */}
-              {activeDragItem?.type !== 'note' && (
+                  targets, and until its settings load so it never flashes at the
+                  wrong height. */}
+              {activeDragItem?.type !== 'note' && addButtonPosition !== null && (
                 <FloatingAddButton
                   to={activeGroupId ? `/notes/new?group=${activeGroupId}` : '/notes/new'}
-                  tiltToMove={tiltAddButton === true && tiltTravel !== null}
-                  tiltMaxFraction={(tiltTravel ?? 3) / 6}
+                  position={addButtonPosition}
+                  dynamic={dynamicAddButton === true}
                 />
               )}
             </div>

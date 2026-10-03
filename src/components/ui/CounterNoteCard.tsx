@@ -1,5 +1,5 @@
-import { useNavigate } from 'react-router'
 import { CheckCircle } from './CheckCircle'
+import { noteMorphName, useOpenNote } from '../../lib/motion/pageTransitions'
 import { NoteStatusStrip } from './NoteStatusStrip'
 import { SWATCH_CLASSES } from './swatchColors'
 import { updateNote } from '../../lib/db/notes'
@@ -16,7 +16,7 @@ interface CounterNoteCardProps {
 }
 
 export function CounterNoteCard({ note, group, onChange }: CounterNoteCardProps) {
-  const navigate = useNavigate()
+  const openNote = useOpenNote()
   const color = resolveNoteColor(note, group)
   const payload = note.payload as CounterPayload
 
@@ -37,7 +37,8 @@ export function CounterNoteCard({ note, group, onChange }: CounterNoteCardProps)
 
   return (
     <div
-      onClick={() => navigate(`/notes/${note.id}/edit`)}
+      onClick={(e) => openNote(e, note.id, color)}
+      style={{ viewTransitionName: noteMorphName(note.id) }}
       className={`flex cursor-pointer flex-col rounded-card shadow-card ${SWATCH_CLASSES[color]}`}
     >
       <div className="flex flex-col gap-3 p-4">

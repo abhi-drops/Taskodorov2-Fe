@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router'
 import { getNoteById, createNote, updateNote, deleteNote, defaultPayload } from '../lib/db/notes'
 import { getGroupById } from '../lib/db/groups'
 import { applyOnCheckMove, isNoteFullyChecked, type OnCheckMoveResult } from '../lib/notes/onCheckMove'
+import { clearNoteMorph } from '../lib/motion/pageTransitions'
 import type { Group } from '../types/group'
 import type { CounterPayload, ListPayload, NotePayload, NoteStatus, NoteType, Priority } from '../types/note'
 import type { SwatchColor } from '../components/ui/swatchColors'
@@ -262,7 +263,10 @@ export function useNoteForm({ groupId, noteId }: UseNoteFormArgs) {
   async function remove() {
     if (!id) return
     await deleteNote(id)
-    navigate('/')
+    // The card it would morph back into no longer exists, so exit like any other
+    // editor close (sheet on mobile, fade on web) instead of a morph.
+    clearNoteMorph()
+    navigate('/', { viewTransition: true })
   }
 
   return {

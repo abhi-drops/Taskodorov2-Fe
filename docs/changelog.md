@@ -4,6 +4,154 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-03 — Fix: glitchy note-card morph; search gets a fade
+
+- **"Doesn't morph the first time" fixed:**
+  - After closing a note, its board card kept the shared `note-morph` name, because
+    React re-applied it at render. `clearNoteMorph()` only removed names it had set by
+    hand.
+  - Tapping a *different* card therefore produced two elements with the same
+    `view-transition-name`, and the browser aborts the transition when that happens.
+  - It now strips the name from every element that has it.
+- **Counter, list and status cards no longer glitch:**
+  - The morph used to stretch a screenshot of the card into the editor's
+    title/description card, and their contents don't match.
+  - It is now a plain block in the note's sticky colour with the hard card shadow,
+    growing from the card to the editor card. Content only fades (out early, in late),
+    never stretches, so all note types morph the same way.
+  - The colour follows edits made in the editor.
+- **Ready-gate cap** raised from 400 to 500 ms for cold first reads.
+- **Search** (board and Diary search icons) now opens with the fade, and fades back.
+
+See `feat-navigation.md` ("Page transitions").
+
+## 2026-10-03 — New page-transition system; circle reveal removed
+
+The feathered circle reveal was removed. It was soft and round against an otherwise
+hard-edged, paper-like UI. In its place is one transition vocabulary chosen by the kind
+of navigation, with back animating in reverse:
+
+- **Opening a note** (mobile and web): the tapped card morphs into the editor's note
+  card, and morphs back on the way out.
+- **"+" into the editor:**
+  - mobile: a paper sheet slides in from the right with a hard 3px ink edge, while the
+    board recedes and dims; it slides back off on the way out;
+  - web: a quick fade-rise.
+- **Bottom-nav tabs** (mobile): a short directional slide in tab order. **Top-nav**
+  (web): fade-rise.
+- **Back** (Android back, browser back, leaving the editor): the reverse of whatever
+  opened it, using React Router's POP replay of view transitions.
+- The bottom and top navs stay still while pages move under them. Re-tapping the
+  current tab doesn't animate. Reduced motion turns all of it off.
+
+How it's built:
+
+- New `lib/motion/pageTransitions.ts`:
+  - a router subscriber picks the kind from the from→to paths and sets
+    `<html data-pt>`;
+  - a ready gate holds the browser's "after" snapshot until the board or editor has
+    loaded its data from SQLite (capped at 400 ms), so transitions never capture an
+    empty page;
+  - `useOpenNote`/`noteMorphName` manage the single shared morph name.
+- CSS in `index.css`. It includes a forced `mix-blend-mode: normal` on page snapshots,
+  because the browser's default `plus-lighter` washes overlapping sliding pages out to
+  white.
+- `useBoard` gained a `loaded` flag.
+- `useCircleReveal.ts` and its CSS were deleted.
+
+See `feat-navigation.md` ("Page transitions").
+
+## 2026-10-02 — Circle reveal becomes a common tool: note cards and bottom nav too
+
+- **Common tool:** `useCircleRevealNavigate` became `lib/motion/useCircleReveal.ts`, a
+  shared hook with two helpers:
+  - `linkClick(to)` for Links and NavLinks;
+  - `revealTo(event, to)` for other click targets.
+
+  It takes an `origin` option: `'element'` grows from the element's centre, `'pointer'`
+  from the tap point. The mobile-only rule, reduced-motion and support checks, and a
+  "skip if already on that page" check are all inside the hook, so callers don't
+  repeat them.
+- **New uses (mobile):**
+  - opening a note from its card (basic, counter or list) grows from where you tapped;
+    this also applies to search results, which reuse the cards;
+  - the bottom nav's Home / Apps / Settings tabs grow from the tapped tab;
+  - re-tapping the tab you're already on doesn't animate.
+- Web is unchanged: everything there is a plain navigation.
+
+See `feat-navigation.md` ("Circle-reveal transition").
+
+## 2026-10-02 — Circle reveal: mobile only, with an ease-in-out
+
+- **Web excluded:** web's per-column "+" no longer uses the circle reveal; it is a
+  plain Link again (`GroupColumn.tsx` is back to how it was before the transition).
+  Only the mobile floating "+" has it.
+- **Easing:** the reveal now uses an ease-in-out (`cubic-bezier(0.65, 0, 0.35, 1)`)
+  over 600 ms, instead of a fast-start ease-out over 480 ms. It starts gently out of the
+  button and settles softly, so the easing is actually visible.
+
+See `feat-navigation.md` ("Circle-reveal transition").
+
+## 2026-10-02 — Feathered edge on the circle-reveal transition
+
+The circle that reveals the new-note page now has a soft, 64 px feathered edge instead
+of a hard cut. This needed a switch from `clip-path`, which can only cut hard edges, to
+a `radial-gradient` `mask-image`. The gradient's radius is animated through a registered
+`@property --vt-r` (`<length>`), so the browser can interpolate it. See
+`feat-navigation.md` ("Circle-reveal transition").
+
+## 2026-10-02 — Circle-reveal transition from the add-note buttons
+
+Tapping an add-note button now opens the new-note page through a circle that grows out
+of that button. This applies to web's per-column "+" and the mobile floating "+".
+
+- It is built on the View Transitions API: the board stays still while the new page is
+  revealed through an expanding `clip-path: circle()`, over 480 ms with an ease-out.
+- The origin is read from the button's live on-screen position at tap time, so it
+  follows the column, the High/Medium/Low setting, and whether the mobile button is
+  shrunk.
+- It falls back to normal navigation without View Transitions support, under
+  reduced motion, or for Ctrl/⌘-click.
+
+New file: `lib/motion/useCircleRevealNavigate.ts`; the CSS is in `index.css`. Also
+fixed a formatting slip in `index.css`: two `@theme` tokens had ended up on one line.
+See `feat-navigation.md` ("Circle-reveal transition").
+
+## 2026-10-02 — Floating "+" position setting, and tilt down wakes it
+
+- **Position:** a new "Add Button Position" setting in Settings → Board (High / Medium /
+  Low) puts the button's centre at 30%, 50% (default) or 70% of the screen height. It is
+  applied with `top`, not a transform, so the idle shrink can't make it jump.
+- **Tilt-down wake:** tilting the phone's bottom edge down more than 12° now also
+  springs a shrunk button back to full size, alongside tilt-left. The 1.7 s lock after
+  a tilt-right tuck still applies.
+- `useTiltAddButtonSetting` became `useAddButtonSettings` (both settings).
+
+See `feat-navigation.md` ("Position", "Dynamic Add Button").
+
+## 2026-10-02 — Floating "+" no longer slides up and down
+
+The tilt-to-slide movement was too much, so it's removed. The button now stays at its
+fixed spot, and only its size changes:
+
+- it still shrinks after 8 s idle;
+- it still wakes when you tilt the phone left;
+- it still tucks away when you tilt the phone right, with the 1.7 s wake lock.
+
+Removed with it:
+
+- the vertical-tilt (`beta`) reading;
+- the slide physics;
+- the haptic thud at the top and bottom;
+- the Short / Medium / Long "Slide distance" setting (its stored key is simply no
+  longer read).
+
+`lib/motion/useTiltSlide.ts` is replaced by the smaller `lib/motion/useTiltShrink.ts`,
+and `FloatingAddButton`'s `tiltToMove`/`tiltMaxFraction` props became one `dynamic`
+prop. The "Dynamic Add Button" on/off setting keeps its stored value. See
+`feat-navigation.md` ("Dynamic Add Button"); the old slide code is in git history at
+`e1d9832`.
+
 ## 2026-09-30 — Tilt right to tuck the floating "+" away
 
 Rolling the phone right (more than 12°), while the "+" is full size and not sliding,
