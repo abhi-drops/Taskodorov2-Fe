@@ -20,6 +20,8 @@ from each entry. See `CLAUDE.md` for the rule on keeping this updated.
   `instantiateTemplate` path as every template (`feat-offline-data-layer.md`).
 - **Refactor, no behaviour change:** Group Settings' dropdowns moved into the shared
   `GroupSettingsFields` component (`feat-groups.md`).
+- **Modals:** every `Modal` now has the chips' 3px ink border, and a `size="large"` option
+  used by the desktop New workspace dialog (`style-guide.md`, `Modal`).
 - The Android export and file-picker paths have not been run on a device yet.
 
 ## 2026-10-05 — Small editor and settings alignment fixes; pen icon

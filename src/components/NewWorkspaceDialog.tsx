@@ -42,12 +42,14 @@ export function NewWorkspaceDialog({ onClose, onCreated, initialTemplateId }: Ne
       onClose={onClose}
       title="New workspace"
       variant={isNative ? 'bottom-sheet' : 'center'}
+      size={isNative ? 'default' : 'large'}
       overlayClassName={DIALOG_OVERLAY}
       panelClassName={DIALOG_SHADOW}
     >
-      {/* p-1: room for the chips' offset shadows inside Modal's scroll box. */}
+      {/* p-1: room for the chips' offset shadows inside Modal's scroll box. On desktop the
+          form fills the large panel: the template grid scrolls, the buttons stay put. */}
       <form
-        className="flex flex-col gap-4 p-1 text-left"
+        className={`flex flex-col gap-4 p-1 text-left ${isNative ? '' : 'h-full'}`}
         onSubmit={(e) => {
           e.preventDefault()
           handleCreate()
@@ -64,14 +66,14 @@ export function NewWorkspaceDialog({ onClose, onCreated, initialTemplateId }: Ne
           />
         </label>
 
-        <div className="flex flex-col gap-1.5">
+        <div className={`flex flex-col gap-1.5 ${isNative ? '' : '-m-1 min-h-0 flex-1 overflow-y-auto p-1'}`}>
           <span id="new-workspace-template" className={FIELD_LABEL}>
             Start from
           </span>
           {status === 'loading' ? (
             <p className="text-sm text-slate-500">Loading…</p>
           ) : (
-            <div role="radiogroup" aria-labelledby="new-workspace-template" className="grid grid-cols-3 gap-2">
+            <div role="radiogroup" aria-labelledby="new-workspace-template" className={`grid grid-cols-3 ${isNative ? 'gap-2' : 'gap-4'}`}>
               {visibleTemplates.map((template) => {
                 const selected = template.id === selectedTemplateId
                 return (
@@ -81,12 +83,18 @@ export function NewWorkspaceDialog({ onClose, onCreated, initialTemplateId }: Ne
                     role="radio"
                     aria-checked={selected}
                     onClick={() => setSelectedTemplateId(template.id)}
-                    className={`flex min-w-0 flex-col gap-1.5 rounded-card border-[3px] border-ink p-1.5 text-left shadow-card transition-colors ${
+                    className={`flex min-w-0 flex-col rounded-card border-[3px] border-ink text-left shadow-card transition-colors ${
+                      isNative ? 'gap-1.5 p-1.5' : 'gap-3 p-3'
+                    } ${
                       selected ? 'bg-sticky-yellow' : 'bg-white hover:bg-slate-50'
                     }`}
                   >
-                    <TemplateThumb content={template.content} />
-                    <span className={`line-clamp-2 text-xs text-ink ${selected ? 'font-bold' : 'font-medium'}`}>
+                    <TemplateThumb content={template.content} size={isNative ? 'small' : 'large'} />
+                    <span
+                      className={`line-clamp-2 text-ink ${isNative ? 'text-xs' : 'text-base'} ${
+                        selected ? 'font-bold' : 'font-medium'
+                      }`}
+                    >
                       {template.name}
                     </span>
                   </button>
