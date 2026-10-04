@@ -1,6 +1,13 @@
 import type { SQLiteDBConnection } from '@capacitor-community/sqlite'
 import { withDb } from './sqlite'
-import { logEvent, logNoteCreated, trackedNoteFields, type StatusEventValue } from './eventLog'
+import {
+  logEvent,
+  logNoteCreated,
+  logStatusEdit,
+  logTitleEdit,
+  trackedNoteFields,
+  type StatusEventValue,
+} from './eventLog'
 import type { Note, NotePayload, NoteStatus, NoteType, Priority } from '../../types/note'
 
 /** The fields the Diary log tracks, read before a write so changes can be diffed. */
@@ -276,7 +283,9 @@ export function updateNote(
       const beforeValues = new Map(trackedNoteFields(before))
       for (const [field, value] of trackedNoteFields(after)) {
         if (beforeValues.get(field) !== value) {
-          await logEvent(db, { ...base, action: 'field_changed', field, newValue: value })
+          // Titles are saved while typing, so a run of saves is logged as one edit.
+          if (field === 'title') await logTitleEdit(db, base, value ?? '')
+          else await logEvent(db, { ...base, action: 'field_changed', field, newValue: value })
         }
       }
       // Statuses: log edits and deletions (additions carry their own `createdAt`).
@@ -290,7 +299,9 @@ export function updateNote(
             : updated.text !== old.text
               ? { op: 'edited', id: old.id, text: updated.text, previousText: old.text, createdAt: old.createdAt }
               : null
-          if (change) {
+          if (change?.op === 'edited') {
+            await logStatusEdit(db, base, change)
+          } else if (change) {
             await logEvent(db, { ...base, action: 'field_changed', field: 'status', newValue: JSON.stringify(change) })
           }
         }

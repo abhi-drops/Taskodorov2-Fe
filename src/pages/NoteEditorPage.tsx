@@ -91,7 +91,7 @@ export default function NoteEditorPage() {
               <textarea
                 ref={titleRef}
                 value={form.title}
-                onChange={(e) => form.setTitle(e.target.value)}
+                onChange={(e) => form.handleTitleChange(e.target.value)}
                 onBlur={form.handleTitleBlur}
                 placeholder="Note Title"
                 rows={1}
@@ -104,7 +104,7 @@ export default function NoteEditorPage() {
             <textarea
               ref={descriptionRef}
               value={form.description}
-              onChange={(e) => form.setDescription(e.target.value)}
+              onChange={(e) => form.handleDescriptionChange(e.target.value)}
               onBlur={form.handleDescriptionBlur}
               placeholder="sample description ..."
               rows={3}

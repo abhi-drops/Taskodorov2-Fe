@@ -4,6 +4,22 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-04 — Note editor saves title, description and status while typing
+
+Edits to a note's title, description and existing statuses now save after a 600 ms pause
+in typing, not only on blur. Blur still saves immediately, and leaving the editor flushes
+a pending save. A new note is still created on the first title blur. See `feat-notes.md`,
+"Debounced saves".
+
+So the Diary doesn't fill with half-typed text, title and status-text edits are coalesced
+when logged: edits to the same title or status within 3 minutes, with nothing else
+happening to the note in between, update one event instead of adding more. Typing back to
+the original removes it. See `feat-diary.md`, "Data: the activity log".
+
+Also in the editor: the add-status button is a borderless add-square icon, and on the
+single-column layout the Note Type / Color / Priority / Delete block is as wide as the
+note card.
+
 ## 2026-10-04 — One animated icon library replaces PNGs, inline SVGs and text glyphs
 
 Every icon now comes from `@animateicons/react` (Huge family). Before, icons were a mix of

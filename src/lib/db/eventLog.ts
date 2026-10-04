@@ -1,7 +1,9 @@
 import type { SQLiteDBConnection } from '@capacitor-community/sqlite'
 
 /**
- * Write side of the Diary's append-only activity log (`activity_events`). Every helper
+ * Write side of the Diary's activity log (`activity_events`). Append-only, with one
+ * exception: a run of title or status-text edits is kept as one event (see
+ * `logTitleEdit` / `logStatusEdit`). Every helper
  * takes an already-open `db`, so callers log **inside the same `withDb` call** as the
  * write they describe, and the log can't drift from the data. Read queries live in
  * `events.ts`; this file has no `sqlite.ts` import, so `sqlite.ts` can use it for
@@ -137,6 +139,89 @@ export async function logEvent(db: SQLiteDBConnection, e: ActivityEventInput): P
       e.createdAt,
     ],
   )
+}
+
+/**
+ * The note editor saves while typing (debounced), so one edit arrives as several saves.
+ * Title or status-text edits to the same note closer together than this, with no other
+ * event on that note in between, are kept as **one** event: the earlier one is updated
+ * in place (new value, new time) and no row is added.
+ */
+export const EDIT_COALESCE_MS = 3 * 60_000
+
+type EditBase = Pick<ActivityEventInput, 'workspaceId' | 'entityType' | 'entityId' | 'createdAt'>
+
+/**
+ * The note's latest event, if it is a `field` edit recent enough to be continued by an
+ * edit at `now`. Genesis values (logged with `created`) are never continued: they are
+ * the note's starting state, not an edit.
+ */
+async function continuableEdit(
+  db: SQLiteDBConnection,
+  entityId: string,
+  field: EventField,
+  now: number,
+): Promise<{ id: string; new_value: string | null } | null> {
+  const { values } = await db.query(
+    `SELECT id, action, field, new_value, created_at FROM activity_events
+     WHERE entity_id = ? ORDER BY created_at DESC, rowid DESC LIMIT 1`,
+    [entityId],
+  )
+  const last = values?.[0] as
+    | { id: string; action: string; field: string | null; new_value: string | null; created_at: number }
+    | undefined
+  if (!last || last.action !== 'field_changed' || last.field !== field) return null
+  if (now - last.created_at > EDIT_COALESCE_MS) return null
+  const genesis = await db.query(
+    `SELECT id FROM activity_events WHERE entity_id = ? AND action = 'created' AND created_at = ? LIMIT 1`,
+    [entityId, last.created_at],
+  )
+  if (genesis.values && genesis.values.length > 0) return null
+  return last
+}
+
+/** Logs a title change, continuing the previous title edit if it is recent (`EDIT_COALESCE_MS`). */
+export async function logTitleEdit(db: SQLiteDBConnection, base: EditBase, title: string): Promise<void> {
+  const last = await continuableEdit(db, base.entityId, 'title', base.createdAt)
+  if (!last) {
+    await logEvent(db, { ...base, action: 'field_changed', field: 'title', newValue: title })
+    return
+  }
+  // The title before this run of edits. Typing back to it means nothing changed, so
+  // the run's event is dropped instead of reading "renamed X to X".
+  const { values } = await db.query(
+    `SELECT new_value FROM activity_events WHERE entity_id = ? AND field = 'title' AND id != ?
+     ORDER BY created_at DESC, rowid DESC LIMIT 1`,
+    [base.entityId, last.id],
+  )
+  const original = values?.[0] as { new_value: string | null } | undefined
+  if (original && original.new_value === title) {
+    await db.run('DELETE FROM activity_events WHERE id = ?', [last.id])
+    return
+  }
+  await db.run('UPDATE activity_events SET new_value = ?, created_at = ? WHERE id = ?', [title, base.createdAt, last.id])
+}
+
+/**
+ * Logs a status text edit, continuing the previous edit of the **same status** if it is
+ * recent (`EDIT_COALESCE_MS`). The continued event keeps its original `previousText`.
+ */
+export async function logStatusEdit(db: SQLiteDBConnection, base: EditBase, change: StatusEventValue): Promise<void> {
+  const last = await continuableEdit(db, base.entityId, 'status', base.createdAt)
+  const previous = last ? (safeParse(last.new_value ?? '') as StatusEventValue | null) : null
+  if (!last || !previous || previous.op !== 'edited' || previous.id !== change.id) {
+    await logEvent(db, { ...base, action: 'field_changed', field: 'status', newValue: JSON.stringify(change) })
+    return
+  }
+  if (previous.previousText === change.text) {
+    await db.run('DELETE FROM activity_events WHERE id = ?', [last.id])
+    return
+  }
+  await db.run('UPDATE activity_events SET new_value = ?, created_at = ? WHERE id = ?', [
+    JSON.stringify({ ...previous, text: change.text }),
+    base.createdAt,
+    last.id,
+  ])
 }
 
 /** `created` plus the genesis value of every tracked field, all at `createdAt`. */

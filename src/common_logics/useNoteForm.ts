@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { getNoteById, createNote, updateNote, deleteNote, defaultPayload } from '../lib/db/notes'
 import { getGroupById } from '../lib/db/groups'
@@ -7,6 +7,11 @@ import { clearNoteMorph } from '../lib/motion/pageTransitions'
 import type { Group } from '../types/group'
 import type { CounterPayload, ListPayload, NotePayload, NoteStatus, NoteType, Priority } from '../types/note'
 import type { SwatchColor } from '../components/ui/swatchColors'
+
+/** How long typing in the title, description or a status must pause before it is saved. */
+const SAVE_DEBOUNCE_MS = 600
+
+type DebouncedField = 'title' | 'description' | 'statuses'
 
 const SWATCH_COLORS: SwatchColor[] = ['yellow', 'coral', 'blue', 'green']
 
@@ -85,6 +90,40 @@ export function useNoteForm({ groupId, noteId }: UseNoteFormArgs) {
     await updateNote(id, patch)
   }
 
+  // Debounced saves while typing, one pending save per field. Each save captures the
+  // value it was scheduled with, so it never reads stale state. Anything that saves the
+  // same field directly (blur, add/remove status) must `cancelSave` first, or the older
+  // pending save would land afterwards and overwrite it.
+  const pendingSaves = useRef(new Map<DebouncedField, { timer: number; run: () => void }>())
+
+  function cancelSave(field: DebouncedField) {
+    const pending = pendingSaves.current.get(field)
+    if (!pending) return
+    window.clearTimeout(pending.timer)
+    pendingSaves.current.delete(field)
+  }
+
+  function scheduleSave(field: DebouncedField, run: () => void) {
+    cancelSave(field)
+    const timer = window.setTimeout(() => {
+      pendingSaves.current.delete(field)
+      run()
+    }, SAVE_DEBOUNCE_MS)
+    pendingSaves.current.set(field, { timer, run })
+  }
+
+  // Leaving the editor mid-pause (e.g. back button, which fires no blur): save what's pending.
+  useEffect(() => {
+    const pending = pendingSaves.current
+    return () => {
+      for (const { timer, run } of pending.values()) {
+        window.clearTimeout(timer)
+        run()
+      }
+      pending.clear()
+    }
+  }, [])
+
   /**
    * After a same-session "On Check Move To" relocation: refresh `group`/
    * `resolvedGroupId` to the destination (otherwise a later re-check in this same
@@ -108,7 +147,17 @@ export function useNoteForm({ groupId, noteId }: UseNoteFormArgs) {
     }
   }
 
+  function handleTitleChange(value: string) {
+    setTitle(value)
+    // A new note is still only created on blur (see `handleTitleBlur`), and an emptied
+    // title waits for blur too, so a half-retyped title isn't saved as blank.
+    const trimmed = value.trim()
+    if (id && trimmed) scheduleSave('title', () => persist({ title: trimmed }))
+    else cancelSave('title')
+  }
+
   async function handleTitleBlur() {
+    cancelSave('title')
     const trimmed = title.trim()
     setTitle(trimmed)
 
@@ -132,7 +181,13 @@ export function useNoteForm({ groupId, noteId }: UseNoteFormArgs) {
     navigate(`/notes/${created.id}/edit`, { replace: true })
   }
 
+  function handleDescriptionChange(value: string) {
+    setDescription(value)
+    if (id) scheduleSave('description', () => persist({ description: value || null }))
+  }
+
   function handleDescriptionBlur() {
+    cancelSave('description')
     persist({ description: description || null })
   }
 
@@ -233,12 +288,21 @@ export function useNoteForm({ groupId, noteId }: UseNoteFormArgs) {
     const trimmed = text.trim()
     if (!trimmed) return
     const next: NoteStatus[] = [...statuses, { id: crypto.randomUUID(), text: trimmed, createdAt: Date.now() }]
+    cancelSave('statuses')
     setStatuses(next)
     persist({ statuses: next })
   }
 
   function updateStatusText(statusId: string, text: string) {
-    setStatuses((current) => current.map((s) => (s.id === statusId ? { ...s, text } : s)))
+    setStatuses(statuses.map((s) => (s.id === statusId ? { ...s, text } : s)))
+    // An emptied status waits for blur (which removes it) instead of being saved blank.
+    const trimmed = text.trim()
+    if (id && trimmed) {
+      const saved = statuses.map((s) => (s.id === statusId ? { ...s, text: trimmed } : s))
+      scheduleSave('statuses', () => persist({ statuses: saved }))
+    } else {
+      cancelSave('statuses')
+    }
   }
 
   function handleStatusTextBlur(statusId: string) {
@@ -250,18 +314,21 @@ export function useNoteForm({ groupId, noteId }: UseNoteFormArgs) {
       return
     }
     const next = statuses.map((s) => (s.id === statusId ? { ...s, text: trimmed } : s))
+    cancelSave('statuses')
     setStatuses(next)
     persist({ statuses: next })
   }
 
   function removeStatus(statusId: string) {
     const next = statuses.filter((s) => s.id !== statusId)
+    cancelSave('statuses')
     setStatuses(next)
     persist({ statuses: next })
   }
 
   async function remove() {
     if (!id) return
+    for (const field of [...pendingSaves.current.keys()]) cancelSave(field)
     await deleteNote(id)
     // The card it would morph back into no longer exists, so exit like any other
     // editor close (sheet on mobile, fade on web) instead of a morph.
@@ -274,10 +341,10 @@ export function useNoteForm({ groupId, noteId }: UseNoteFormArgs) {
     isNew: !id,
     group,
     title,
-    setTitle,
+    handleTitleChange,
     handleTitleBlur,
     description,
-    setDescription,
+    handleDescriptionChange,
     handleDescriptionBlur,
     type,
     handleTypeChange,

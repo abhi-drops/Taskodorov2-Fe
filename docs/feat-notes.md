@@ -65,7 +65,8 @@ entry with the highest `createdAt` (`getLatestStatus`), not array/insertion orde
 `updateStatusText`/`handleStatusTextBlur`/`removeStatus`) reuses the exact convention
 `list`-type items already established (see "Create/edit" below): always-editable
 `<textarea>` rows, click-and-type with no separate edit mode, text changes persist
-(trimmed) only on blur, and blurring an entry to empty text deletes it instead of
+(trimmed) on a typing pause and on blur (see "Debounced saves" under "Create/edit"; list
+items are still blur-only), and blurring an entry to empty text deletes it instead of
 persisting empty. The whole Status block is gated behind `!form.isNew` — same reasoning
 as the Delete button — since a status needs a real note id to attach to, and a
 brand-new note isn't written to the DB until its title is non-empty. The editor lists
@@ -188,9 +189,23 @@ note as checked.
 
 One page/hook drives both `/notes/new?group=<id>` and `/notes/:id/edit`. **No Save
 button** — title and description are edited inline directly on the colored card
-preview and auto-save on blur; Note Type/Color/Priority/payload fields auto-save
-immediately on change. This matches every other settings-style screen in the app (see
+preview and auto-save while typing (debounced) and on blur; Note Type/Color/Priority/payload
+fields auto-save immediately on change. This matches every other settings-style screen in the app (see
 `feat-power-tools.md`).
+
+**Debounced saves** (`useNoteForm.ts`): editing the **title**, **description** or an
+existing **status** saves after a 600 ms pause in typing (`SAVE_DEBOUNCE_MS`), not only on
+blur.
+- Blur still saves at once and does the trimming; leaving the editor with a save pending
+  (e.g. the back button, which fires no blur) flushes it.
+- One pending save per field. Anything that writes the same field directly (blur,
+  add/remove status, delete note) calls `cancelSave` first: otherwise the older pending
+  save would land afterwards and overwrite it, e.g. bring back a removed status.
+- An emptied title or status is not saved by the debounce; it waits for blur.
+- A **new** note is still created only on the first non-empty title blur (below).
+- **Diary:** title and status edits are Diary-tracked, so each of these saves would log
+  an entry. The log coalesces them on write: edits within 3 minutes are one "old → final"
+  entry (`feat-diary.md`, "Data: the activity log"). Descriptions aren't tracked.
 
 **A new note is not written to the database until its title is non-empty.** Type,
 color, priority, and payload edits made before that just update local component state;

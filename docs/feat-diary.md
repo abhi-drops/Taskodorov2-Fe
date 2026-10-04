@@ -111,6 +111,18 @@ The live tables only store *current* state, so the Diary reads an append-only
 **`activity_events`** table. Schema and indexes are in `lib/db/eventLog.ts`
 (`ACTIVITY_EVENTS_SQL`), created in `sqlite.ts`'s `initDb`.
 
+- **One exception to append-only: title and status-text edits are coalesced on write.**
+  The note editor saves while typing (debounced, see `feat-notes.md`), so one edit
+  arrives as several saves.
+  - A title edit, or an edit to the same status, within `EDIT_COALESCE_MS` (3 minutes) of
+    the previous one, with no other event on that note in between, **updates that event
+    in place** (new value, new time) and adds no row (`logTitleEdit` / `logStatusEdit` in
+    `eventLog.ts`). The Diary shows one "old → final" entry at the time of the last edit.
+  - Typing back to the value from before the run deletes the run's event: nothing changed.
+  - A status event keeps its first `previousText`. Genesis values are never continued.
+  - This is different from counter bursts, which keep every tap and merge on display.
+    Half-typed text has no value as history, so it isn't stored.
+
 - **Vocabulary (deliberately narrow):**
   - `created` / `deleted` for notes and groups;
   - `moved` (note `from_group_id → to_group_id`);
