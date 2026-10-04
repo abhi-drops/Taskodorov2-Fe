@@ -61,7 +61,7 @@ style of its own):
   switcher itself was closed, since z-index still governs stacking against anything
   spatially overlapping it (e.g. a `ConfirmDialog`'s full-screen backdrop) whether or
   not the switcher's own popup is open. Caught and fixed same-session.
-- Both render the same list content: click a name to switch to it, a pencil icon to
+- Both render the same list content: click a name to switch to it, a pen icon to
   rename, a close icon (`CloseIcon`) to delete (hidden entirely when only 1 workspace remains, same as
   before).
 - **Rename is inline and autosaves, but is a separate explicit action from
@@ -71,8 +71,8 @@ style of its own):
   clickable area covers nearly the whole row, so "click to switch" became almost
   impossible to hit — a real regression, caught immediately by trying to actually use
   it. Fixed by keeping the name a plain button (single click = switch, unambiguous,
-  same as before the redesign) and adding a small pencil icon (`EditIcon` from
-  `components/ui/icons.ts`) that swaps just that row into an autofocused,
+  same as before the redesign) and adding a small pen icon (`EditIcon` from
+  `components/ui/icons.ts`, the library's Pen 01) that swaps just that row into an autofocused,
   autosave-on-blur/Enter input (`editingId` state, local to the component — Escape
   cancels without saving and reverts to the button). Still zero Save/Cancel buttons in
   the edit state itself (that's the part of the original "inline autosave" idea that

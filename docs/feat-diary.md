@@ -15,7 +15,7 @@ against the wireframes `docs/design-references/web/diary.png`, `diary_sidebar.pn
 
 - **Icons:** the markers written in this file as `+`, `↔`, `✎`, `✓`, `○`, `→`, `↺`, `▸`, `‹ ›`,
   `×` and ☰ are shorthand. On screen they are icons from `components/ui/icons.ts` (see
-  `style-guide.md`, "Icons"); `○` unchecked is drawn as an undo arrow.
+  `style-guide.md`, "Icons"); `○` unchecked is drawn as an undo arrow, and `✎` is the pen icon (`EditIcon`).
 - **Calendar:**
   - each day cell shows small chips in the Diary colour scheme (below): violet `+N`
     created, blue `↔N` moved, yellow `✎N` changes;

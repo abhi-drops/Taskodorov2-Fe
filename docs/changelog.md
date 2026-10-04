@@ -4,6 +4,15 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-05 — Small editor and settings alignment fixes; pen icon
+
+- **Note editor:** the title checkbox, the status remove icons and the add-status icon
+  now share one centre line (`feat-notes.md`, "Alignment").
+- **Colour picker:** the swatch row is inset 4px so the selected ring lines up with the
+  fields around it (`style-guide.md`, `SwatchPicker`).
+- **Group Settings (mobile):** the editable group name is centred (`feat-groups.md`).
+- **Icons:** `EditIcon` is now the library's Pen 01 instead of the pencil.
+
 ## 2026-10-04 — Styled dropdown replaces the native select
 
 `Select.tsx` is now built on Radix Select (`@radix-ui/react-select`) and styled as the

@@ -89,6 +89,12 @@ generate its CSS, and a runtime-only template-literal concatenation wouldn't). T
 button has no border of its own: it is just the `AddSquareIcon` (whose square outline
 is the button's shape), tinted by the same `text-*` class.
 
+**Alignment:** the title card's checkbox, each status's remove icon and the add-status
+icon share one vertical centre line. The Status block's right padding (`pr-5`) matches
+the title card's `p-5`, and both status buttons are a `w-[22px]` box (the checkbox's
+size) with the icon centred in it. They are `h-5`, one line of `text-sm`, so each icon
+sits on its row's first text line. Change these together or the three drift apart.
+
 **Gotcha:** the existing-status `<textarea>` must not be given `flex-1` inside its
 `flex-col` wrapper (the column that also holds the timestamp caption) — in a
 column-direction flex container, `flex-1` governs the item's *height*, which fights the

@@ -158,7 +158,9 @@ stay valid after `random` was removed from the `NoteColorMode` type.
 
 The group name heading at the top of Group Settings (both platforms) is directly
 editable — a plain `<input>` styled as the `<h1>` it replaces, not a separate rename
-dialog like the workspace switcher's. Auto-saves on blur (`useGroupSettings.ts`'s
+dialog like the workspace switcher's. On mobile it is centred above "Group settings"
+(the input carries its own `text-center`; an `<input>` doesn't inherit `text-align` from
+the centred header around it). On desktop it is left-aligned. Auto-saves on blur (`useGroupSettings.ts`'s
 `updateName` → `updateGroup`'s already-generic `name` column update — the DB layer
 never actually needed a change, only the UI was missing), same "no Save button, save on
 blur" convention as every other field on this page (`docs/feat-power-tools.md`).
