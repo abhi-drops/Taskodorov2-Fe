@@ -40,8 +40,9 @@ desktop wireframe — see `docs/style-guide.md`'s "Power Tools: row chips + desk
 
 ## Sections
 
-- **Groups** — list of the active workspace's groups, each row: box icon, name, gear
-  icon (→ `/settings/groups/:id`, see `feat-groups.md`), "×" (→ `ConfirmDialog` →
+- **Groups** — list of the active workspace's groups, each row: box icon (`GroupIcon`), name, gear
+  icon (`SettingsIcon`, → `/settings/groups/:id`, see `feat-groups.md`), close icon
+  (`CloseIcon`, → `ConfirmDialog` →
   cascading delete). A "+ New group" input + button chip below the list
   (`common_logics/useGroupForm.ts`) — **this is the only way to create a group** (see
   `feat-groups.md` for why the board itself has no create-group UI).

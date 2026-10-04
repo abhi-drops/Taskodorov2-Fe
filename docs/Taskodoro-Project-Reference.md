@@ -354,7 +354,7 @@ Two states shown:
 
 ### Power Tools screen
 - **Addon Tools:** "Pomodoro" listed as an available addon.
-- **Groups:** list of current groups (Todo, In Progress, Completed shown, each with a settings gear + delete "×"), plus **"+ New Group"** — confirms **groups are user-configurable, not a fixed enum**. This means the backend's `notes.column_state` concept (implied by the product doc's original `column_state -- todo / in_progress / completed` field) needs to become a **`group_id` FK into a new `groups` table**, not a fixed string union. See §11.
+- **Groups:** list of current groups (Todo, In Progress, Completed shown, each with a settings gear + delete icon), plus **"+ New Group"** — confirms **groups are user-configurable, not a fixed enum**. This means the backend's `notes.column_state` concept (implied by the product doc's original `column_state -- todo / in_progress / completed` field) needs to become a **`group_id` FK into a new `groups` table**, not a fixed string union. See §11.
 - **Account:** "Sync with Google" (distinct action from Google Sign-In auth — likely a Google Tasks/Calendar sync, not yet specified) and "Reset to Default" (destructive account action, needs confirmation flow).
 
 ### Group settings screen (per-group config, reached from Power Tools)

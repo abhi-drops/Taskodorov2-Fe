@@ -66,11 +66,14 @@ All app data (workspaces/groups/notes) lives in local SQLite (`@capacitor-commun
 
 ### Workspaces, Groups, Notes
 
-The core data model and UI, in dependency order: a workspace contains groups, a group contains notes (3 types: basic/counter/list). Details, including two non-obvious things (list notes have no card-level checkmark; a note doesn't get written to the DB until it has a title) worth knowing before touching this code: `docs/feat-workspaces.md`, `docs/feat-groups.md`, `docs/feat-power-tools.md`, `docs/feat-notes.md`, `docs/feat-search-filter.md`.
+The core data model and UI, in dependency order: a workspace contains groups, a group contains notes (3 types: basic/counter/list). Details, including a few non-obvious things (list notes have no card-level checkmark; a note doesn't get written to the DB until it has a title; the editor saves title/description/status while typing, debounced, and the Diary log coalesces those title/status edits within 3 minutes into one event) worth knowing before touching this code: `docs/feat-workspaces.md`, `docs/feat-groups.md`, `docs/feat-power-tools.md`, `docs/feat-notes.md`, `docs/feat-search-filter.md`.
 
 ### Design system
 
 Self-hosted fonts (never a Google Fonts CDN link — this is an offline-first app), the grid background, and the shared `components/ui/*` primitive set. `docs/style-guide.md`.
+
+- **Icons** come from one library, `@animateicons/react` (Huge family, pinned exactly). Add icons in `components/ui/icons.ts` and render them with `components/ui/AnimatedIcon.tsx`, never as text characters, inline SVGs or direct library imports. Exceptions: the note checkbox (`CheckCircle`) and the search icon are still PNGs.
+- **Dropdowns** go through `components/ui/Select.tsx`: a styled Radix Select on web, a native `<select>` on Android (`isNative`). It takes an `options` array, not `<option>` children.
 
 ### Auth
 

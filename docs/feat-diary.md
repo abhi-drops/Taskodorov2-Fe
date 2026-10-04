@@ -13,8 +13,8 @@ against the wireframes `docs/design-references/web/diary.png`, `diary_sidebar.pn
 | `/apps/diary` (`DiaryPage`) | Month calendar inside the Apps 2-panel layout | Same calendar, full page |
 | `/apps/diary/:date` (`DiaryDayPage`, `yyyy-MM-dd`) | **Replay:** scrubber + read-only board + day sidebar | **Summary only:** counts + list of changes, no scrubber |
 
-- **Icons:** the markers written in this file as `+`, `↔`, `✎`, `✓`, `○`, `→`, `↺`, `▸` and
-  ☰ are shorthand. On screen they are icons from `components/ui/icons.ts` (see
+- **Icons:** the markers written in this file as `+`, `↔`, `✎`, `✓`, `○`, `→`, `↺`, `▸`, `‹ ›`,
+  `×` and ☰ are shorthand. On screen they are icons from `components/ui/icons.ts` (see
   `style-guide.md`, "Icons"); `○` unchecked is drawn as an undo arrow.
 - **Calendar:**
   - each day cell shows small chips in the Diary colour scheme (below): violet `+N`

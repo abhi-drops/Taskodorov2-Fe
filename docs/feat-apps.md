@@ -43,7 +43,7 @@ Built in Phase 2.8 (2026-10-03):
 
 On desktop, the Apps list rail is a `SidePanel` (opt-in `sidePanel` prop on
 `SidebarPanelLayout`; Settings' rail stays fixed). It can be resized by dragging its
-edge, and it is hidden or shown by a ☰ `SidebarToggle` placed in the app's own toolbar
+edge, and it is hidden or shown by a menu-icon `SidebarToggle` placed in the app's own toolbar
 (the Diary header's far left). The toggle and the panel share state by the key
 `APPS_PANEL_KEY` (`appsList.ts`). A new app that uses this layout should put the same
 toggle in its toolbar.

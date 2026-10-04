@@ -77,7 +77,7 @@ helper — plain `Intl.DateTimeFormat`, no library).
 Unlike the adjacent list-items/counter-config blocks (which use the note's own swatch
 color as their background, per "Create/edit" below), the Status block's own background
 is always `bg-ink` — the same dark token `NoteStatusStrip` uses on the board — with all
-of its text, timestamps, and the add (`+`)/remove (`×`) icons tinted to the note's
+of its text, timestamps, and the add (`AddSquareIcon`)/remove (`CloseIcon`) icons tinted to the note's
 swatch color (`SWATCH_TEXT_CLASSES`) and `font-semibold`, so the block visually pairs
 with the board strip rather than blending into the preview card like the other
 type-specific config blocks do. The "New status" input's placeholder uses a matching
@@ -86,8 +86,8 @@ type-specific config blocks do. The "New status" input's placeholder uses a matc
 a variant prefix onto `SWATCH_TEXT_CLASSES` at the call site — Tailwind's content
 scanner needs the complete class string to appear literally in some scanned file to
 generate its CSS, and a runtime-only template-literal concatenation wouldn't). The add
-button's border uses the static `border-current` utility rather than a fourth
-swatch-color map, since its color already matches the `+` glyph's `text-*` class.
+button has no border of its own: it is just the `AddSquareIcon` (whose square outline
+is the button's shape), tinted by the same `text-*` class.
 
 **Gotcha:** the existing-status `<textarea>` must not be given `flex-1` inside its
 `flex-col` wrapper (the column that also holds the timestamp caption) — in a
@@ -235,9 +235,9 @@ separate border. Individual item rows are plain `flex items-center gap-2` with a
 `gap-4` between rows, and the checkbox sits flush against the block's left edge (no
 left padding — safe because `rounded-card` is `0px`, so there's no corner to clip
 into). The "new item" input, unlike the checkbox rows, does get a small `pl-3` so its
-text/placeholder isn't flush against that same edge. The item remove "×" uses
+text/placeholder isn't flush against that same edge. The item remove icon (`CloseIcon`) uses
 `text-ink` (not a hardcoded swatch color) so it stays legible against any of the four
-note colors. The "Add" control is a small square `+` icon button (`font-display`,
+note colors. The "Add" control is a small square `PlusIcon` button (white,
 bordered `border-ink`) rather than a full labeled `Button`, since it sits inline with
 the input instead of needing its own row.
 
@@ -270,8 +270,10 @@ On `lg:` viewports and wider, the page splits into a 40/60 two-column grid inste
 one column: title/description + items/counter-config on the left (40%), Note Type/
 Color/Priority/Delete ("config for note") on the right (60%), capped at `max-w-6xl`,
 vertically centered against each other (`lg:items-center`) with `lg:gap-12` between
-them. The right column's controls are further wrapped in a `mx-auto max-w-xs` block so
+them. The right column's controls are further wrapped in a `mx-auto lg:max-w-xs` block so
 they're horizontally centered within that 60% track rather than stretched to fill it.
+The cap is `lg:`-only: in the single column the controls are as wide as the note card
+and the Status block above them.
 Below that breakpoint it's the same single column as before — this is a plain CSS
 breakpoint, not an `isNative` branch, since both platforms should reflow the same way
 at the same width.
