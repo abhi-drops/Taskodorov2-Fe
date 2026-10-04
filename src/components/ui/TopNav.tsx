@@ -30,9 +30,9 @@ export function TopNav({ className = '' }: TopNavProps) {
         <NavLink
           to="/settings"
           viewTransition
-          className="flex items-center gap-2 bg-nav-dark px-5 py-2 text-sm font-medium text-white"
+          className="flex items-center gap-2 bg-nav-dark px-5 py-2 text-sm font-medium text-sticky-yellow"
         >
-          <AnimatedIcon icon={SettingsIcon} size={18} className="text-sticky-yellow" />
+          <AnimatedIcon icon={SettingsIcon} size={18} />
           Settings
         </NavLink>
         <NavLink
