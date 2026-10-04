@@ -15,7 +15,7 @@ import { sortStatusesNewestFirst, formatStatusTimestamp } from '../lib/notes/not
 import { Button } from '../components/ui/Button'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { AnimatedIcon } from '../components/ui/AnimatedIcon'
-import { CloseIcon, TrashIcon } from '../components/ui/icons'
+import { AddSquareIcon, CloseIcon, PlusIcon, TrashIcon } from '../components/ui/icons'
 import { useNoteForm } from '../common_logics/useNoteForm'
 import { noteMorphName, setNoteMorphColor, useTransitionReady } from '../lib/motion/pageTransitions'
 import type { CounterPayload, ListPayload } from '../types/note'
@@ -170,9 +170,9 @@ export default function NoteEditorPage() {
                       setNewItemText('')
                     }}
                     aria-label="Add item"
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-card border border-ink bg-white font-display text-lg leading-none text-ink hover:bg-slate-50"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-card border border-ink bg-white text-ink hover:bg-slate-50"
                   >
-                    +
+                    <AnimatedIcon icon={PlusIcon} size={16} />
                   </button>
                 </div>
               </div>
@@ -264,9 +264,9 @@ export default function NoteEditorPage() {
                       setNewStatusText('')
                     }}
                     aria-label="Add status"
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-card border border-current font-display text-lg font-semibold leading-none hover:opacity-70 ${statusTextColorClass}`}
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center hover:opacity-70 ${statusTextColorClass}`}
                   >
-                    +
+                    <AnimatedIcon icon={AddSquareIcon} size={24} />
                   </button>
                 </div>
               </div>
@@ -275,7 +275,7 @@ export default function NoteEditorPage() {
         </div>
 
         <div className="flex flex-col gap-6">
-          <div className="mx-auto flex w-full max-w-xs flex-col gap-6">
+          <div className="mx-auto flex w-full flex-col gap-6 lg:max-w-xs">
             <Select
               label="Note Type"
               value={form.type}

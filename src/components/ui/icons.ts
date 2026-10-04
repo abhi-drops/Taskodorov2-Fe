@@ -6,6 +6,7 @@
  */
 export {
   Add01Icon as PlusIcon,
+  AddSquareIcon,
   ArrowLeftRightIcon as MovedIcon,
   ArrowRight02Icon as ArrowRightIcon,
   BookOpen01Icon as DiaryIcon,
