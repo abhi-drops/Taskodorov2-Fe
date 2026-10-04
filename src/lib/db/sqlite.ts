@@ -126,6 +126,11 @@ export async function seedIfEmpty(db: SQLiteDBConnection): Promise<void> {
     await logGroupCreated(db, { id: group.id, workspaceId, createdAt: now })
   }
 
+  // The Diary's "Completed Group" defaults to the seeded Completed column, so new users
+  // (and Reset to Default) get a working Completed count without visiting Settings.
+  // `migrateSchema()` has already added the column by the time the seed runs.
+  await db.run('UPDATE workspaces SET completed_group_id = ? WHERE id = ?', [completedId, workspaceId])
+
   // Walks a new user through the "On Check Move To" chain wired above, right in the
   // Todo column they land on first.
   const todoNotes: { title: string; description: string | null; color: string }[] = [

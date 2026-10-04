@@ -165,6 +165,10 @@ The live tables only store *current* state, so the Diary reads an append-only
 - **Completed Group:** `workspaces.completed_group_id`, set in Settings → Groups.
   - Notes created or moved into that group count as "Completed" for the day.
   - Unset means a count of 0, with no guessing.
+  - **Default:** the first-run seed (`seedIfEmpty`, also used by Reset to Default) sets
+    it to the seeded **Completed** group. Workspaces that existed before this default
+    keep whatever they had (unset unless chosen in Settings). New workspaces created
+    later start unset, since they have no groups yet.
   - It is read and written by `getCompletedGroupId`/`setCompletedGroupId` in
     `workspaces.ts`, not through the workspace context.
 

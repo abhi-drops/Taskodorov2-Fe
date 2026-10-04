@@ -4,6 +4,13 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-04 — Default Completed Group for new users
+
+The first-run seed now sets the workspace's Diary "Completed Group" to the seeded
+**Completed** column. A new user, or anyone using Reset to Default, gets a working
+"Completed" count in the Diary without visiting Settings. Existing workspaces are
+unchanged. See `feat-diary.md`.
+
 ## 2026-10-04 — Diary tracks status edits and deletions; list wording
 
 **The status problem:** statuses were only read from the note's current status list.
