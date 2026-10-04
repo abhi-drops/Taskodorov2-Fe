@@ -5,6 +5,9 @@ import { SidePanel } from './ui/SidePanel'
 
 /** Row-chip look shared by Settings' rows and the mobile Apps list. See `docs/style-guide.md`. */
 export const CHIP = 'flex items-center gap-3 rounded-card border-[3px] border-ink bg-white px-4 py-3 shadow-card'
+/** The destructive-action chip (Delete, Reset): the same chip shape in coral. */
+export const DANGER_CHIP =
+  'flex w-full items-center justify-center gap-2 rounded-card border-[3px] border-ink bg-sticky-coral px-4 py-3 font-medium text-ink shadow-card transition hover:opacity-90'
 
 export interface SidebarItem {
   id: string

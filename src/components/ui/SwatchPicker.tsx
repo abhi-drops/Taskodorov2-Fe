@@ -10,8 +10,11 @@ interface SwatchPickerProps {
 
 export function SwatchPicker({ value, onChange, disabled = false, className = '' }: SwatchPickerProps) {
   return (
+    // `px-1`: the selected swatch's ring reaches 4px outside its circle (2px offset + 2px
+    // ring). The inset keeps that ring flush with the left edge of the fields around the
+    // picker, not poking out past it.
     <div
-      className={`flex items-center gap-3 ${disabled ? 'pointer-events-none opacity-35' : ''} ${className}`}
+      className={`flex items-center gap-3 px-1 ${disabled ? 'pointer-events-none opacity-35' : ''} ${className}`}
       role="radiogroup"
     >
       {SWATCH_OPTIONS.map((color) => {

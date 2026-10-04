@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { AppShell } from '../components/AppShell'
 import { PowerToolsDesktopLayout } from '../components/PowerToolsSidebar'
-import { CHIP } from '../components/SidebarPanelLayout'
+import { CHIP, DANGER_CHIP } from '../components/SidebarPanelLayout'
 import { useAuth } from '../lib/auth/useAuth'
 import { useWorkspace } from '../lib/workspace/useWorkspace'
 import { usePlatform } from '../lib/platform/usePlatform'
@@ -20,9 +20,6 @@ import { Select } from '../components/ui/Select'
 import { resetToDefault } from '../lib/db/reset'
 import type { Group } from '../types/group'
 import type { AuthState } from '../lib/auth/authContext'
-
-const DANGER_CHIP =
-  'flex w-full items-center justify-center gap-2 rounded-card border-[3px] border-ink bg-sticky-coral px-4 py-3 font-medium text-white shadow-card transition hover:opacity-90'
 
 function SectionHeading({ children }: { children: string }) {
   return <h2 className="text-sm font-medium text-slate-600">{children}</h2>

@@ -140,9 +140,10 @@ to Default / Delete This Group) is its own `border-[3px] border-ink shadow-card`
 heading — not one big enclosing card containing a mini-list, matching the mockup's
 "list of independent chips" reading exactly like `GroupColumn`'s note list. Danger
 actions (Reset to Default, Delete This Group) are the same chip shape with
-`bg-sticky-coral text-white` instead of the shared `Button.tsx` `danger` variant (which
-has no border) — a page-local `DANGER_CHIP` class string in each file, not a change to
-`Button.tsx` itself, since that primitive is used well beyond this page's aesthetic.
+`bg-sticky-coral text-ink` (label and icon in the border colour) instead of the shared `Button.tsx` `danger` variant (which
+has no border) — a shared `DANGER_CHIP` class string exported from `SidebarPanelLayout.tsx` beside `CHIP`
+(also used by the note editor's Delete button), not a change to `Button.tsx` itself, since
+that primitive is used well beyond this page's aesthetic.
 Each group row's box is `GroupIcon` from `components/ui/icons.ts` (see "Icons" above). (Since the 2.7 rename to **Settings**, the Addons/Pomodoro chip
 moved to Apps — see `feat-apps.md`.)
 

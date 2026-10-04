@@ -274,6 +274,20 @@ them. The right column's controls are further wrapped in a `mx-auto lg:max-w-xs`
 they're horizontally centered within that 60% track rather than stretched to fill it.
 The cap is `lg:`-only: in the single column the controls are as wide as the note card
 and the Status block above them.
+
+**In the two-column layout the page has a fixed height and each column scrolls on its
+own** (`EditorColumns` + `COLUMN_SCROLL` in `NoteEditorPage.tsx`):
+- the box takes exactly the rest of the screen, measured with
+  `lib/layout/useFillViewportHeight.ts` (as the Diary day page does), so the page itself
+  never scrolls;
+- a column taller than the box scrolls by itself (e.g. a long checklist or many statuses
+  on the left while the settings on the right stay put); a shorter one stays vertically
+  centred;
+- the height is passed as a CSS variable and applied with an `lg:` class, so the single
+  column below `lg:` is untouched and scrolls with the page as before;
+- each column has `lg:p-3` so the scroll box doesn't clip the cards' shadows;
+- `EditorColumns` is its own component because the hook measures on mount, and the page
+  returns its "Loading…" state before the layout exists.
 Below that breakpoint it's the same single column as before — this is a plain CSS
 breakpoint, not an `isNative` branch, since both platforms should reflow the same way
 at the same width.

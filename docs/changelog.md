@@ -13,7 +13,9 @@ Android it stays a native select (system picker) with the same chip look when cl
 changed from `<option>` children to an `options` array. The main JS chunk grew by about
 85 kB (30 kB gzip). See `style-guide.md`, "Shared primitives".
 
-Also: the dropdown is yellow when focused (no violet ring), and the top nav's Settings
+Also: the note editor's Delete button is now the coral danger chip (ink border, hard
+shadow, ink label and icon) used in Settings; on the two-column layout the editor has a
+fixed height and its two columns scroll separately (`feat-notes.md`); the dropdown is yellow when focused (no violet ring), and the top nav's Settings
 tab has a yellow label to match its yellow gear.
 
 ## 2026-10-04 — Note editor saves title, description and status while typing

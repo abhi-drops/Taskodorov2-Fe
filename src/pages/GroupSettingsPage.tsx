@@ -2,15 +2,13 @@ import { useState, type FocusEvent } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { AppShell } from '../components/AppShell'
 import { PowerToolsDesktopLayout } from '../components/PowerToolsSidebar'
+import { DANGER_CHIP } from '../components/SidebarPanelLayout'
 import { Select } from '../components/ui/Select'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { AnimatedIcon } from '../components/ui/AnimatedIcon'
 import { TrashIcon } from '../components/ui/icons'
 import { useGroupSettings } from '../common_logics/useGroupSettings'
 import { usePlatform } from '../lib/platform/usePlatform'
-
-const DANGER_CHIP =
-  'flex w-full items-center justify-center gap-2 rounded-card border-[3px] border-ink bg-sticky-coral px-4 py-3 font-medium text-white shadow-card transition hover:opacity-90'
 
 export default function GroupSettingsPage() {
   const { groupId } = useParams<{ groupId: string }>()
@@ -105,7 +103,7 @@ export default function GroupSettingsPage() {
       />
 
       <button type="button" onClick={() => setConfirmDelete(true)} className={DANGER_CHIP}>
-        <AnimatedIcon icon={TrashIcon} size={16} className="text-white" />
+        <AnimatedIcon icon={TrashIcon} size={16} />
         Delete This Group
       </button>
     </>
