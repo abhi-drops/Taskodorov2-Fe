@@ -4,6 +4,15 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-04 — Styled dropdown replaces the native select
+
+`Select.tsx` is now built on Radix Select (`@radix-ui/react-select`) and styled as the
+board's chip: ink border, hard shadow, yellow highlight, check on the chosen option. All
+seven dropdowns use it (note type and priority, group settings, Completed Group). On
+Android it stays a native select (system picker) with the same chip look when closed. Its API
+changed from `<option>` children to an `options` array. The main JS chunk grew by about
+85 kB (30 kB gzip). See `style-guide.md`, "Shared primitives".
+
 ## 2026-10-04 — Note editor saves title, description and status while typing
 
 Edits to a note's title, description and existing statuses now save after a 600 ms pause

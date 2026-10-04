@@ -130,15 +130,9 @@ function GroupsSection({
         <Select
           label="Completed Group"
           value={completedGroupId ?? 'none'}
-          onChange={(e) => onCompletedGroupChange(e.target.value === 'none' ? null : e.target.value)}
-        >
-          <option value="none">None</option>
-          {groups.map((group) => (
-            <option key={group.id} value={group.id}>
-              {group.name}
-            </option>
-          ))}
-        </Select>
+          onChange={(value) => onCompletedGroupChange(value === 'none' ? null : value)}
+          options={[{ value: 'none', label: 'None' }, ...groups.map((group) => ({ value: group.id, label: group.name }))]}
+        />
         <p className="px-1 text-xs text-slate-600">
           Notes moved into this group count as Completed in the Diary.
         </p>

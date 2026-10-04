@@ -8,7 +8,6 @@ import { AnimatedIcon } from '../components/ui/AnimatedIcon'
 import { TrashIcon } from '../components/ui/icons'
 import { useGroupSettings } from '../common_logics/useGroupSettings'
 import { usePlatform } from '../lib/platform/usePlatform'
-import type { NoteColorMode, SortedBy } from '../types/group'
 
 const DANGER_CHIP =
   'flex w-full items-center justify-center gap-2 rounded-card border-[3px] border-ink bg-sticky-coral px-4 py-3 font-medium text-white shadow-card transition hover:opacity-90'
@@ -67,46 +66,43 @@ export default function GroupSettingsPage() {
       <Select
         label="Sorted By"
         value={group.sortedBy}
-        onChange={(e) => updateSortedBy(e.target.value as SortedBy)}
-      >
-        <option value="manual">Manual</option>
-        <option value="alphabetical">A to Z</option>
-        <option value="date">Date</option>
-        <option value="priority">Priority</option>
-      </Select>
+        onChange={updateSortedBy}
+        options={[
+          { value: 'manual', label: 'Manual' },
+          { value: 'alphabetical', label: 'A to Z' },
+          { value: 'date', label: 'Date' },
+          { value: 'priority', label: 'Priority' },
+        ]}
+      />
 
       <Select
         label="On Check Move To"
         value={group.onCheckMoveToGroupId ?? 'none'}
-        onChange={(e) => updateOnCheckMoveTo(e.target.value === 'none' ? null : e.target.value)}
-      >
-        <option value="none">None</option>
-        {siblingGroups.map((sg) => (
-          <option key={sg.id} value={sg.id}>
-            {sg.name}
-          </option>
-        ))}
-      </Select>
+        onChange={(value) => updateOnCheckMoveTo(value === 'none' ? null : value)}
+        options={[{ value: 'none', label: 'None' }, ...siblingGroups.map((sg) => ({ value: sg.id, label: sg.name }))]}
+      />
 
       {group.onCheckMoveToGroupId && (
         <Select
           label="Reset To Unchecked On Move"
           value={group.resetOnMove ? 'on' : 'off'}
-          onChange={(e) => updateResetOnMove(e.target.value === 'on')}
-        >
-          <option value="on">On</option>
-          <option value="off">Off</option>
-        </Select>
+          onChange={(value) => updateResetOnMove(value === 'on')}
+          options={[
+            { value: 'on', label: 'On' },
+            { value: 'off', label: 'Off' },
+          ]}
+        />
       )}
 
       <Select
         label="Note Colors"
         value={group.noteColorMode}
-        onChange={(e) => updateNoteColorMode(e.target.value as NoteColorMode)}
-      >
-        <option value="manual">Manual</option>
-        <option value="priority">Priority</option>
-      </Select>
+        onChange={updateNoteColorMode}
+        options={[
+          { value: 'manual', label: 'Manual' },
+          { value: 'priority', label: 'Priority' },
+        ]}
+      />
 
       <button type="button" onClick={() => setConfirmDelete(true)} className={DANGER_CHIP}>
         <AnimatedIcon icon={TrashIcon} size={16} className="text-white" />

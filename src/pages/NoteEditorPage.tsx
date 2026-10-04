@@ -279,12 +279,13 @@ export default function NoteEditorPage() {
             <Select
               label="Note Type"
               value={form.type}
-              onChange={(e) => form.handleTypeChange(e.target.value as typeof form.type)}
-            >
-              <option value="basic">Task</option>
-              <option value="counter">Counter</option>
-              <option value="list">Checklist</option>
-            </Select>
+              onChange={form.handleTypeChange}
+              options={[
+                { value: 'basic', label: 'Task' },
+                { value: 'counter', label: 'Counter' },
+                { value: 'list', label: 'Checklist' },
+              ]}
+            />
 
             <div className="flex flex-col gap-1.5 text-left">
               <span className="text-sm font-medium text-slate-700">Color</span>
@@ -301,13 +302,14 @@ export default function NoteEditorPage() {
             <Select
               label="Priority"
               value={form.priority}
-              onChange={(e) => form.handlePriorityChange(e.target.value as typeof form.priority)}
-            >
-              <option value="low">low</option>
-              <option value="normal">normal</option>
-              <option value="medium">medium</option>
-              <option value="high">high</option>
-            </Select>
+              onChange={form.handlePriorityChange}
+              options={[
+                { value: 'low', label: 'low' },
+                { value: 'normal', label: 'normal' },
+                { value: 'medium', label: 'medium' },
+                { value: 'high', label: 'high' },
+              ]}
+            />
 
             {!form.isNew && (
               <Button variant="danger" onClick={() => setConfirmDelete(true)}>
