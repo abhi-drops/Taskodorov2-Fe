@@ -7,7 +7,8 @@ from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 ## 2026-10-05 — Workspace templates: Templates app, template picker, export and import
 
 - **Templates app** (`/apps/templates`): lists the stored templates, with a live
-  board-preview editor for groups, group settings and sample notes, plus duplicate,
+  board-preview editor with a right-hand settings sidebar (workspace, group or note
+  settings, following the selection), plus duplicate,
   delete, export and import (`feat-templates.md`).
 - **Six built-in templates:** Default, Shopping list, Brainstorm, Weekly planner, Project
   kanban, Study plan. Editable, resettable, not deletable.

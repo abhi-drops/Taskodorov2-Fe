@@ -89,25 +89,48 @@ state, counter values and statuses.
 
 ### Editor (`/apps/templates/:templateId`)
 
-A live preview of the board the template makes.
+A live preview of the board the template makes, with a settings sidebar beside it.
 
 - **Desktop:** `TemplateBoard` draws every group as a column with the same chip +
-  backdrop markup as `DiaryReplayBoard`. The chip opens the group's settings, the purple
-  "+" adds a sample note, the last column is the "+ New group" chip.
-- **Mobile:** `Tabs` for the groups, the active group's notes, then "Add sample note"
-  and "<group> settings" chips and the "+ New group" chip.
+  backdrop markup as `DiaryReplayBoard`, in a box that fills the rest of the screen
+  (`useFillViewportHeight`) and scrolls inside. To its right is a `SidePanel`
+  (`TEMPLATE_SETTINGS_PANEL_KEY`, toggled from the far right of the toolbar, the same
+  arrangement as the Diary's day details).
+- **The sidebar follows the selection:**
+  - nothing selected: **workspace settings**;
+  - a group chip clicked: that **group's settings** (the chip turns `sticky-yellow`);
+  - a note card clicked: that **note's settings** (the card gets the Diary's purple
+    selection ring).
+  Selecting anything re-opens a collapsed sidebar. Clicking the empty board, or the
+  sidebar header's close button, goes back to the workspace settings.
+- **Each settings view copies the screen the user already knows**
+  (`components/TemplateSettingsPanels.tsx`), so editing a template feels like editing a
+  board:
+  - `TemplateWorkspaceSettings` is Settings' Groups list: a row chip per group (gear to
+    open, cross to delete), the "+ New group" chip, the Completed Group select, and the
+    danger chip (Reset to Default for a built-in, Delete This Template otherwise).
+  - `TemplateGroupSettings` is the Group Settings page: the big editable name, the
+    shared `GroupSettingsFields` dropdowns (also used by the real page), Move left /
+    Move right, "Add sample note", Delete This Group. Deleting a group clears any "On
+    Check Move To" or Completed Group that pointed at it.
+  - `TemplateNoteSettings` is the note editor: the note-coloured title + description
+    card, the coloured Items card or Step / Target card, then Note Type, Color and
+    Priority, and Delete This Note. No checkbox or Status block: those are state, which
+    a template doesn't carry.
+- **Mobile** has no sidebar: `Tabs` for the groups, the active group's notes, "Add
+  sample note" and "<group> settings" chips, the "+ New group" chip, then the workspace
+  settings inline. Group and note settings are the same two components in a bottom sheet.
 - **The cards are the real note cards** (`BasicNoteCard`, `CounterNoteCard`,
   `ListNoteCard`) in their `readOnly` + `onSelect` mode, fed by `lib/templates/preview.ts`,
   which turns template groups and notes into `Group`/`Note` shapes with the keys as ids.
   Nothing in the preview can write to the database.
-- **Group settings** (`TemplateGroupDialog`): name, Move left / Move right, the shared
-  `GroupSettingsFields` dropdowns (also used by Settings' Group Settings page), delete.
-  Deleting a group clears any "On Check Move To" or Completed Group that pointed at it.
-- **Sample note** (`TemplateNoteDialog`): title, description, type, counter step and
-  target or checklist items, colour, priority, delete. A new note that is closed without
-  a title is discarded, like the real editor.
-- **Completed Group** select and the danger chip (Reset to Default for a built-in,
-  Delete This Template otherwise) sit under the board.
+- **Adding a note** (the purple "+", or "Add sample note") selects it with its title
+  focused. Like the real editor, a note only exists once it has a title: selecting
+  something else while it is untitled discards it.
+- **Gotcha:** the board + sidebar live in their own `BoardWithSettings` component so they
+  mount only after the template loads. `useFillViewportHeight` measures the element it
+  finds at mount; called from the page itself it would find nothing during "Loading…"
+  and never measure.
 - **Saving:** every change goes through `edit()` with a pure function from
   `lib/templates/editContent.ts`, shows at once and is written after a 600 ms pause
   (flushed on leaving the page). No Save button.

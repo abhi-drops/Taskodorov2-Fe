@@ -43,6 +43,9 @@ export function TemplatesShell({ wide = false, children }: { wide?: boolean; chi
   )
 }
 
+/** `SidePanel`/`SidebarToggle` key for the editor's settings sidebar (desktop). */
+export const TEMPLATE_SETTINGS_PANEL_KEY = 'template-settings'
+
 /** A labelled square toolbar control, the same shape as `SidebarToggle` beside it. */
 export const TOOLBAR_BUTTON =
   'flex h-7 shrink-0 items-center gap-1.5 rounded-card border-2 border-ink px-2 text-sm font-medium text-ink shadow-card transition-colors disabled:opacity-50'

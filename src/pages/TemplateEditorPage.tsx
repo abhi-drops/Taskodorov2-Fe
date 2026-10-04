@@ -1,17 +1,29 @@
-import { useState, type FocusEvent } from 'react'
+import { useState, type FocusEvent, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router'
-import { TemplatesShell, TemplatesToolbar, TOOLBAR_BUTTON } from '../components/TemplatesShell'
+import {
+  TEMPLATE_SETTINGS_PANEL_KEY,
+  TemplatesShell,
+  TemplatesToolbar,
+  TOOLBAR_BUTTON,
+} from '../components/TemplatesShell'
 import { NewTemplateGroupInput, TemplateBoard, TemplateNoteList } from '../components/TemplateBoard'
-import { TemplateGroupDialog } from '../components/TemplateGroupDialog'
-import { TemplateNoteDialog } from '../components/TemplateNoteDialog'
+import {
+  SettingsPanelHeader,
+  TemplateGroupSettings,
+  TemplateNoteSettings,
+  TemplateWorkspaceSettings,
+} from '../components/TemplateSettingsPanels'
 import { NewWorkspaceDialog } from '../components/NewWorkspaceDialog'
-import { CHIP, DANGER_CHIP } from '../components/SidebarPanelLayout'
+import { CHIP } from '../components/SidebarPanelLayout'
 import { AnimatedIcon } from '../components/ui/AnimatedIcon'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { FormError } from '../components/ui/FormError'
-import { Select } from '../components/ui/Select'
+import { Modal } from '../components/ui/Modal'
+import { SidePanel } from '../components/ui/SidePanel'
+import { SidebarToggle } from '../components/ui/SidebarToggle'
 import { Tabs } from '../components/ui/Tabs'
-import { ExportIcon, PlusIcon, ResetIcon, SettingsIcon, TrashIcon } from '../components/ui/icons'
+import { DIALOG_OVERLAY, DIALOG_SHADOW } from '../components/ui/dialogStyles'
+import { ExportIcon, PlusIcon, SettingsIcon } from '../components/ui/icons'
 import { useTemplateEditor } from '../common_logics/useTemplateEditor'
 import { exportTemplate } from '../common_logics/useTemplates'
 import {
@@ -27,9 +39,58 @@ import {
   patchNote,
   setCompletedGroup,
 } from '../lib/templates/editContent'
+import { useFillViewportHeight } from '../lib/layout/useFillViewportHeight'
 import { usePlatform } from '../lib/platform/usePlatform'
 
+/** What the settings sidebar (desktop) or bottom sheet (mobile) is showing. */
+type Selection = { kind: 'group'; key: string } | { kind: 'note'; key: string } | null
+
 type Confirming = { kind: 'reset' } | { kind: 'delete' } | { kind: 'delete-group'; groupKey: string } | null
+
+/**
+ * Desktop: the board beside the settings sidebar. Its own component so it mounts only
+ * once the template has loaded: `useFillViewportHeight` measures the element it finds
+ * at mount, and there is no board to measure while the page shows "Loading…".
+ */
+function BoardWithSettings({
+  board,
+  openRequest,
+  children,
+}: {
+  board: ReactNode
+  /** Selecting a group or note always reveals its settings. */
+  openRequest: string | null
+  children: ReactNode
+}) {
+  const [boardRef, boardHeight] = useFillViewportHeight<HTMLDivElement>()
+  // Until the first measurement (one frame), a conservative guess that can't overflow.
+  const fillHeight = boardHeight ?? 'calc(100svh - 20rem)'
+
+  return (
+    // No flex gap: the settings SidePanel owns it, so it closes when collapsed.
+    <div className="flex items-start">
+      {/* Measured height: fills the rest of the screen; the board scrolls inside. */}
+      <div ref={boardRef} style={{ height: fillHeight }} className="min-w-0 flex-1 border border-neutral-300 bg-white">
+        {board}
+      </div>
+
+      <SidePanel
+        side="right"
+        storageKey={TEMPLATE_SETTINGS_PANEL_KEY}
+        label="Settings"
+        defaultWidth={320}
+        minWidth={260}
+        maxWidth={560}
+        openRequest={openRequest}
+        // Same measured height as the board, so both end at the same line.
+        maxHeight={fillHeight}
+        panelClassName="flex flex-col gap-4 border border-neutral-300 bg-surface p-4 shadow-card"
+      >
+        {children}
+      </SidePanel>
+    </div>
+  )
+}
 
 export default function TemplateEditorPage() {
   const { templateId } = useParams<{ templateId: string }>()
@@ -37,8 +98,7 @@ export default function TemplateEditorPage() {
   const { isNative } = usePlatform()
   const { template, status, edit, rename, reset, remove, flush } = useTemplateEditor(templateId ?? '')
 
-  const [openGroupKey, setOpenGroupKey] = useState<string | null>(null)
-  const [openNoteKey, setOpenNoteKey] = useState<string | null>(null)
+  const [selection, setSelection] = useState<Selection>(null)
   const [activeGroupKey, setActiveGroupKey] = useState<string | null>(null)
   const [confirming, setConfirming] = useState<Confirming>(null)
   const [isUsing, setIsUsing] = useState(false)
@@ -63,10 +123,21 @@ export default function TemplateEditorPage() {
   const current = template
   const content = template.content
   const isBuiltin = template.builtinId !== null
-  const openGroup = content.groups.find((g) => g.key === openGroupKey) ?? null
-  const openNote = openNoteKey ? findNote(content, openNoteKey) : null
+  // A selection whose group or note has since been deleted falls back to the workspace.
+  const selectedGroup = selection?.kind === 'group' ? (content.groups.find((g) => g.key === selection.key) ?? null) : null
+  const selectedNote = selection?.kind === 'note' ? findNote(content, selection.key) : null
   // Mobile shows one group at a time, like the board's tabs.
   const activeGroup = content.groups.find((g) => g.key === activeGroupKey) ?? content.groups[0] ?? null
+
+  /** Changes what the settings show. Like the real editor, a note only exists once it
+   * has a title, so leaving an untitled one discards it. */
+  function select(next: Selection) {
+    if (selectedNote && selectedNote.note.title.trim() === '' && !(next?.kind === 'note' && next.key === selectedNote.note.key)) {
+      const key = selectedNote.note.key
+      edit((c) => deleteNote(c, key))
+    }
+    setSelection(next)
+  }
 
   function handleNameBlur(e: FocusEvent<HTMLInputElement>) {
     const trimmed = e.target.value.trim()
@@ -80,13 +151,7 @@ export default function TemplateEditorPage() {
   function handleAddNote(groupKey: string) {
     const key = newKey(content)
     edit((c) => addNote(c, groupKey, blankNote(key)))
-    setOpenNoteKey(key)
-  }
-
-  // Like the real editor, a note only exists once it has a title.
-  function closeNote() {
-    if (openNote && openNote.note.title.trim() === '') edit((c) => deleteNote(c, openNote.note.key))
-    setOpenNoteKey(null)
+    setSelection({ kind: 'note', key })
   }
 
   async function handleExport() {
@@ -99,12 +164,15 @@ export default function TemplateEditorPage() {
   }
 
   function handleConfirm() {
-    if (confirming?.kind === 'reset') reset()
+    if (confirming?.kind === 'reset') {
+      setSelection(null)
+      reset()
+    }
     if (confirming?.kind === 'delete') remove().then(() => navigate('/apps/templates'))
     if (confirming?.kind === 'delete-group') {
       const key = confirming.groupKey
       edit((c) => deleteGroup(c, key))
-      setOpenGroupKey(null)
+      setSelection(null)
     }
   }
 
@@ -126,6 +194,44 @@ export default function TemplateEditorPage() {
             message: 'Delete this group and its sample notes from the template?',
             confirmLabel: 'Delete',
           }
+
+  const workspaceSettings = (
+    <TemplateWorkspaceSettings
+      content={content}
+      isBuiltin={isBuiltin}
+      showGroups={!isNative}
+      onSelectGroup={(key) => select({ kind: 'group', key })}
+      onAddGroup={(name) => edit((c) => addGroup(c, name))}
+      onDeleteGroup={(groupKey) => setConfirming({ kind: 'delete-group', groupKey })}
+      onCompletedGroupChange={(key) => edit((c) => setCompletedGroup(c, key))}
+      onDangerAction={() => setConfirming({ kind: isBuiltin ? 'reset' : 'delete' })}
+    />
+  )
+
+  const groupSettings = selectedGroup && (
+    <TemplateGroupSettings
+      content={content}
+      group={selectedGroup}
+      onPatch={(patch) => edit((c) => patchGroup(c, selectedGroup.key, patch))}
+      onMove={(direction) => edit((c) => moveGroup(c, selectedGroup.key, direction))}
+      onAddNote={() => handleAddNote(selectedGroup.key)}
+      onDelete={() => setConfirming({ kind: 'delete-group', groupKey: selectedGroup.key })}
+    />
+  )
+
+  const noteSettings = selectedNote && (
+    <TemplateNoteSettings
+      // Remount per note, so a newly added one focuses its title.
+      key={selectedNote.note.key}
+      note={selectedNote.note}
+      group={selectedNote.group}
+      onPatch={(patch) => edit((c) => patchNote(c, selectedNote.note.key, patch))}
+      onDelete={() => {
+        edit((c) => deleteNote(c, selectedNote.note.key))
+        setSelection(null)
+      }}
+    />
+  )
 
   return (
     <TemplatesShell wide>
@@ -156,12 +262,9 @@ export default function TemplateEditorPage() {
             <AnimatedIcon icon={PlusIcon} size={16} />
             Use template
           </button>
+          {!isNative && <SidebarToggle storageKey={TEMPLATE_SETTINGS_PANEL_KEY} label="settings" />}
         </div>
       </TemplatesToolbar>
-
-      <p className="text-slate-600">
-        A new workspace made from this template starts with these groups and sample notes.
-      </p>
 
       <FormError message={exportError} />
 
@@ -180,80 +283,73 @@ export default function TemplateEditorPage() {
                 <TemplateNoteList
                   group={activeGroup}
                   position={content.groups.indexOf(activeGroup)}
-                  onSelectNote={setOpenNoteKey}
+                  onSelectNote={(key) => select({ kind: 'note', key })}
                 />
               </div>
               <button type="button" onClick={() => handleAddNote(activeGroup.key)} className={`${CHIP} font-medium text-ink`}>
                 <AnimatedIcon icon={PlusIcon} size={20} />
                 Add sample note
               </button>
-              <button type="button" onClick={() => setOpenGroupKey(activeGroup.key)} className={`${CHIP} font-medium text-ink`}>
+              <button
+                type="button"
+                onClick={() => select({ kind: 'group', key: activeGroup.key })}
+                className={`${CHIP} font-medium text-ink`}
+              >
                 <AnimatedIcon icon={SettingsIcon} size={20} />
                 <span className="min-w-0 truncate">{activeGroup.name} settings</span>
               </button>
             </>
           )}
           <NewTemplateGroupInput onAdd={(name) => edit((c) => addGroup(c, name))} />
+          {workspaceSettings}
+
+          {/* Mobile has no sidebar: group and note settings open in a bottom sheet. */}
+          <Modal
+            isOpen={selectedGroup !== null || selectedNote !== null}
+            onClose={() => select(null)}
+            title={selectedNote ? 'Sample note' : undefined}
+            variant="bottom-sheet"
+            overlayClassName={DIALOG_OVERLAY}
+            panelClassName={DIALOG_SHADOW}
+          >
+            {/* p-1: room for the chips' offset shadows inside Modal's scroll box. */}
+            <div className="p-1">{noteSettings || groupSettings}</div>
+          </Modal>
         </div>
       ) : (
-        // -mx-6: the board scrolls edge to edge inside the panel's own p-6.
-        <div className="-mx-6">
-          <TemplateBoard
-            content={content}
-            onOpenGroup={setOpenGroupKey}
-            onAddNote={handleAddNote}
-            onSelectNote={setOpenNoteKey}
-            onAddGroup={(name) => edit((c) => addGroup(c, name))}
-          />
-        </div>
-      )}
-
-      <div className={`flex flex-col gap-6 ${isNative ? '' : 'max-w-sm'}`}>
-        <div className="flex flex-col gap-1.5">
-          <Select
-            label="Completed Group"
-            value={content.completedGroupKey ?? 'none'}
-            onChange={(value) => edit((c) => setCompletedGroup(c, value === 'none' ? null : value))}
-            options={[{ value: 'none', label: 'None' }, ...content.groups.map((g) => ({ value: g.key, label: g.name }))]}
-          />
-          <p className="px-1 text-xs text-slate-600">Notes that reach this group count as completed in the Diary.</p>
-        </div>
-
-        {isBuiltin ? (
-          <button type="button" onClick={() => setConfirming({ kind: 'reset' })} className={DANGER_CHIP}>
-            <AnimatedIcon icon={ResetIcon} size={16} />
-            Reset to Default
-          </button>
-        ) : (
-          <button type="button" onClick={() => setConfirming({ kind: 'delete' })} className={DANGER_CHIP}>
-            <AnimatedIcon icon={TrashIcon} size={16} />
-            Delete This Template
-          </button>
-        )}
-      </div>
-
-      {openGroup && (
-        <TemplateGroupDialog
-          content={content}
-          group={openGroup}
-          onClose={() => setOpenGroupKey(null)}
-          onPatch={(patch) => edit((c) => patchGroup(c, openGroup.key, patch))}
-          onMove={(direction) => edit((c) => moveGroup(c, openGroup.key, direction))}
-          onDelete={() => setConfirming({ kind: 'delete-group', groupKey: openGroup.key })}
-        />
-      )}
-
-      {openNote && (
-        <TemplateNoteDialog
-          note={openNote.note}
-          group={openNote.group}
-          onClose={closeNote}
-          onPatch={(patch) => edit((c) => patchNote(c, openNote.note.key, patch))}
-          onDelete={() => {
-            edit((c) => deleteNote(c, openNote.note.key))
-            setOpenNoteKey(null)
-          }}
-        />
+        <BoardWithSettings
+          openRequest={selection?.key ?? null}
+          board={
+            <TemplateBoard
+              className="h-full"
+              content={content}
+              selectedGroupKey={selectedGroup?.key ?? null}
+              selectedNoteKey={selectedNote?.note.key ?? null}
+              onClearSelection={() => select(null)}
+              onOpenGroup={(key) => select({ kind: 'group', key })}
+              onAddNote={handleAddNote}
+              onSelectNote={(key) => select({ kind: 'note', key })}
+              onAddGroup={(name) => edit((c) => addGroup(c, name))}
+            />
+          }
+        >
+          {noteSettings ? (
+            <>
+              <SettingsPanelHeader onClose={() => select(null)}>Sample note</SettingsPanelHeader>
+              {noteSettings}
+            </>
+          ) : groupSettings ? (
+            <>
+              <SettingsPanelHeader onClose={() => select(null)}>Group</SettingsPanelHeader>
+              {groupSettings}
+            </>
+          ) : (
+            <>
+              <SettingsPanelHeader>Workspace settings</SettingsPanelHeader>
+              {workspaceSettings}
+            </>
+          )}
+        </BoardWithSettings>
       )}
 
       {isUsing && (
