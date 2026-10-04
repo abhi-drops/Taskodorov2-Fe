@@ -1,5 +1,7 @@
 import { withDb } from './sqlite'
+import { instantiateTemplate } from '../templates/instantiate'
 import type { Workspace } from '../../types/workspace'
+import type { TemplateContent } from '../../types/template'
 
 interface WorkspaceRow {
   id: string
@@ -45,6 +47,21 @@ export function createWorkspace(input: { name: string }): Promise<Workspace> {
     )
 
     return { id, name: input.name, position, createdAt: now, updatedAt: now, deletedAt: null }
+  })
+}
+
+/**
+ * Creates a workspace from a stored template (its groups, settings and sample notes) in
+ * one write. Returns the new workspace's id, or `null` if the template no longer exists.
+ */
+export function createWorkspaceFromTemplate(input: { name: string; templateId: string }): Promise<string | null> {
+  return withDb(async (db) => {
+    const { values } = await db.query('SELECT content FROM templates WHERE id = ? AND deleted_at IS NULL', [
+      input.templateId,
+    ])
+    const row = values?.[0] as { content: string } | undefined
+    if (!row) return null
+    return instantiateTemplate(db, JSON.parse(row.content) as TemplateContent, input.name)
   })
 }
 

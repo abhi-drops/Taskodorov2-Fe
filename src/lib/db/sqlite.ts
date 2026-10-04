@@ -10,9 +10,10 @@ import {
   ACTIVITY_EVENTS_SQL,
   backfillEventsIfEmpty,
   backfillTrackedStateIfMissing,
-  logGroupCreated,
-  logNoteCreated,
 } from './eventLog'
+import { DEFAULT_TEMPLATE_CONTENT } from '../templates/builtins'
+import { instantiateTemplate } from '../templates/instantiate'
+import { TEMPLATES_SQL, seedBuiltinTemplates } from '../templates/seedBuiltins'
 
 const DB_NAME = 'taskodoro'
 
@@ -92,79 +93,10 @@ export async function seedIfEmpty(db: SQLiteDBConnection): Promise<void> {
   const existing = await db.query('SELECT id FROM workspaces WHERE deleted_at IS NULL LIMIT 1')
   if (existing.values && existing.values.length > 0) return
 
-  const now = Date.now()
-  const workspaceId = crypto.randomUUID()
-
-  await db.run(
-    'INSERT INTO workspaces (id, name, position, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, NULL)',
-    [workspaceId, 'Workspace 1', 0, now, now],
-  )
-
-  const todoId = crypto.randomUUID()
-  const inProgressId = crypto.randomUUID()
-  const completedId = crypto.randomUUID()
-
-  // Chained "On Check Move To": checking a Todo item just means "move it along" so it
-  // resets to unchecked on arrival in In Progress; checking an In Progress item means
-  // it's actually done, so it keeps its checked state on arrival in Completed.
-  const defaultGroups: { id: string; name: string; moveTo: string | null; resetOnMove: number }[] = [
-    { id: todoId, name: 'Todo', moveTo: inProgressId, resetOnMove: 1 },
-    { id: inProgressId, name: 'In Progress', moveTo: completedId, resetOnMove: 0 },
-    { id: completedId, name: 'Completed', moveTo: null, resetOnMove: 1 },
-  ]
-
-  for (let i = 0; i < defaultGroups.length; i++) {
-    const group = defaultGroups[i]
-    await db.run(
-      `INSERT INTO groups
-        (id, workspace_id, name, position, sorted_by, note_color_mode, on_check_move_to_group_id, reset_on_move, created_at, updated_at, deleted_at)
-       VALUES (?, ?, ?, ?, 'manual', 'manual', ?, ?, ?, ?, NULL)`,
-      [group.id, workspaceId, group.name, i, group.moveTo, group.resetOnMove, now, now],
-    )
-    // Logged here too (not only via backfill): after "Reset to Default" the activity log
-    // is no longer empty, so the backfill wouldn't pick the re-seeded data up.
-    await logGroupCreated(db, { id: group.id, workspaceId, createdAt: now })
-  }
-
-  // The Diary's "Completed Group" defaults to the seeded Completed column, so new users
-  // (and Reset to Default) get a working Completed count without visiting Settings.
-  // `migrateSchema()` has already added the column by the time the seed runs.
-  await db.run('UPDATE workspaces SET completed_group_id = ? WHERE id = ?', [completedId, workspaceId])
-
-  // Walks a new user through the "On Check Move To" chain wired above, right in the
-  // Todo column they land on first.
-  const todoNotes: { title: string; description: string | null; color: string }[] = [
-    { title: 'Click to edit me', description: 'Edit Title , Note Type & color ', color: 'yellow' },
-    {
-      title:
-        'Plz check me to go "in progress", then check again to go to "complete" or you can also try drag and drop',
-      description: null,
-      color: 'coral',
-    },
-    { title: 'Try "POWER TOOLS" for advanced behaviour edits', description: null, color: 'green' },
-  ]
-
-  for (let i = 0; i < todoNotes.length; i++) {
-    const note = todoNotes[i]
-    const noteId = crypto.randomUUID()
-    await db.run(
-      `INSERT INTO notes
-        (id, workspace_id, group_id, type, title, description, color, priority, position, completed, payload, created_at, updated_at, deleted_at)
-       VALUES (?, ?, ?, 'basic', ?, ?, ?, 'normal', ?, 0, '{}', ?, ?, NULL)`,
-      [noteId, workspaceId, todoId, note.title, note.description, note.color, i, now, now],
-    )
-    await logNoteCreated(db, {
-      id: noteId,
-      workspaceId,
-      groupId: todoId,
-      type: 'basic',
-      title: note.title,
-      color: note.color,
-      completed: false,
-      payload: {},
-      createdAt: now,
-    })
-  }
+  // Always the factory Default (not the user's edited copy in `templates`), so first
+  // launch and "Reset to Default" give the same board. It logs its own Diary events:
+  // after a reset the activity log is no longer empty, so the backfill wouldn't.
+  await instantiateTemplate(db, DEFAULT_TEMPLATE_CONTENT, 'Workspace 1')
 }
 
 /**
@@ -217,7 +149,9 @@ async function initDb(): Promise<SQLiteDBConnection> {
   const db = await openConnection()
   await db.execute(SCHEMA_SQL)
   await db.execute(ACTIVITY_EVENTS_SQL)
+  await db.execute(TEMPLATES_SQL)
   await migrateSchema(db)
+  await seedBuiltinTemplates(db)
   // Before seeding: an upgrading install backfills its existing data, while a fresh
   // install has nothing to backfill and the seed logs its own events (eventLog.ts).
   await backfillEventsIfEmpty(db)

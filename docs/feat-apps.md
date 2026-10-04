@@ -34,6 +34,12 @@ This follows the same split Settings uses (see `feat-power-tools.md`):
     Tapping a chip push-navigates to the app's page.
   - There is no persistent sidebar, and the Android back button walks history as usual.
 
+## Templates
+
+`/apps/templates` lists workspace templates; `/apps/templates/:templateId` edits one.
+Its chrome (`TemplatesShell`, `TemplatesToolbar`) follows the Diary's, including the
+Apps list toggle at the far left of the toolbar. See `feat-templates.md`.
+
 ## Diary
 
 Built in Phase 2.8 (2026-10-03):

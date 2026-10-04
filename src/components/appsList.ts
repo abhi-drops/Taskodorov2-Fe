@@ -1,7 +1,7 @@
 import type { SidebarItem } from './SidebarPanelLayout'
-import { DiaryIcon, PomodoroIcon } from './ui/icons'
+import { DiaryIcon, PomodoroIcon, TemplatesIcon } from './ui/icons'
 
-export type AppId = 'diary' | 'pomodoro'
+export type AppId = 'diary' | 'templates' | 'pomodoro'
 
 /** `SidePanel`/`SidebarToggle` key for the desktop Apps list (width + collapsed). */
 export const APPS_PANEL_KEY = 'apps'
@@ -13,5 +13,6 @@ export const APPS_PANEL_KEY = 'apps'
  */
 export const APPS: (SidebarItem & { id: AppId })[] = [
   { id: 'diary', label: 'Diary', to: '/apps/diary', icon: DiaryIcon },
+  { id: 'templates', label: 'Templates', to: '/apps/templates', icon: TemplatesIcon },
   { id: 'pomodoro', label: 'Pomodoro', icon: PomodoroIcon, disabled: true },
 ]

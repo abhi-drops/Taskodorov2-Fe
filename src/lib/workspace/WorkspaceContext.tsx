@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import {
   listWorkspaces,
   createWorkspace as dbCreateWorkspace,
+  createWorkspaceFromTemplate,
   renameWorkspace as dbRenameWorkspace,
   deleteWorkspace as dbDeleteWorkspace,
 } from '../db/workspaces'
@@ -27,11 +28,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     hydrate()
   }, [])
 
-  async function createWorkspace(name: string) {
-    const created = await dbCreateWorkspace({ name })
+  async function createWorkspace(name: string, templateId?: string) {
+    // A template that was deleted in the meantime falls back to an empty workspace.
+    const fromTemplate = templateId ? await createWorkspaceFromTemplate({ name, templateId }) : null
+    const createdId = fromTemplate ?? (await dbCreateWorkspace({ name })).id
     const workspaces = await listWorkspaces()
-    await saveActiveWorkspaceId(created.id)
-    setState({ workspaces, activeWorkspaceId: created.id, status: 'ready' })
+    await saveActiveWorkspaceId(createdId)
+    setState({ workspaces, activeWorkspaceId: createdId, status: 'ready' })
   }
 
   async function renameWorkspace(id: string, name: string) {

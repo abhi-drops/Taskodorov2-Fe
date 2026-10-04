@@ -4,6 +4,24 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-05 — Workspace templates: Templates app, template picker, export and import
+
+- **Templates app** (`/apps/templates`): lists the stored templates, with a live
+  board-preview editor for groups, group settings and sample notes, plus duplicate,
+  delete, export and import (`feat-templates.md`).
+- **Six built-in templates:** Default, Shopping list, Brainstorm, Weekly planner, Project
+  kanban, Study plan. Editable, resettable, not deletable.
+- **New workspace dialog:** "+ New workspace" in the switcher now opens a dialog with a
+  name and a template picker (three templates, the rest behind "More templates"). A new
+  workspace is no longer created empty (`feat-workspaces.md`).
+- **Export / import:** templates travel as `.taskodoro.json` files: a download on web,
+  the share sheet on Android. Adds `@capacitor/filesystem` and `@capacitor/share`.
+- **Data layer:** new `templates` table; the first-run seed now goes through the same
+  `instantiateTemplate` path as every template (`feat-offline-data-layer.md`).
+- **Refactor, no behaviour change:** Group Settings' dropdowns moved into the shared
+  `GroupSettingsFields` component (`feat-groups.md`).
+- The Android export and file-picker paths have not been run on a device yet.
+
 ## 2026-10-05 — Small editor and settings alignment fixes; pen icon
 
 - **Note editor:** the title checkbox, the status remove icons and the add-status icon

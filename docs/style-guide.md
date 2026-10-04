@@ -243,6 +243,7 @@ system" above).
 | `FloatingAddButton.tsx` | Mobile quick-add: a 34×100px bell-curve bump fixed flush to the right screen edge, drawn as an inline SVG using the exact path from the mobile Penpot export (`newdesktoplayloutMobile.html`), translated to the origin. The export closes the shape outside the viewBox, which is why there is no outline along the screen edge. `accent-purple` fill (the export uses a lighter `#d47cff`, but the app's existing purple was kept deliberately); the export's inner stroke is reproduced as a 10-wide `stroke-ink` clipped to the shape, so 5px is visible. It has a white `PlusIcon` (white rather than the export's dark glyph, for contrast on the darker purple) and `shadow-card` done as a CSS `drop-shadow`, so it follows the curve. Generic (`to`, `position` and `dynamic` props; vertical position is set with `top`, never a transform); `HomePage` decides the target and visibility. See `feat-navigation.md`. |
 | `AnimatedIcon.tsx` + `icons.ts` | The app's icons: see "Icons" above. |
 | `Icon.tsx` | Thin `<img>` wrapper, used by `CheckCircle` and the search icon. |
+| `dialogStyles.ts` | Class strings for dialogs built on `Modal`: `DIALOG_OVERLAY` / `DIALOG_SHADOW` (the frosted dim and deep shadow `WorkspaceSwitcher` and `ConfirmDialog` use), `FIELD_LABEL` (same as `Select`'s label) and `FIELD_INPUT` (a text input in `Select`'s trigger shape, `sticky-yellow` while focused). Used by the New workspace, New template and template editor dialogs. |
 | `ExitToast.tsx` | Small fixed-position "Press back again to exit" pill, shown above `BottomNav` when the Android hardware back button/edge-swipe is pressed on Home with no more history — see `docs/feat-navigation.md`. Native-only in practice (driven by `useAndroidBackButton`), but the component itself has no platform branching of its own. |
 
 `AppShell.tsx`, `GroupColumn.tsx`, and `PowerToolsSidebar.tsx` (`src/components/`, not
@@ -256,6 +257,13 @@ both the web multi-column layout and the mobile single-active-tab view in
 `PowerToolsSidebar.tsx`'s `PowerToolsDesktopLayout` (Settings) and `AppsSidebar.tsx`'s
 `AppsDesktopLayout` (Apps, items from `appsList.ts`) are thin wrappers over it — see
 "Power Tools: row chips + desktop 2-panel drill-down" above.
+
+`TemplateThumb.tsx` (`src/components/`) is the Templates feature's one new visual: a tiny
+board drawn from the board's own shapes (ink bar per group, a sticky-coloured block per
+sample note). `TemplatesShell.tsx` also exports `TOOLBAR_BUTTON`, a labelled version of
+`SidebarToggle`'s square `border-2 border-ink shadow-card` toolbar control. New icons in
+`icons.ts`: `TemplatesIcon`, `ExportIcon`, `ImportIcon`, `DuplicateIcon`. See
+`feat-templates.md`.
 
 ## Platform detection
 

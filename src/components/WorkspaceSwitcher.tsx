@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { usePlatform } from '../lib/platform/usePlatform'
 import { useWorkspaceSwitcher } from '../common_logics/useWorkspaceSwitcher'
 import { AnimatedIcon } from './ui/AnimatedIcon'
-import { ChevronDownIcon, CloseIcon, EditIcon } from './ui/icons'
+import { ChevronDownIcon, CloseIcon, EditIcon, PlusIcon } from './ui/icons'
 import { Modal } from './ui/Modal'
 import { ConfirmDialog } from './ui/ConfirmDialog'
+import { NewWorkspaceDialog } from './NewWorkspaceDialog'
 
 const CHIP = 'flex items-center gap-3 rounded-card border-[3px] border-ink bg-white px-3 py-2.5 shadow-card'
 
@@ -22,9 +23,9 @@ export function WorkspaceSwitcher() {
     isOpen,
     open,
     close,
-    newName,
-    setNewName,
-    handleCreate,
+    isCreating,
+    startCreate,
+    closeCreate,
     handleSwitch,
     updateName,
     confirmingDeleteId,
@@ -126,24 +127,18 @@ export function WorkspaceSwitcher() {
           ),
         )}
 
-        <div className={`${CHIP} justify-between`}>
-          <input
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleCreate()
-            }}
-            placeholder="+ New workspace"
-            className="min-w-0 flex-1 bg-transparent text-sm font-medium text-ink outline-none placeholder:text-ink/50"
-          />
-          <button
-            type="button"
-            onClick={handleCreate}
-            className="shrink-0 font-display text-sm font-bold uppercase text-ink hover:opacity-70"
-          >
-            Add
-          </button>
-        </div>
+        {/* Opens the "New workspace" dialog (name + template) in place of this list. */}
+        <button
+          type="button"
+          onClick={() => {
+            setEditingId(null)
+            startCreate()
+          }}
+          className={`${CHIP} w-full text-left text-sm font-medium text-ink hover:bg-slate-50`}
+        >
+          <AnimatedIcon icon={PlusIcon} size={16} />
+          New workspace
+        </button>
       </div>
     )
   }
@@ -184,6 +179,8 @@ export function WorkspaceSwitcher() {
           {renderList()}
         </Modal>
       )}
+
+      {isCreating && <NewWorkspaceDialog onClose={closeCreate} onCreated={closeCreate} />}
 
       <ConfirmDialog
         isOpen={confirmingDeleteId !== null}

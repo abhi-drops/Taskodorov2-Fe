@@ -21,6 +21,8 @@ again.
 | `/power-tools`, `/power-tools/groups/:groupId` | → `/settings…` | Legacy redirects (`replace`) since the 2.7 rename. |
 | `/apps` | `AppsPage` | Web: redirects to the first enabled app. Mobile: app tile list. See `feat-apps.md`. |
 | `/apps/diary` | `DiaryPage` | Placeholder until Phase 2.8. |
+| `/apps/templates` | `TemplatesPage` | Template list. See `feat-templates.md`. |
+| `/apps/templates/:templateId` | `TemplateEditorPage` | Template editor. |
 | `/notes/new` | `NoteEditorPage` | Reads `?group=<id>` from the query string. |
 | `/notes/:id/edit` | `NoteEditorPage` | Same component as create — see `feat-notes.md`. |
 | `/login`, `/signup` | `LoginPage`, `SignupPage` | Reachable only from Settings' Account section now, not the app door. |

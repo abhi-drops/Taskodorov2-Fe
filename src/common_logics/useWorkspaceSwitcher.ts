@@ -2,11 +2,10 @@ import { useState } from 'react'
 import { useWorkspace } from '../lib/workspace/useWorkspace'
 
 export function useWorkspaceSwitcher() {
-  const { workspaces, activeWorkspaceId, createWorkspace, renameWorkspace, deleteWorkspace, switchWorkspace } =
-    useWorkspace()
+  const { workspaces, activeWorkspaceId, renameWorkspace, deleteWorkspace, switchWorkspace } = useWorkspace()
 
   const [isOpen, setIsOpen] = useState(false)
-  const [newName, setNewName] = useState('')
+  const [isCreating, setIsCreating] = useState(false)
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null)
 
   function open() {
@@ -16,15 +15,16 @@ export function useWorkspaceSwitcher() {
   function close() {
     setIsOpen(false)
     setConfirmingDeleteId(null)
-    setNewName('')
   }
 
-  async function handleCreate() {
-    const name = newName.trim()
-    if (!name) return
-    await createWorkspace(name)
-    setNewName('')
+  /** Swaps the workspace list for the "New workspace" dialog. */
+  function startCreate() {
     close()
+    setIsCreating(true)
+  }
+
+  function closeCreate() {
+    setIsCreating(false)
   }
 
   function handleSwitch(id: string) {
@@ -57,9 +57,9 @@ export function useWorkspaceSwitcher() {
     isOpen,
     open,
     close,
-    newName,
-    setNewName,
-    handleCreate,
+    isCreating,
+    startCreate,
+    closeCreate,
     handleSwitch,
     updateName,
     confirmingDeleteId,

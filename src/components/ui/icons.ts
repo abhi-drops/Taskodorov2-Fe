@@ -15,11 +15,14 @@ export {
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  CopyIcon as DuplicateIcon,
   Clock01Icon as PomodoroIcon,
   Delete02Icon as TrashIcon,
   DeliveryBox01Icon as GroupIcon,
+  DownloadIcon as ExportIcon,
   GridViewIcon as AppsIcon,
   Home01Icon as HomeIcon,
+  LayoutTemplateIcon as TemplatesIcon,
   Menu01Icon as MenuIcon,
   MinusSignIcon as MinusIcon,
   PauseIcon,
@@ -29,4 +32,5 @@ export {
   Settings01Icon as SettingsIcon,
   // Huge has no empty-circle glyph; "undo" is the closest reading of "unchecked".
   UndoIcon as UncheckedIcon,
+  Upload01Icon as ImportIcon,
 } from '@animateicons/react/huge'

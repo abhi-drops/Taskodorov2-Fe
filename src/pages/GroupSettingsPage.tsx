@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router'
 import { AppShell } from '../components/AppShell'
 import { PowerToolsDesktopLayout } from '../components/PowerToolsSidebar'
 import { DANGER_CHIP } from '../components/SidebarPanelLayout'
-import { Select } from '../components/ui/Select'
+import { GroupSettingsFields } from '../components/GroupSettingsFields'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { AnimatedIcon } from '../components/ui/AnimatedIcon'
 import { TrashIcon } from '../components/ui/icons'
@@ -61,45 +61,16 @@ export default function GroupSettingsPage() {
 
   const fields = (
     <>
-      <Select
-        label="Sorted By"
-        value={group.sortedBy}
-        onChange={updateSortedBy}
-        options={[
-          { value: 'manual', label: 'Manual' },
-          { value: 'alphabetical', label: 'A to Z' },
-          { value: 'date', label: 'Date' },
-          { value: 'priority', label: 'Priority' },
-        ]}
-      />
-
-      <Select
-        label="On Check Move To"
-        value={group.onCheckMoveToGroupId ?? 'none'}
-        onChange={(value) => updateOnCheckMoveTo(value === 'none' ? null : value)}
-        options={[{ value: 'none', label: 'None' }, ...siblingGroups.map((sg) => ({ value: sg.id, label: sg.name }))]}
-      />
-
-      {group.onCheckMoveToGroupId && (
-        <Select
-          label="Reset To Unchecked On Move"
-          value={group.resetOnMove ? 'on' : 'off'}
-          onChange={(value) => updateResetOnMove(value === 'on')}
-          options={[
-            { value: 'on', label: 'On' },
-            { value: 'off', label: 'Off' },
-          ]}
-        />
-      )}
-
-      <Select
-        label="Note Colors"
-        value={group.noteColorMode}
-        onChange={updateNoteColorMode}
-        options={[
-          { value: 'manual', label: 'Manual' },
-          { value: 'priority', label: 'Priority' },
-        ]}
+      <GroupSettingsFields
+        sortedBy={group.sortedBy}
+        noteColorMode={group.noteColorMode}
+        onCheckMoveTo={group.onCheckMoveToGroupId}
+        resetOnMove={group.resetOnMove}
+        siblingGroups={siblingGroups}
+        onSortedByChange={updateSortedBy}
+        onNoteColorModeChange={updateNoteColorMode}
+        onCheckMoveToChange={updateOnCheckMoveTo}
+        onResetOnMoveChange={updateResetOnMove}
       />
 
       <button type="button" onClick={() => setConfirmDelete(true)} className={DANGER_CHIP}>

@@ -110,6 +110,9 @@ tabs — dragging a note *between* groups is a fundamentally different gesture o
 
 ## Group Settings (`/power-tools/groups/:groupId`, `GroupSettingsPage.tsx`)
 
+The four dropdowns are the presentational `components/GroupSettingsFields.tsx` (values
+in, callbacks out), shared with the template editor's group dialog (`feat-templates.md`).
+
 Reached via the gear icon on a group's row in Power Tools. Fields, all auto-saving on
 change (no Save button — see `feat-power-tools.md` for why that's the pattern
 throughout this app):

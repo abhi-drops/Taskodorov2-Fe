@@ -96,6 +96,18 @@ plain `SELECT *`.
     it *before* `seedIfEmpty`.
   - See `feat-diary.md`.
 
+- **`templates`** (2026-10-05): `id`, `name`, `builtin_id` (nullable; set on the
+  templates the app ships with), `position`, `content` (JSON: groups, their settings and
+  sample notes), timestamps, `deleted_at`.
+  - Its SQL and `seedBuiltinTemplates` live in `lib/templates/seedBuiltins.ts` (no
+    `sqlite.ts` import, same reason as `eventLog.ts`); `initDb` runs both.
+  - CRUD is `lib/db/templates.ts`.
+  - `seedIfEmpty` is now one call to `instantiateTemplate` (`lib/templates/instantiate.ts`)
+    with the factory Default template. That function takes the raw `db`, so it must be
+    called inside a single `withDb` and must never call the `withDb`-based CRUD functions.
+  - Settings' "Reset to Default" does not touch this table.
+  - See `feat-templates.md`.
+
 `lastSyncedAt` — deliberately **not implemented**, despite an early planning doc
 listing it as a "scaffold to add." It's specified as a single app-level timestamp (not
 a per-row column) for Phase 3 sync diffing; there's nothing to build yet, and adding an

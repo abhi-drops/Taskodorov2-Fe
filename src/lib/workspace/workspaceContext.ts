@@ -10,7 +10,9 @@ export interface WorkspaceState {
 }
 
 export interface WorkspaceContextValue extends WorkspaceState {
-  createWorkspace(name: string): Promise<void>
+  /** With a `templateId` the workspace starts with that template's groups and sample
+   * notes; without one it starts empty. */
+  createWorkspace(name: string, templateId?: string): Promise<void>
   renameWorkspace(id: string, name: string): Promise<void>
   deleteWorkspace(id: string): Promise<void>
   switchWorkspace(id: string): void

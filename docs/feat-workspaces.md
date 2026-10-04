@@ -13,7 +13,10 @@ persisted `activeWorkspaceId` (`lib/storage/preferences.ts`, key
 the auth session). If the persisted id no longer matches a loaded workspace (e.g. it
 was deleted in another session), falls back to the first workspace.
 
-`createWorkspace` auto-switches to the newly created one. `deleteWorkspace` cascades
+`createWorkspace(name, templateId?)` auto-switches to the newly created one. With a
+`templateId` the workspace starts with that template's groups, settings and sample notes
+(`createWorkspaceFromTemplate`, see `feat-templates.md`); without one, or if the template
+has been deleted meanwhile, it starts empty. `deleteWorkspace` cascades
 (via `lib/db/workspaces.ts`, see `feat-offline-data-layer.md`) and, if the deleted
 workspace was active, switches to another remaining one automatically — the app can
 never be left pointing at a deleted workspace. There is always ≥1 workspace; the first-
@@ -29,6 +32,14 @@ visual system was reworked later to match the board/Power Tools chip aesthetic (
 `border-[3px] border-ink bg-white shadow-card` row-chip treatment, not a bespoke
 style of its own):
 
+- **Creating a workspace** is a separate dialog, not an input in the list. The list's last
+  chip, "New workspace", closes the switcher and opens `NewWorkspaceDialog`
+  (`useNewWorkspace.ts`): a name field and a "Start from" grid of template tiles (a
+  `TemplateThumb` and the name; the selected tile is `sticky-yellow`). It shows the first
+  three templates, with "More templates" expanding the grid in place. Default is
+  selected to begin with. It is a centred `Modal` on web and a bottom sheet on mobile,
+  with the same frosted overlay and deep shadow as the switcher. The template editor's
+  "Use template" opens the same dialog with its template preselected.
 - Trigger: the workspace name + chevron, in the board's header (only there — the
   mockups only ever show the workspace label on the Board screen, never on Search/Power
   Tools/etc., so the trigger isn't in the shared `AppShell` chrome).

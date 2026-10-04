@@ -7,6 +7,8 @@ import PowerToolsPage from '../pages/PowerToolsPage'
 import GroupSettingsPage from '../pages/GroupSettingsPage'
 import NoteEditorPage from '../pages/NoteEditorPage'
 import AppsPage from '../pages/AppsPage'
+import TemplatesPage from '../pages/TemplatesPage'
+import TemplateEditorPage from '../pages/TemplateEditorPage'
 import { installPageTransitions } from '../lib/motion/pageTransitions'
 
 export const router = createBrowserRouter([
@@ -29,6 +31,8 @@ export const router = createBrowserRouter([
     path: '/apps/diary/:date',
     lazy: async () => ({ Component: (await import('../pages/DiaryDayPage')).default }),
   },
+  { path: '/apps/templates', element: <TemplatesPage /> },
+  { path: '/apps/templates/:templateId', element: <TemplateEditorPage /> },
   { path: '/notes/new', element: <NoteEditorPage /> },
   { path: '/notes/:id/edit', element: <NoteEditorPage /> },
   { path: '*', element: <Navigate to="/" replace /> },
