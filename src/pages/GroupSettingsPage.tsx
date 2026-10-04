@@ -118,7 +118,11 @@ export default function GroupSettingsPage() {
         if (e.key === 'Enter') e.currentTarget.blur()
       }}
       aria-label="Group name"
-      className="w-full bg-transparent font-display text-2xl font-bold text-nav-dark outline-none"
+      // An <input> doesn't inherit `text-align` from the mobile header's `text-center`
+      // wrapper, so it needs its own.
+      className={`w-full bg-transparent font-display text-2xl font-bold text-nav-dark outline-none ${
+        isNative ? 'text-center' : ''
+      }`}
     />
   )
 
