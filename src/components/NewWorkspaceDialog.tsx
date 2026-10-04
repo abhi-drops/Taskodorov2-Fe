@@ -1,7 +1,8 @@
 import { Modal } from './ui/Modal'
 import { Button } from './ui/Button'
 import { AnimatedIcon } from './ui/AnimatedIcon'
-import { ChevronDownIcon } from './ui/icons'
+import { ChevronDownIcon, ImportIcon } from './ui/icons'
+import { FormError } from './ui/FormError'
 import { DIALOG_OVERLAY, DIALOG_SHADOW, FIELD_INPUT, FIELD_LABEL } from './ui/dialogStyles'
 import { TemplateThumb } from './TemplateThumb'
 import { useNewWorkspace } from '../common_logics/useNewWorkspace'
@@ -32,6 +33,8 @@ export function NewWorkspaceDialog({ onClose, onCreated, initialTemplateId }: Ne
     setName,
     selectedTemplateId,
     setSelectedTemplateId,
+    importError,
+    handleImport,
     canCreate,
     handleCreate,
   } = useNewWorkspace(initialTemplateId, onCreated)
@@ -102,17 +105,29 @@ export function NewWorkspaceDialog({ onClose, onCreated, initialTemplateId }: Ne
               })}
             </div>
           )}
-          {hasMore && (
+          <div className="mt-1 flex flex-wrap items-center gap-x-6 gap-y-2">
+            {hasMore && (
+              <button
+                type="button"
+                onClick={toggleShowAll}
+                aria-expanded={showAll}
+                className="flex items-center gap-1.5 font-display text-sm font-bold uppercase text-ink hover:opacity-70"
+              >
+                {showAll ? 'Fewer templates' : 'More templates'}
+                <AnimatedIcon icon={ChevronDownIcon} size={14} className={showAll ? 'rotate-180' : ''} />
+              </button>
+            )}
+            {/* Adds the file to the stored templates and selects it. */}
             <button
               type="button"
-              onClick={toggleShowAll}
-              aria-expanded={showAll}
-              className="mt-1 flex items-center gap-1.5 self-start font-display text-sm font-bold uppercase text-ink hover:opacity-70"
+              onClick={handleImport}
+              className="flex items-center gap-1.5 font-display text-sm font-bold uppercase text-ink hover:opacity-70"
             >
-              {showAll ? 'Fewer templates' : 'More templates'}
-              <AnimatedIcon icon={ChevronDownIcon} size={14} className={showAll ? 'rotate-180' : ''} />
+              <AnimatedIcon icon={ImportIcon} size={14} />
+              Import template
             </button>
-          )}
+          </div>
+          <FormError message={importError} />
         </div>
 
         <div className="flex justify-end gap-3">

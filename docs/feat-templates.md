@@ -162,6 +162,36 @@ three shown first in the picker are fixed).
 - An imported template is always a user template. A name already in use becomes
   "Name (2)".
 
+- **Three ways in:**
+  - **Import** (Templates toolbar) adds the file as a new template under "Yours".
+  - **Import template** (the "New workspace" dialog) does the same, then selects it, so a
+    file can become a workspace in one go.
+  - **Replace from file** (the editor's toolbar) overwrites the open template's groups and
+    sample notes with the file's, after a confirm that says how many groups and notes are
+    coming in. The template keeps its name, id, position and (for a built-in) its
+    `builtinId`, so a replaced built-in can still be reset. It goes through the editor's
+    normal `edit()`, so it saves like any other change.
+
+## AI Guide
+
+The Templates toolbar's **AI Guide** button downloads (shares, on Android)
+`taskodoro-template-ai-guide.md`: a self-contained Markdown guide the user pastes into an
+AI assistant such as ChatGPT or Claude, so it can write a new template file or edit an
+exported one. It covers the file format field by field, how to write sample-note titles
+as next-step instructions that match the group's settings ("Click the checkbox when a
+task is off hold"), what the importer does with
+mistakes, advice on making a good board, rules for editing an existing template, a
+complete example, and how to bring the file back into the app.
+
+- Source: `src/lib/templates/aiGuide.md`, bundled into the app with Vite's `?raw` import
+  (so it works offline) and written out by `downloadAiGuide` (`useTemplates.ts`).
+- **It must be kept in step with the code.** It is the only description of the file
+  format anything outside this repo sees. `CLAUDE.md` makes updating it part of any change
+  to templates or to anything a template describes (group settings, note types, colours,
+  priorities, the import / replace / export UI).
+- Its last JSON block is a full example; after editing the guide, check that it still
+  imports unchanged through `parseTemplateFile`.
+
 **Not verifiable in a browser:** the Android export and the Android file picker are
 `isNative` paths. Check them on a device.
 

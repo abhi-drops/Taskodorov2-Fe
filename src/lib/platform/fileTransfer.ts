@@ -12,9 +12,14 @@ import { Share } from '@capacitor/share'
  * Resolves once the download has started or the share sheet has closed. Dismissing the
  * share sheet is not an error.
  */
-export async function exportTextFile(fileName: string, contents: string, title: string): Promise<void> {
+export async function exportTextFile(
+  fileName: string,
+  contents: string,
+  title: string,
+  mimeType = 'application/json',
+): Promise<void> {
   if (!Capacitor.isNativePlatform()) {
-    const url = URL.createObjectURL(new Blob([contents], { type: 'application/json' }))
+    const url = URL.createObjectURL(new Blob([contents], { type: mimeType }))
     const link = document.createElement('a')
     link.href = url
     link.download = fileName

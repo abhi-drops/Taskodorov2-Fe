@@ -30,6 +30,7 @@ export {
   PlayIcon,
   Refresh01Icon as ResetIcon,
   Settings01Icon as SettingsIcon,
+  SparklesIcon as AiGuideIcon,
   // Huge has no empty-circle glyph; "undo" is the closest reading of "unchecked".
   UndoIcon as UncheckedIcon,
   Upload01Icon as ImportIcon,

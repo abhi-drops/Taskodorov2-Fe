@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { listTemplates } from '../lib/db/templates'
+import { createTemplate, listTemplates } from '../lib/db/templates'
 import { DEFAULT_BUILTIN_ID } from '../lib/templates/builtins'
 import { useWorkspace } from '../lib/workspace/useWorkspace'
+import { NOT_A_TEMPLATE_MESSAGE, pickTemplateFile } from './useTemplates'
 import type { Template } from '../types/template'
 
 /** How many templates the picker shows before "More templates" is pressed. */
@@ -22,6 +23,7 @@ export function useNewWorkspace(initialTemplateId: string | undefined, onCreated
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(initialTemplateId ?? null)
   const [showAll, setShowAll] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
+  const [importError, setImportError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -43,6 +45,22 @@ export function useNewWorkspace(initialTemplateId: string | undefined, onCreated
   const visibleTemplates = showAll ? all : all.slice(0, QUICK_PICK_COUNT)
   const canCreate = name.trim() !== '' && !isCreating
 
+  /** Imports a template file, adds it to the stored templates and selects it. */
+  async function handleImport() {
+    setImportError(null)
+    const parsed = await pickTemplateFile()
+    if (parsed === null) return
+    if (parsed === 'invalid') {
+      setImportError(NOT_A_TEMPLATE_MESSAGE)
+      return
+    }
+    const created = await createTemplate(parsed)
+    setTemplates(await listTemplates())
+    setSelectedTemplateId(created.id)
+    // It lands at the end of the list, past the first three.
+    setShowAll(true)
+  }
+
   async function handleCreate() {
     const trimmed = name.trim()
     if (!trimmed || isCreating) return
@@ -61,6 +79,8 @@ export function useNewWorkspace(initialTemplateId: string | undefined, onCreated
     setName,
     selectedTemplateId,
     setSelectedTemplateId,
+    importError,
+    handleImport,
     canCreate,
     handleCreate,
   }

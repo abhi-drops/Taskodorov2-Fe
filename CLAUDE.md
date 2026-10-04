@@ -37,6 +37,23 @@ Copy `.env.example` to `.env.local` (gitignored) and fill in:
   to (or update) the relevant `docs/feat-*.md` file. If the change adds or
   substantially changes a feature, update or create the matching `feat-*.md` too — the
   changelog is a log entry, not a substitute for the feature doc staying accurate.
+- **The templates "AI Guide" (`src/lib/templates/aiGuide.md`) must be updated with the
+  code.** It is a Markdown file users download from the Templates app and paste into an
+  AI assistant (ChatGPT, Claude, ...) so it can write or edit a template file; it is the
+  only description of the template file format an outside tool ever sees. **Whenever a
+  change touches templates or anything a template describes, update the guide in the
+  same change**, and say in the changelog entry that it was updated. That covers:
+  - the file format, its parsing and limits (`lib/templates/templateFile.ts`,
+    `types/template.ts`);
+  - what a template can hold: a new group setting, note type, note field, colour or
+    priority (`types/group.ts`, `types/note.ts`, `swatchColors.ts`,
+    `resolveNoteColor.ts`), including a change to what an existing value means;
+  - how templates are imported, replaced or exported in the UI (the guide's "Using the
+    file" steps name the buttons).
+
+  The guide's last JSON block is a complete example: after editing the guide, check that
+  example still imports unchanged through `parseTemplateFile`. If a change turns out not
+  to affect the guide, say so in your summary rather than skipping the check silently.
 - **`docs/phase2-roadmap.md`**, **`docs/phase2-offline-first-plan.md`** — the planning
   docs Phase 2 was built from; mostly historical now that Phase 2 is complete, but
   still the record of *why* certain decisions were made (kept for that reason, not

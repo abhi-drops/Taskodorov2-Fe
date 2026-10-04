@@ -37,7 +37,8 @@ style of its own):
   (`useNewWorkspace.ts`): a name field and a "Start from" grid of template tiles (a
   `TemplateThumb` and the name; the selected tile is `sticky-yellow`). It shows the first
   three templates, with "More templates" expanding the grid in place. Default is
-  selected to begin with. It is a large centred `Modal` on web (`size="large"`: about 60% of the screen wide, 90% tall, big tiles, the grid scrolls and the buttons stay pinned) and a bottom sheet on mobile,
+  selected to begin with. "Import template" beside it imports a template file, stores it
+  and selects it. It is a large centred `Modal` on web (`size="large"`: about 60% of the screen wide, 90% tall, big tiles, the grid scrolls and the buttons stay pinned) and a bottom sheet on mobile,
   with the same frosted overlay and deep shadow as the switcher. The template editor's
   "Use template" opens the same dialog with its template preselected.
 - Trigger: the workspace name + chevron, in the board's header (only there — the

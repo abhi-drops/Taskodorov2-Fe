@@ -17,6 +17,14 @@ from each entry. See `CLAUDE.md` for the rule on keeping this updated.
   workspace is no longer created empty (`feat-workspaces.md`).
 - **Export / import:** templates travel as `.taskodoro.json` files: a download on web,
   the share sheet on Android. Adds `@capacitor/filesystem` and `@capacitor/share`.
+- **AI Guide:** the Templates toolbar downloads a Markdown guide to paste into an AI
+  assistant so it can write or edit a template file (`src/lib/templates/aiGuide.md`).
+  It tells the assistant to write sample-note titles as next-step instructions that match
+  each group's settings.
+  `CLAUDE.md` now requires updating it with any template-related change.
+- **More ways to bring a file in:** "Import template" in the New workspace dialog, and
+  "Replace from file" in the template editor, which swaps an existing template's content
+  for an updated file and keeps its name.
 - **Data layer:** new `templates` table; the first-run seed now goes through the same
   `instantiateTemplate` path as every template (`feat-offline-data-layer.md`).
 - **Refactor, no behaviour change:** Group Settings' dropdowns moved into the shared

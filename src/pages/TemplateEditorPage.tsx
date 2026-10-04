@@ -23,13 +23,14 @@ import { SidePanel } from '../components/ui/SidePanel'
 import { SidebarToggle } from '../components/ui/SidebarToggle'
 import { Tabs } from '../components/ui/Tabs'
 import { DIALOG_OVERLAY, DIALOG_SHADOW } from '../components/ui/dialogStyles'
-import { ExportIcon, PlusIcon, SettingsIcon } from '../components/ui/icons'
+import { ExportIcon, ImportIcon, PlusIcon, SettingsIcon } from '../components/ui/icons'
 import { useTemplateEditor } from '../common_logics/useTemplateEditor'
-import { exportTemplate } from '../common_logics/useTemplates'
+import { exportTemplate, NOT_A_TEMPLATE_MESSAGE, pickTemplateFile } from '../common_logics/useTemplates'
 import {
   addGroup,
   addNote,
   blankNote,
+  countNotes,
   deleteGroup,
   deleteNote,
   findNote,
@@ -41,11 +42,18 @@ import {
 } from '../lib/templates/editContent'
 import { useFillViewportHeight } from '../lib/layout/useFillViewportHeight'
 import { usePlatform } from '../lib/platform/usePlatform'
+import type { TemplateContent } from '../types/template'
 
 /** What the settings sidebar (desktop) or bottom sheet (mobile) is showing. */
 type Selection = { kind: 'group'; key: string } | { kind: 'note'; key: string } | null
 
-type Confirming = { kind: 'reset' } | { kind: 'delete' } | { kind: 'delete-group'; groupKey: string } | null
+type Confirming =
+  | { kind: 'reset' }
+  | { kind: 'delete' }
+  | { kind: 'delete-group'; groupKey: string }
+  /** A template file has been picked and read; replacing waits for a yes. */
+  | { kind: 'replace'; content: TemplateContent }
+  | null
 
 /**
  * Desktop: the board beside the settings sidebar. Its own component so it mounts only
@@ -102,7 +110,7 @@ export default function TemplateEditorPage() {
   const [activeGroupKey, setActiveGroupKey] = useState<string | null>(null)
   const [confirming, setConfirming] = useState<Confirming>(null)
   const [isUsing, setIsUsing] = useState(false)
-  const [exportError, setExportError] = useState<string | null>(null)
+  const [fileError, setFileError] = useState<string | null>(null)
 
   if (status === 'loading') {
     return (
@@ -155,18 +163,36 @@ export default function TemplateEditorPage() {
   }
 
   async function handleExport() {
-    setExportError(null)
+    setFileError(null)
     try {
       await exportTemplate(current)
     } catch {
-      setExportError(`Couldn't export "${current.name}". Try again.`)
+      setFileError(`Couldn't export "${current.name}". Try again.`)
     }
+  }
+
+  /** Replaces this template's groups and sample notes with a file's (an updated version,
+   * e.g. one an AI assistant edited). The template keeps its name and its place. */
+  async function handleReplace() {
+    setFileError(null)
+    const parsed = await pickTemplateFile()
+    if (parsed === null) return
+    if (parsed === 'invalid') {
+      setFileError(NOT_A_TEMPLATE_MESSAGE)
+      return
+    }
+    setConfirming({ kind: 'replace', content: parsed.content })
   }
 
   function handleConfirm() {
     if (confirming?.kind === 'reset') {
       setSelection(null)
       reset()
+    }
+    if (confirming?.kind === 'replace') {
+      const replacement = confirming.content
+      setSelection(null)
+      edit(() => replacement)
     }
     if (confirming?.kind === 'delete') remove().then(() => navigate('/apps/templates'))
     if (confirming?.kind === 'delete-group') {
@@ -189,7 +215,13 @@ export default function TemplateEditorPage() {
             message: `Delete the "${template.name}" template? Workspaces already made from it are not affected.`,
             confirmLabel: 'Delete',
           }
-        : {
+        : confirming?.kind === 'replace'
+          ? {
+              title: 'Replace template',
+              message: `Replace everything in "${template.name}" with the file's ${confirming.content.groups.length} groups and ${countNotes(confirming.content)} sample notes? The template keeps its name.`,
+              confirmLabel: 'Replace',
+            }
+          : {
             title: 'Delete group',
             message: 'Delete this group and its sample notes from the template?',
             confirmLabel: 'Delete',
@@ -246,10 +278,14 @@ export default function TemplateEditorPage() {
           aria-label="Template name"
           className="min-w-0 flex-1 basis-40 bg-transparent font-display text-lg font-bold text-nav-dark outline-none"
         />
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
           <button type="button" onClick={handleExport} className={`${TOOLBAR_BUTTON} bg-white hover:bg-slate-50`}>
             <AnimatedIcon icon={ExportIcon} size={16} />
             Export
+          </button>
+          <button type="button" onClick={handleReplace} className={`${TOOLBAR_BUTTON} bg-white hover:bg-slate-50`}>
+            <AnimatedIcon icon={ImportIcon} size={16} />
+            Replace from file
           </button>
           <button
             type="button"
@@ -266,7 +302,7 @@ export default function TemplateEditorPage() {
         </div>
       </TemplatesToolbar>
 
-      <FormError message={exportError} />
+      <FormError message={fileError} />
 
       {isNative ? (
         <div className="flex flex-col gap-4">

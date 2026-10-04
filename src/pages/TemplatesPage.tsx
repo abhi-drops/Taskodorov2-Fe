@@ -7,7 +7,7 @@ import { NewTemplateDialog } from '../components/NewTemplateDialog'
 import { AnimatedIcon } from '../components/ui/AnimatedIcon'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { FormError } from '../components/ui/FormError'
-import { CloseIcon, DuplicateIcon, ExportIcon, ImportIcon, PlusIcon, TemplatesIcon } from '../components/ui/icons'
+import { AiGuideIcon, CloseIcon, DuplicateIcon, ExportIcon, ImportIcon, PlusIcon, TemplatesIcon } from '../components/ui/icons'
 import { useTemplates } from '../common_logics/useTemplates'
 import { countNotes } from '../lib/templates/editContent'
 import type { Template } from '../types/template'
@@ -69,6 +69,7 @@ export default function TemplatesPage() {
     error,
     handleImport,
     handleExport,
+    handleDownloadGuide,
     handleDuplicate,
     deleteTarget,
     requestDelete,
@@ -95,7 +96,12 @@ export default function TemplatesPage() {
           <AnimatedIcon icon={TemplatesIcon} size={20} />
           <h1 className="font-display text-lg font-bold">Templates</h1>
         </div>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          {/* A Markdown file to paste into an AI assistant, so it can write a template. */}
+          <button type="button" onClick={handleDownloadGuide} className={`${TOOLBAR_BUTTON} bg-white hover:bg-slate-50`}>
+            <AnimatedIcon icon={AiGuideIcon} size={16} />
+            AI Guide
+          </button>
           <button type="button" onClick={handleImport} className={`${TOOLBAR_BUTTON} bg-white hover:bg-slate-50`}>
             <AnimatedIcon icon={ImportIcon} size={16} />
             Import
@@ -124,7 +130,8 @@ export default function TemplatesPage() {
             <SectionHeading>Yours</SectionHeading>
             {userTemplates.length === 0 ? (
               <p className="text-sm text-slate-500">
-                None yet. Save one of your workspaces as a template, or import a template file.
+                None yet. Save one of your workspaces as a template, import a template file, or download the AI
+                Guide and have an AI assistant write one for you.
               </p>
             ) : (
               userTemplates.map(row)
