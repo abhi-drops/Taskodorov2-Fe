@@ -1,4 +1,16 @@
 import { useState, type ReactNode } from 'react'
+import { AnimatedIcon, type AnimatedIconComponent } from './ui/AnimatedIcon'
+import {
+  ArrowRightIcon,
+  CheckIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  EditIcon,
+  MinusIcon,
+  PlusIcon,
+  ResetIcon,
+  UncheckedIcon,
+} from './ui/icons'
 import { SWATCH_CLASSES, SWATCH_TEXT_CLASSES, type SwatchColor } from './ui/swatchColors'
 import {
   formatTimeOfDay,
@@ -59,17 +71,17 @@ export function DiaryCounts({ counts }: { counts: DayCountsDetailed }) {
 // ---------------------------------------------------------------- change list
 
 /** Action chip per kind, in the same colour scheme as the count tiles (see above). */
-const KIND_CHIP: Record<FeedKind, { label: string; tone: string }> = {
+const KIND_CHIP: Record<FeedKind, { label: string; tone: string; icon?: AnimatedIconComponent }> = {
   created: { label: 'Created', tone: VIOLET },
   moved: { label: 'Moved', tone: 'bg-sticky-blue text-ink' },
-  checked: { label: '✓ Checked', tone: GREEN },
-  unchecked: { label: '○ Unchecked', tone: YELLOW },
+  checked: { label: 'Checked', tone: GREEN, icon: CheckIcon },
+  unchecked: { label: 'Unchecked', tone: YELLOW, icon: UncheckedIcon },
   counter: { label: 'Counter', tone: YELLOW },
   list: { label: 'List', tone: YELLOW },
   title: { label: 'Renamed', tone: YELLOW },
   color: { label: 'Color', tone: YELLOW },
   status: { label: 'Status', tone: STATUS },
-  status_edited: { label: '✎ Status', tone: STATUS },
+  status_edited: { label: 'Status', tone: STATUS, icon: EditIcon },
   status_deleted: { label: 'Status deleted', tone: 'bg-sticky-coral text-ink' },
   deleted: { label: 'Deleted', tone: 'bg-sticky-coral text-ink' },
 }
@@ -79,7 +91,7 @@ const isSwatch = (color: string | null | undefined): color is SwatchColor => !!c
 function Chip({ className, children }: { className: string; children: ReactNode }) {
   return (
     <span
-      className={`inline-flex shrink-0 items-center rounded-card border-2 border-ink px-1.5 font-display text-[10px] font-bold uppercase leading-4 ${className}`}
+      className={`inline-flex shrink-0 items-center gap-0.5 rounded-card border-2 border-ink px-1.5 font-display text-[10px] font-bold uppercase leading-4 ${className}`}
     >
       {children}
     </span>
@@ -107,12 +119,12 @@ function Swatch({ color }: { color: string | null | undefined }) {
 const signed = (n: number) => (n > 0 ? `+${n}` : `${n}`)
 
 /** Icon + wording per item-level list change. */
-const LIST_CHANGE: Record<ListChange['change'], { icon: string; className?: string }> = {
-  checked: { icon: '✓' },
-  unchecked: { icon: '○' },
-  added: { icon: '+' },
-  removed: { icon: '−', className: 'line-through opacity-70' },
-  edited: { icon: '✎' },
+const LIST_CHANGE: Record<ListChange['change'], { icon: AnimatedIconComponent; className?: string }> = {
+  checked: { icon: CheckIcon },
+  unchecked: { icon: UncheckedIcon },
+  added: { icon: PlusIcon },
+  removed: { icon: MinusIcon, className: 'line-through opacity-70' },
+  edited: { icon: EditIcon },
 }
 
 function ListChanges({ changes }: { changes: ListChange[] }) {
@@ -120,13 +132,12 @@ function ListChanges({ changes }: { changes: ListChange[] }) {
     <ul className="flex flex-col gap-0.5 text-xs text-ink">
       {changes.map((c, i) => (
         <li key={i} className="flex items-start gap-1.5">
-          <span className="w-3 shrink-0 text-center font-display font-bold" aria-hidden="true">
-            {LIST_CHANGE[c.change].icon}
-          </span>
+          <AnimatedIcon icon={LIST_CHANGE[c.change].icon} size={12} className="mt-0.5" />
           <span className={`min-w-0 break-words ${LIST_CHANGE[c.change].className ?? ''}`}>
             {c.change === 'edited' ? (
               <>
-                <span className="line-through opacity-60">{c.previousText}</span> → {c.text}
+                <span className="line-through opacity-60">{c.previousText}</span>{' '}
+                <AnimatedIcon icon={ArrowRightIcon} size={12} className="align-middle" /> {c.text}
               </>
             ) : (
               c.text
@@ -152,10 +163,15 @@ function EntryDetail({ entry }: { entry: FeedEntry }) {
         <div className="flex flex-col gap-1">
           <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-ink">
             <GroupChip name={entry.fromGroup ?? '?'} />
-            <span aria-hidden="true">→</span>
+            <AnimatedIcon icon={ArrowRightIcon} size={12} />
             <GroupChip name={entry.toGroup ?? '?'} />
           </div>
-          {entry.resetOnMove && <span className="text-xs text-slate-600">↺ reset to unchecked</span>}
+          {entry.resetOnMove && (
+            <span className="flex items-center gap-1 text-xs text-slate-600">
+              <AnimatedIcon icon={ResetIcon} size={12} />
+              reset to unchecked
+            </span>
+          )}
         </div>
       )
     case 'title':
@@ -168,7 +184,7 @@ function EntryDetail({ entry }: { entry: FeedEntry }) {
       return (
         <div className="flex items-center gap-1.5 text-xs text-ink">
           <Swatch color={entry.previousColor} />
-          <span aria-hidden="true">→</span>
+          <AnimatedIcon icon={ArrowRightIcon} size={12} />
           <Swatch color={entry.color} />
         </div>
       )
@@ -176,8 +192,10 @@ function EntryDetail({ entry }: { entry: FeedEntry }) {
       const delta = entry.fromValue != null && entry.toValue !== undefined ? entry.toValue - entry.fromValue : null
       return (
         <div className="flex items-baseline gap-2 text-ink">
-          <span className="font-display text-sm font-bold">
-            {entry.fromValue ?? '?'} → {entry.toValue}
+          <span className="inline-flex items-center gap-1 font-display text-sm font-bold">
+            {entry.fromValue ?? '?'}
+            <AnimatedIcon icon={ArrowRightIcon} size={12} />
+            {entry.toValue}
           </span>
           {delta !== null && delta !== 0 && <span className="font-display text-xs text-slate-600">{signed(delta)}</span>}
         </div>
@@ -191,18 +209,19 @@ function EntryDetail({ entry }: { entry: FeedEntry }) {
       // The same dark strip a note card uses for its statuses, in the note's colour.
       // An edit shows old → new; a deletion shows the removed text struck through.
       return (
-        <p
+        <div
           className={`break-words bg-ink px-2 py-1 text-xs font-medium ${
             isSwatch(entry.color) ? SWATCH_TEXT_CLASSES[entry.color] : 'text-white'
           }`}
         >
           {entry.kind === 'status_edited' && (
             <>
-              <span className="line-through opacity-60">{entry.previousStatusText}</span> →{' '}
+              <span className="line-through opacity-60">{entry.previousStatusText}</span>{' '}
+              <AnimatedIcon icon={ArrowRightIcon} size={12} className="align-middle" />{' '}
             </>
           )}
           <span className={entry.kind === 'status_deleted' ? 'line-through opacity-70' : ''}>{entry.statusText}</span>
-        </p>
+        </div>
       )
     case 'checked':
     case 'unchecked':
@@ -221,9 +240,10 @@ function TapBreakdown({ entry }: { entry: FeedEntry }) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="font-display text-[11px] font-bold text-slate-600 hover:text-ink"
+        className="flex items-center gap-0.5 font-display text-[11px] font-bold text-slate-600 hover:text-ink"
       >
-        {open ? '▾ Hide taps' : `▸ Show ${taps.length} taps`}
+        <AnimatedIcon icon={open ? ChevronDownIcon : ChevronRightIcon} size={12} />
+        {open ? 'Hide taps' : `Show ${taps.length} taps`}
       </button>
       {open && (
         <ol className="mt-1 flex flex-col gap-0.5 border-l-2 border-ink/20 pl-2">
@@ -281,8 +301,16 @@ export function DiaryFeedList({ feed, frame, onSelect, empty = 'Nothing happened
               className="flex w-full flex-col gap-1.5 p-2 text-left"
             >
               <span className="flex items-center gap-1.5">
-                <Chip className={chip.tone}>{chip.label}</Chip>
-                {entry.completed && <Chip className={GREEN}>✓ Completed</Chip>}
+                <Chip className={chip.tone}>
+                  {chip.icon && <AnimatedIcon icon={chip.icon} size={10} />}
+                  {chip.label}
+                </Chip>
+                {entry.completed && (
+                  <Chip className={GREEN}>
+                    <AnimatedIcon icon={CheckIcon} size={10} />
+                    Completed
+                  </Chip>
+                )}
                 <span className="ml-auto shrink-0 font-display text-[11px] text-slate-600">
                   {formatTimeOfDay(entry.time)}
                 </span>

@@ -1,6 +1,8 @@
 import { createContext, useContext, type ReactNode } from 'react'
 import { DayPicker, type DayButtonProps } from 'react-day-picker'
 import { addMonths, format } from 'date-fns'
+import { AnimatedIcon } from './AnimatedIcon'
+import { ChevronLeftIcon, ChevronRightIcon } from './icons'
 
 /**
  * Generic month-grid calendar on react-day-picker v9, styled entirely with the app's
@@ -9,7 +11,7 @@ import { addMonths, format } from 'date-fns'
  * No Diary logic lives here: callers put per-day content in `renderDay`, which renders
  * under the day number. See `docs/style-guide.md`.
  *
- * Navigation is our own header (yellow square ‹ › buttons and the month name, as in the
+ * Navigation is our own header (yellow square chevron buttons and the month name, as in the
  * Diary wireframe) instead of react-day-picker's, so the month is fully controlled by
  * `month`/`onMonthChange`.
  */
@@ -66,10 +68,10 @@ export function Calendar({ month, onMonthChange, onDayClick, renderDay, classNam
         <h2 className="font-display text-lg font-bold text-nav-dark">{format(month, 'MMMM yyyy')}</h2>
         <div className="flex items-center gap-2">
           <NavButton label="Previous month" onClick={() => onMonthChange(addMonths(month, -1))}>
-            ‹
+            <AnimatedIcon icon={ChevronLeftIcon} size={16} />
           </NavButton>
           <NavButton label="Next month" onClick={() => onMonthChange(addMonths(month, 1))}>
-            ›
+            <AnimatedIcon icon={ChevronRightIcon} size={16} />
           </NavButton>
         </div>
       </div>

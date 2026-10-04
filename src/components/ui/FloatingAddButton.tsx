@@ -1,5 +1,7 @@
 import { useId, useRef } from 'react'
 import { Link } from 'react-router'
+import { AnimatedIcon } from './AnimatedIcon'
+import { PlusIcon } from './icons'
 import { useTiltShrink } from '../../lib/motion/useTiltShrink'
 
 /**
@@ -58,9 +60,11 @@ export function FloatingAddButton({ to, position = 'medium', dynamic = false, cl
         {/* Inner stroke, as in the export: 10 wide, clipped to the shape → 5px visible. */}
         <path d={BUMP_PATH} fill="none" strokeWidth={10} clipPath={`url(#${clipId})`} className="stroke-ink" />
       </svg>
-      <span className="absolute left-[14px] top-1/2 -translate-y-1/2 font-display text-[25px] font-bold leading-none text-white">
-        +
-      </span>
+      <AnimatedIcon
+        icon={PlusIcon}
+        size={18}
+        className="absolute left-[12px] top-1/2 -translate-y-1/2 text-white [&_svg]:stroke-[2.5]"
+      />
     </Link>
   )
 }

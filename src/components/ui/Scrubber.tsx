@@ -1,4 +1,6 @@
 import * as Slider from '@radix-ui/react-slider'
+import { AnimatedIcon } from './AnimatedIcon'
+import { PauseIcon, PlayIcon } from './icons'
 
 /**
  * Generic frame scrubber, a "video player" timeline: a Radix Slider (accessible, with
@@ -43,14 +45,9 @@ export function Scrubber({
         className="flex h-7 w-7 shrink-0 items-center justify-center rounded-card border-2 border-ink bg-white text-ink shadow-card hover:bg-slate-50 disabled:opacity-40"
       >
         {playing ? (
-          <svg viewBox="0 0 12 12" className="h-3 w-3" aria-hidden="true">
-            <rect x="2" y="1.5" width="3" height="9" fill="currentColor" />
-            <rect x="7" y="1.5" width="3" height="9" fill="currentColor" />
-          </svg>
+          <AnimatedIcon icon={PauseIcon} size={14} />
         ) : (
-          <svg viewBox="0 0 12 12" className="h-3 w-3" aria-hidden="true">
-            <path d="M3 1.5v9l7-4.5z" fill="currentColor" />
-          </svg>
+          <AnimatedIcon icon={PlayIcon} size={14} />
         )}
       </button>
 

@@ -17,7 +17,7 @@ someone goes looking for it.
 Reworked against a mobile mockup (`docs/design-references/mobile/`) and a rough
 desktop wireframe — see `docs/style-guide.md`'s "Power Tools: row chips + desktop
 2-panel drill-down" section for the full visual system (chip rows, `DANGER_CHIP`,
-`ClockIcon`/`BoxIcon`). Structurally the two platforms now genuinely diverge:
+`GroupIcon`). Structurally the two platforms now genuinely diverge:
 
 - **Mobile** — `/settings` is one scrolling page (Groups → Account, in that order) and
   `/settings/groups/:id` is a separate full-page screen, matching the two distinct

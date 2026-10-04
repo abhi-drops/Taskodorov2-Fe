@@ -4,10 +4,10 @@ import { AppShell } from '../components/AppShell'
 import { PowerToolsDesktopLayout } from '../components/PowerToolsSidebar'
 import { Select } from '../components/ui/Select'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
-import { Icon } from '../components/ui/Icon'
+import { AnimatedIcon } from '../components/ui/AnimatedIcon'
+import { TrashIcon } from '../components/ui/icons'
 import { useGroupSettings } from '../common_logics/useGroupSettings'
 import { usePlatform } from '../lib/platform/usePlatform'
-import deleteIcon from '../assets/delete.png'
 import type { NoteColorMode, SortedBy } from '../types/group'
 
 const DANGER_CHIP =
@@ -109,7 +109,7 @@ export default function GroupSettingsPage() {
       </Select>
 
       <button type="button" onClick={() => setConfirmDelete(true)} className={DANGER_CHIP}>
-        <Icon src={deleteIcon} alt="" size={16} className="[filter:brightness(0)_invert(1)]" />
+        <AnimatedIcon icon={TrashIcon} size={16} className="text-white" />
         Delete This Group
       </button>
     </>

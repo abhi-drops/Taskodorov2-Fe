@@ -1,4 +1,6 @@
 import type { SelectHTMLAttributes } from 'react'
+import { AnimatedIcon } from './AnimatedIcon'
+import { ChevronDownIcon } from './icons'
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label: string
@@ -23,14 +25,12 @@ export function Select({ label, error, id, className = '', children, ...rest }: 
         >
           {children}
         </select>
-        <svg
-          className="pointer-events-none absolute right-3.5 top-1/2 h-2.5 w-2.5 -translate-y-1/2"
-          viewBox="0 0 10 6"
-          fill="none"
-          aria-hidden="true"
-        >
-          <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <AnimatedIcon
+          icon={ChevronDownIcon}
+          size={14}
+          still
+          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
+        />
       </div>
       {error && <span className="text-sm text-sticky-coral">{error}</span>}
     </div>

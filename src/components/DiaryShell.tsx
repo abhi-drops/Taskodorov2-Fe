@@ -3,8 +3,9 @@ import { Link } from 'react-router'
 import { AppShell } from './AppShell'
 import { AppsDesktopLayout } from './AppsSidebar'
 import { WorkspaceSwitcher } from './WorkspaceSwitcher'
+import { AnimatedIcon } from './ui/AnimatedIcon'
 import { Icon } from './ui/Icon'
-import { BookIcon } from './ui/NavIcons'
+import { DiaryIcon, EditIcon, MovedIcon, PlusIcon } from './ui/icons'
 import { SidebarToggle } from './ui/SidebarToggle'
 import { APPS_PANEL_KEY } from './appsList'
 import { usePlatform } from '../lib/platform/usePlatform'
@@ -32,8 +33,8 @@ export function DiaryShell({ wide = false, children }: { wide?: boolean; childre
     <AppShell
       headerStart={<WorkspaceSwitcher />}
       headerEnd={
-        <Link to="/search" viewTransition aria-label="Search">
-          <Icon src={searchIcon} alt="" size={20} />
+        <Link to="/search" viewTransition aria-label="Search" className="group">
+          <Icon src={searchIcon} alt="" size={20} className="transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110 group-active:scale-95 motion-reduce:transition-none" />
         </Link>
       }
     >
@@ -48,8 +49,8 @@ export function DiaryShell({ wide = false, children }: { wide?: boolean; childre
 export const DIARY_DETAILS_PANEL_KEY = 'diary-day-details'
 
 /**
- * The Diary toolbar: "📖 Diary" plus optional controls (scrubber, date stepper) as
- * children. On desktop it also carries the sidebar ☰ toggles at its two ends: the Apps
+ * The Diary toolbar: the book icon and "Diary" plus optional controls (scrubber, date stepper) as
+ * children. On desktop it also carries the sidebar menu toggles at its two ends: the Apps
  * list on the far left (always), and the day-details sidebar on the far right when
  * `detailsToggle` is set. They're aligned with the toolbar, never floating, so they
  * stay put whether their sidebars are open or not.
@@ -60,7 +61,7 @@ export function DiaryHeader({ detailsToggle = false, children }: { detailsToggle
     <div className="flex items-center gap-3">
       {!isNative && <SidebarToggle storageKey={APPS_PANEL_KEY} label="apps list" />}
       <div className="flex shrink-0 items-center gap-2 text-nav-dark">
-        <BookIcon className="h-5 w-5" />
+        <AnimatedIcon icon={DiaryIcon} size={20} />
         <h1 className="font-display text-lg font-bold">Diary</h1>
       </div>
       {children}
@@ -78,22 +79,25 @@ export function DayActivityChips({ created, moved, changes }: { created: number;
   if (created + moved + changes === 0) return null
   // Text colour is set per chip (not here): two text-* utilities on one element have no
   // guaranteed winner in Tailwind.
-  const chip = 'rounded-card border border-ink px-1 font-display text-[10px] font-bold leading-4'
+  const chip = 'inline-flex items-center gap-px rounded-card border border-ink px-1 font-display text-[10px] font-bold leading-4'
   return (
     <div className="flex flex-wrap gap-0.5">
       {created > 0 && (
         <span className={`${chip} bg-accent-purple text-white`} title={`${created} created`}>
-          +{created}
+          <AnimatedIcon icon={PlusIcon} size={10} still />
+          {created}
         </span>
       )}
       {moved > 0 && (
         <span className={`${chip} bg-sticky-blue text-ink`} title={`${moved} moved`}>
-          ↔{moved}
+          <AnimatedIcon icon={MovedIcon} size={10} still />
+          {moved}
         </span>
       )}
       {changes > 0 && (
         <span className={`${chip} bg-sticky-yellow text-ink`} title={`${changes} changes`}>
-          ✎{changes}
+          <AnimatedIcon icon={EditIcon} size={10} still />
+          {changes}
         </span>
       )}
     </div>

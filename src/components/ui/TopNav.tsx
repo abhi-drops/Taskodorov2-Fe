@@ -1,7 +1,6 @@
 import { NavLink } from 'react-router'
-import { Icon } from './Icon'
-import { GearIcon, GridIcon } from './NavIcons'
-import homeIcon from '../../assets/home.png'
+import { AnimatedIcon } from './AnimatedIcon'
+import { AppsIcon, HomeIcon, SettingsIcon } from './icons'
 
 interface TopNavProps {
   className?: string
@@ -25,7 +24,7 @@ export function TopNav({ className = '' }: TopNavProps) {
           viewTransition
           className="flex items-center gap-2 bg-sticky-yellow px-5 py-2 text-sm font-medium text-nav-dark"
         >
-          <Icon src={homeIcon} alt="" size={18} />
+          <AnimatedIcon icon={HomeIcon} size={18} />
           Home
         </NavLink>
         <NavLink
@@ -33,7 +32,7 @@ export function TopNav({ className = '' }: TopNavProps) {
           viewTransition
           className="flex items-center gap-2 bg-nav-dark px-5 py-2 text-sm font-medium text-white"
         >
-          <GearIcon className="h-[18px] w-[18px] text-sticky-yellow" />
+          <AnimatedIcon icon={SettingsIcon} size={18} className="text-sticky-yellow" />
           Settings
         </NavLink>
         <NavLink
@@ -41,7 +40,7 @@ export function TopNav({ className = '' }: TopNavProps) {
           viewTransition
           className="flex items-center gap-2 bg-sticky-blue px-5 py-2 text-sm font-medium text-nav-dark"
         >
-          <GridIcon className="h-[18px] w-[18px]" />
+          <AnimatedIcon icon={AppsIcon} size={18} />
           Apps
         </NavLink>
       </nav>

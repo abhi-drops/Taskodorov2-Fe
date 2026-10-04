@@ -1,7 +1,9 @@
+import { AnimatedIcon } from './AnimatedIcon'
+import { MenuIcon } from './icons'
 import { togglePanelCollapsed, usePanelLayout } from '../../lib/storage/panelLayout'
 
 /**
- * The ☰ button that opens/closes a `SidePanel`, meant to sit in a page's toolbar
+ * The menu button that opens/closes a `SidePanel`, meant to sit in a page's toolbar
  * (e.g. the far left and far right of the Diary header). It shares state with the panel
  * through `lib/storage/panelLayout.ts` by `storageKey`, so it can live anywhere on the
  * page. Square, ink-bordered, `shadow-card`, like the toolbar's other controls. The
@@ -20,11 +22,7 @@ export function SidebarToggle({ storageKey, label }: { storageKey: string; label
         collapsed ? 'bg-white text-ink hover:bg-slate-50' : 'bg-ink text-white hover:opacity-90'
       }`}
     >
-      <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" aria-hidden="true">
-        <rect x="2" y="3" width="12" height="2" fill="currentColor" />
-        <rect x="2" y="7" width="12" height="2" fill="currentColor" />
-        <rect x="2" y="11" width="12" height="2" fill="currentColor" />
-      </svg>
+      <AnimatedIcon icon={MenuIcon} size={16} />
     </button>
   )
 }

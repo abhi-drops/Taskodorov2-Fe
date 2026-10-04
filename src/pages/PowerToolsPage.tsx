@@ -6,6 +6,8 @@ import { CHIP } from '../components/SidebarPanelLayout'
 import { useAuth } from '../lib/auth/useAuth'
 import { useWorkspace } from '../lib/workspace/useWorkspace'
 import { usePlatform } from '../lib/platform/usePlatform'
+import { AnimatedIcon } from '../components/ui/AnimatedIcon'
+import { CloseIcon, GroupIcon, SettingsIcon } from '../components/ui/icons'
 import { Button } from '../components/ui/Button'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { useGroupForm } from '../common_logics/useGroupForm'
@@ -21,16 +23,6 @@ import type { AuthState } from '../lib/auth/authContext'
 
 const DANGER_CHIP =
   'flex w-full items-center justify-center gap-2 rounded-card border-[3px] border-ink bg-sticky-coral px-4 py-3 font-medium text-white shadow-card transition hover:opacity-90'
-
-function BoxIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className={className}>
-      <path d="M3 6.5 10 3l7 3.5-7 3.5-7-3.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-      <path d="M3 6.5V14l7 3.5 7-3.5V6.5" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-      <path d="M10 10v7.5" stroke="currentColor" strokeWidth="1.5" />
-    </svg>
-  )
-}
 
 function SectionHeading({ children }: { children: string }) {
   return <h2 className="text-sm font-medium text-slate-600">{children}</h2>
@@ -94,22 +86,22 @@ function GroupsSection({
       <SectionHeading>Groups</SectionHeading>
       {groups.map((group) => (
         <div key={group.id} className={CHIP}>
-          <BoxIcon className="h-5 w-5 shrink-0 text-ink" />
+          <AnimatedIcon icon={GroupIcon} size={20} still className="text-ink" />
           <span className="flex-1 truncate font-medium text-ink">{group.name}</span>
           <Link
             to={`/settings/groups/${group.id}`}
             aria-label={`${group.name} settings`}
-            className="text-lg leading-none text-ink hover:opacity-70"
+            className="shrink-0 text-ink hover:opacity-70"
           >
-            ⚙
+            <AnimatedIcon icon={SettingsIcon} size={18} />
           </Link>
           <button
             type="button"
             onClick={() => onDeleteRequest(group)}
             aria-label={`Delete ${group.name}`}
-            className="text-lg leading-none text-ink hover:opacity-70"
+            className="shrink-0 text-ink hover:opacity-70"
           >
-            ×
+            <AnimatedIcon icon={CloseIcon} size={18} />
           </button>
         </div>
       ))}

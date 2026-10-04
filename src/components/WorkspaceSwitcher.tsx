@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { usePlatform } from '../lib/platform/usePlatform'
 import { useWorkspaceSwitcher } from '../common_logics/useWorkspaceSwitcher'
+import { AnimatedIcon } from './ui/AnimatedIcon'
+import { ChevronDownIcon, CloseIcon, EditIcon } from './ui/icons'
 import { Modal } from './ui/Modal'
 import { ConfirmDialog } from './ui/ConfirmDialog'
 
@@ -11,14 +13,6 @@ const CHIP = 'flex items-center gap-3 rounded-card border-[3px] border-ink bg-wh
  * lifts further off the page than an ordinary chip, on both platforms. */
 const SWITCHER_OVERLAY = 'bg-white/60 backdrop-blur-sm'
 const SWITCHER_SHADOW = 'shadow-[6px_10px_0px_0px_rgba(0,0,0,0.25)]'
-
-function EditIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className={className}>
-      <path d="M12.5 3.5l4 4L6 18H2v-4L12.5 3.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-    </svg>
-  )
-}
 
 export function WorkspaceSwitcher() {
   const { isNative } = usePlatform()
@@ -116,16 +110,16 @@ export function WorkspaceSwitcher() {
                 aria-label={`Rename ${ws.name}`}
                 className="shrink-0 text-ink hover:opacity-70"
               >
-                <EditIcon className="h-4 w-4" />
+                <AnimatedIcon icon={EditIcon} size={16} />
               </button>
               {workspaces.length > 1 && (
                 <button
                   type="button"
                   onClick={() => requestDelete(ws.id)}
                   aria-label={`Delete ${ws.name}`}
-                  className="shrink-0 text-lg leading-none text-ink hover:opacity-70"
+                  className="shrink-0 text-ink hover:opacity-70"
                 >
-                  ×
+                  <AnimatedIcon icon={CloseIcon} size={16} />
                 </button>
               )}
             </div>
@@ -164,15 +158,7 @@ export function WorkspaceSwitcher() {
         }`}
       >
         {activeWorkspace?.name ?? 'Workspace'}
-        <svg className="h-3 w-3" viewBox="0 0 10 6" fill="none" aria-hidden="true">
-          <path
-            d="M1 1l4 4 4-4"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        <AnimatedIcon icon={ChevronDownIcon} size={14} />
       </button>
 
       {!isNative && isOpen && (

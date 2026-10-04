@@ -51,8 +51,8 @@ export default function HomePage() {
 
   const workspaceSwitcher = <WorkspaceSwitcher />
   const searchLink = (
-    <Link to="/search" viewTransition aria-label="Search">
-      <Icon src={searchIcon} alt="" size={20} />
+    <Link to="/search" viewTransition aria-label="Search" className="group">
+      <Icon src={searchIcon} alt="" size={20} className="transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110 group-active:scale-95 motion-reduce:transition-none" />
     </Link>
   )
 

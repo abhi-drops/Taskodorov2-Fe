@@ -1,4 +1,6 @@
 import { AppShell } from '../components/AppShell'
+import { AnimatedIcon } from '../components/ui/AnimatedIcon'
+import { ChevronDownIcon } from '../components/ui/icons'
 import { Icon } from '../components/ui/Icon'
 import { Tabs } from '../components/ui/Tabs'
 import { BasicNoteCard } from '../components/ui/BasicNoteCard'
@@ -73,20 +75,11 @@ export default function SearchPage() {
             className="flex items-center gap-1.5 self-start text-sm font-medium text-slate-700"
           >
             Filter
-            <svg
-              className={`h-2.5 w-2.5 transition-transform ${filtersExpanded ? 'rotate-180' : ''}`}
-              viewBox="0 0 10 6"
-              fill="none"
-              aria-hidden="true"
-            >
-              <path
-                d="M1 1l4 4 4-4"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <AnimatedIcon
+              icon={ChevronDownIcon}
+              size={14}
+              className={`transition-transform ${filtersExpanded ? 'rotate-180' : ''}`}
+            />
           </button>
 
           {filtersExpanded && (

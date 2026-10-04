@@ -2,7 +2,8 @@ import { Link } from 'react-router'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Icon } from './ui/Icon'
+import { AnimatedIcon } from './ui/AnimatedIcon'
+import { PlusIcon } from './ui/icons'
 import { BasicNoteCard } from './ui/BasicNoteCard'
 import { CounterNoteCard } from './ui/CounterNoteCard'
 import { ListNoteCard } from './ui/ListNoteCard'
@@ -13,7 +14,6 @@ import {
   type DragNoteData,
   type DragGroupChipData,
 } from '../common_logics/useBoardDnd'
-import pluseIcon from '../assets/pluse.png'
 import type { Group } from '../types/group'
 import type { Note } from '../types/note'
 
@@ -174,7 +174,7 @@ export function GroupColumn({ group, notes, onChange, showHeader = true }: Group
           className="flex h-8 w-8 items-center justify-center rounded-card border-[3px] border-ink bg-accent-purple shadow-card"
           aria-label={`Add note to ${group.name}`}
         >
-          <Icon src={pluseIcon} alt="" size={14} className="[filter:brightness(0)_invert(1)]" />
+          <AnimatedIcon icon={PlusIcon} size={16} className="text-white [&_svg]:stroke-[2.5]" />
         </Link>
       </div>
 

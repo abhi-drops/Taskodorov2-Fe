@@ -2,6 +2,7 @@ import { Link, Navigate } from 'react-router'
 import { AppShell } from '../components/AppShell'
 import { CHIP } from '../components/SidebarPanelLayout'
 import { APPS } from '../components/appsList'
+import { AnimatedIcon } from '../components/ui/AnimatedIcon'
 import { usePlatform } from '../lib/platform/usePlatform'
 
 /**
@@ -29,7 +30,7 @@ export default function AppsPage() {
             const AppIcon = app.icon
             const content = (
               <span className="flex items-center gap-3 font-medium text-ink">
-                {AppIcon && <AppIcon className="h-5 w-5" />}
+                {AppIcon && <AnimatedIcon icon={AppIcon} size={20} />}
                 {app.label}
               </span>
             )

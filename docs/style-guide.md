@@ -29,20 +29,39 @@ screens only (`AppShell`), never globally on `body` — auth screens stay flat
 
 ## Icons
 
-No icon library. `src/assets/` holds a curated set of flat single-color PNGs
-(`home.png`, `pluse.png`, `power-tools.png`, `search.png`, `check-circle.png`,
-`check-tick.png`, `delete.png`) rendered through `components/ui/Icon.tsx` (a thin
-`<img>` wrapper). A few icons are synthesized from these instead of adding new assets:
-`Modal`'s close "×" is `pluse.png` rotated 45°; `GroupColumn`'s add-note "+" is `pluse.png` with a
-`brightness(0) invert(1)` CSS filter to render white-on-purple. (`FloatingAddButton`'s
-"+" is a text glyph instead, matching the export.) One-off glyphs that
-don't fit the PNG set (`Select`'s dropdown chevron, `WorkspaceSwitcher`'s trigger
-chevron, `PowerToolsPage`'s box icon) are small inline SVGs or Unicode
-characters instead of pulling in an icon library for a single glyph. Glyphs shared
-across files — the nav's Apps grid and Settings gear, and the Apps sidebar's Diary book
-and Pomodoro clock — live together in `components/ui/NavIcons.tsx` (`currentColor`
-stroke, tinted via `text-*`). `power-tools.png` is no longer referenced since the 2.7
-Settings rename.
+One icon library: **`@animateicons/react`**, Huge family (`@animateicons/react/huge`),
+pinned to an exact version (it is 0.x). It is an npm dependency bundled into the app, so
+it works offline.
+
+- **`components/ui/icons.ts`** re-exports the icons the app uses under app-level names
+  (`HomeIcon`, `CloseIcon`, `TrashIcon`, `DiaryIcon`, ...). Add a new icon there, never by
+  importing from the library at a call site, so the choice of glyph stays in one file.
+- **`components/ui/AnimatedIcon.tsx`** is how every icon is rendered:
+  `<AnimatedIcon icon={CloseIcon} size={16} />`.
+  - It plays the icon's animation when the **button or link it sits in** is hovered (web)
+    or tapped (Android has no hover). It finds that ancestor itself
+    (`closest('a, button, [role="button"]')`), so call sites need no wiring.
+  - `still` turns animation off: used for decorative icons (`Select`'s chevron) and for icons repeated in a grid (the Diary calendar's day chips).
+  - Colour is `currentColor`: tint with a `text-*` class. Size is the `size` prop in px,
+    not `h-*`/`w-*`. For a heavier stroke, add `[&_svg]:stroke-[2.5]` (the counter card's
+    + / −, the add-note buttons).
+  - **Gotcha:** the library's icon root is a `<div>`, so an icon can't sit inside a `<p>`
+    (invalid nesting); use a `<div>`/`<span>` host for text that contains one.
+  - The library bundles its own motion runtime (separate from the app's `motion`
+    package), which added about 80 kB (23 kB gzip) to the main chunk. It respects
+    `prefers-reduced-motion`.
+- Text characters are no longer used as icons (no `×`, `⚙`, `‹ ›`, `✓`, `→` ...). Huge has
+  no empty-circle glyph, so "unchecked" in the Diary is its undo arrow (`UncheckedIcon`).
+
+**Two exceptions that are not library icons:**
+- **The note checkbox.** `CheckCircle.tsx` still composites `check-circle.png` +
+  `check-tick.png` through `components/ui/Icon.tsx` (a thin `<img>` wrapper).
+- **The search icon** is the original `search.png`, also through `Icon.tsx`, kept by
+  choice over the library's magnifier. The two header search links give it a small CSS
+  hover effect (tilt + scale via `group-hover`), since a PNG can't use the library's
+  animation.
+- **`FloatingAddButton`'s purple bump** is an inline SVG because it is the button's shape,
+  not an icon; the "+" on it is a library icon.
 
 ## Board & note-card system
 
@@ -124,9 +143,7 @@ actions (Reset to Default, Delete This Group) are the same chip shape with
 `bg-sticky-coral text-white` instead of the shared `Button.tsx` `danger` variant (which
 has no border) — a page-local `DANGER_CHIP` class string in each file, not a change to
 `Button.tsx` itself, since that primitive is used well beyond this page's aesthetic.
-`BoxIcon` (each group row) is a small inline SVG local to `PowerToolsPage.tsx`,
-following the same one-off-glyph convention as the chevron icons above rather than
-adding new PNG assets. (Since the 2.7 rename to **Settings**, the Addons/Pomodoro chip
+Each group row's box is `GroupIcon` from `components/ui/icons.ts` (see "Icons" above). (Since the 2.7 rename to **Settings**, the Addons/Pomodoro chip
 moved to Apps — see `feat-apps.md`.)
 
 **Mobile is unchanged in structure** — still the single scrolling page (Groups →
@@ -217,12 +234,13 @@ system" above).
 | `Calendar.tsx` | Generic month grid on react-day-picker v9. Its stylesheet is **not** imported: square `rounded-card` cells with `border-2 border-ink` and `shadow-card`, today in `sticky-yellow`, outside days at 40%. The header is our own yellow square ‹ › buttons and the month name (from the Diary wireframe). Callers render per-day content with `renderDay`, passed to the module-level day button through context so cells don't remount every render. First used by the Diary (`feat-diary.md`). |
 | `Scrubber.tsx` | Generic frame slider on Radix Slider: an ink track, a **round** yellow thumb (round on purpose, matching the wireframe, the one round control in the app), a tick per frame (hidden above 120), and a square Play/Pause button. Accessible, with arrow keys and touch drag. Takes `frameCount`/`frame`/`onChange`; no Diary logic. |
 | `SidePanel.tsx` | Desktop sidebar that is collapsible, drag-resizable and capped to the screen height.<br>• It has **no toggle of its own**: a `SidebarToggle` in the page's toolbar opens and closes it. They share state by `storageKey` through a tiny store in `lib/storage/panelLayout.ts` (`useSyncExternalStore`).<br>• **Collapsing removes it entirely**: the width animates to exactly 0 with no padding sliver, and the gap beside it, which the panel owns as `gap` margin, closes too. Parents put no flex gap next to it. (An earlier version left a thin border line and an empty gap behind it.)<br>• Optional **`rail`**: instead of disappearing, a collapsed panel shows this slim strip (`railWidth`, default 52px) with a half gap. The strip `self-stretch`es to the height of the content beside it. The Apps list uses it for an icon rail; the Diary's day details doesn't.<br>• Drag the inner edge to resize: it is an accessible `separator`, ←/→ steps 16px and double-click resets.<br>• Width and collapsed state are remembered per `storageKey` (`lib/storage/panelLayout.ts`, synchronous `localStorage` so there's no jump on load).<br>• `sticky` with a `maxHeight` cap and its own scrollbar. Prefer a **measured** height (`lib/layout/useFillViewportHeight.ts`) over a guessed `calc(100svh − …)`: a guessed offset went stale and gave the Diary page a whole-page scrollbar.<br>• **Smooth collapse:** the width and the gap animate over 250 ms on the page transitions' curve (`cubic-bezier(0.2, 0, 0, 1)`), and the content keeps its width, so nothing re-wraps. The full panel and the `rail` stay mounted as two layers and **cross-fade** (panel out, rail in, and the reverse), instead of swapping on the first frame. The sidebar is **always stretched** to the content's height, with the panel `sticky` at its top, so collapsing never snaps the height. Animation is off while dragging and under reduced motion. A collapsed panel is `inert`.<br>• **Gotcha:** the clip box uses `overflow-clip`, not `overflow-hidden`. `hidden` makes it a scroll container, which silently breaks the inner panel's `sticky`.<br>• The resize handle lives inside the panel's sticky wrapper, so it's exactly the panel's height (not the stretched sidebar's) and fades with it.<br>• `openRequest` re-expands it (e.g. on selecting a note).<br>Used by the Apps rail (`SidebarPanelLayout`'s opt-in `sidePanel`) and the Diary's day-details sidebar. |
-| `SidebarToggle.tsx` | The ☰ (hamburger) button that shows or hides a `SidePanel` by `storageKey`, placed in a toolbar: in the Diary, the far left of the header for the Apps list and the far right for day details. It is the same square `border-2 border-ink` `shadow-card` shape as the toolbar's other controls, white when its panel is hidden and ink-filled while it's open. Toolbar placement (not floating in the gap) keeps it aligned and in the same spot in both states. |
+| `SidebarToggle.tsx` | The menu (hamburger, `MenuIcon`) button that shows or hides a `SidePanel` by `storageKey`, placed in a toolbar: in the Diary, the far left of the header for the Apps list and the far right for day details. It is the same square `border-2 border-ink` `shadow-card` shape as the toolbar's other controls, white when its panel is hidden and ink-filled while it's open. Toolbar placement (not floating in the gap) keeps it aligned and in the same spot in both states. |
 | `ProgressBar.tsx` | Simple track + fill, optional `%` label. No longer used on the board (removed from `GroupColumn` in 2.7 — the reference design never shows it on the default view); still a generic primitive, may be reused elsewhere. |
 | `BasicNoteCard.tsx`, `CounterNoteCard.tsx`, `ListNoteCard.tsx` | The three note-type cards rendered by `GroupColumn`. Share the `shadow-card`/`text-black`/`SWATCH_CLASSES[color]` treatment (see above); `CounterNoteCard`'s `+`/`−` row order matters — `+` left, `−` right, matching the reference (easy to get backwards). `ListNoteCard` has its own two-piece shape, see above. All three (plus `SearchPage`'s reuse of them) render `NoteStatusStrip` as their last child — see `docs/feat-notes.md`'s "Statuses" section for the full behavior; the one style-system point worth repeating here is that its dark `bg-ink` background is a deliberate departure from every other note-card-adjacent chrome, which uses the note's own swatch color, not a fixed dark token. Since the Diary (2.8), all three take `readOnly` + `onSelect` for the history replay: interactive parts become `inert` (so a replay can never write to the DB), a click selects instead of opening the editor, and no morph name is taken. Their colour fills also have `transition-colors duration-300`, so a recolour cross-fades. |
 | `TopNav.tsx` (web) / `BottomNav.tsx` (mobile) | Home (`sticky-yellow`) / Settings (`nav-dark`, yellow gear) / Apps (`sticky-blue`, grid) on web, labelled; Home / Apps / Settings on mobile, icon-only with `aria-label`s — order follows each platform's wireframe. `TopNav` has the backdrop card treatment described above; `BottomNav` doesn't. |
-| `FloatingAddButton.tsx` | Mobile quick-add: a 34×100px bell-curve bump fixed flush to the right screen edge, drawn as an inline SVG using the exact path from the mobile Penpot export (`newdesktoplayloutMobile.html`), translated to the origin. The export closes the shape outside the viewBox, which is why there is no outline along the screen edge. `accent-purple` fill (the export uses a lighter `#d47cff`, but the app's existing purple was kept deliberately); the export's inner stroke is reproduced as a 10-wide `stroke-ink` clipped to the shape, so 5px is visible. It has a white bold `font-display` "+" glyph (not `pluse.png`; white rather than the export's dark glyph, for contrast on the darker purple) and `shadow-card` done as a CSS `drop-shadow`, so it follows the curve. Generic (`to`, `position` and `dynamic` props; vertical position is set with `top`, never a transform); `HomePage` decides the target and visibility. See `feat-navigation.md`. |
-| `Icon.tsx` | Thin `<img>` wrapper used by everything above. |
+| `FloatingAddButton.tsx` | Mobile quick-add: a 34×100px bell-curve bump fixed flush to the right screen edge, drawn as an inline SVG using the exact path from the mobile Penpot export (`newdesktoplayloutMobile.html`), translated to the origin. The export closes the shape outside the viewBox, which is why there is no outline along the screen edge. `accent-purple` fill (the export uses a lighter `#d47cff`, but the app's existing purple was kept deliberately); the export's inner stroke is reproduced as a 10-wide `stroke-ink` clipped to the shape, so 5px is visible. It has a white `PlusIcon` (white rather than the export's dark glyph, for contrast on the darker purple) and `shadow-card` done as a CSS `drop-shadow`, so it follows the curve. Generic (`to`, `position` and `dynamic` props; vertical position is set with `top`, never a transform); `HomePage` decides the target and visibility. See `feat-navigation.md`. |
+| `AnimatedIcon.tsx` + `icons.ts` | The app's icons: see "Icons" above. |
+| `Icon.tsx` | Thin `<img>` wrapper, used by `CheckCircle` and the search icon. |
 | `ExitToast.tsx` | Small fixed-position "Press back again to exit" pill, shown above `BottomNav` when the Android hardware back button/edge-swipe is pressed on Home with no more history — see `docs/feat-navigation.md`. Native-only in practice (driven by `useAndroidBackButton`), but the component itself has no platform branching of its own. |
 
 `AppShell.tsx`, `GroupColumn.tsx`, and `PowerToolsSidebar.tsx` (`src/components/`, not

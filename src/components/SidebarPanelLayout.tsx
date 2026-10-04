@@ -1,5 +1,6 @@
-import type { ComponentType, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { Link } from 'react-router'
+import { AnimatedIcon, type AnimatedIconComponent } from './ui/AnimatedIcon'
 import { SidePanel } from './ui/SidePanel'
 
 /** Row-chip look shared by Settings' rows and the mobile Apps list. See `docs/style-guide.md`. */
@@ -10,7 +11,7 @@ export interface SidebarItem {
   label: string
   /** Omitted for disabled placeholder items. */
   to?: string
-  icon?: ComponentType<{ className?: string }>
+  icon?: AnimatedIconComponent
   disabled?: boolean
 }
 
@@ -21,7 +22,7 @@ function SidebarItemContent({ item }: { item: SidebarItem }) {
   const ItemIcon = item.icon
   return (
     <span className="flex items-center gap-2">
-      {ItemIcon && <ItemIcon className="h-4 w-4 shrink-0" />}
+      {ItemIcon && <AnimatedIcon icon={ItemIcon} size={16} />}
       {item.label}
     </span>
   )
@@ -80,7 +81,7 @@ export function SidebarPanelLayout({
         const ItemIcon = item.icon
         // Items without an icon fall back to their first letter.
         const glyph = ItemIcon ? (
-          <ItemIcon className="h-5 w-5" />
+          <AnimatedIcon icon={ItemIcon} size={20} />
         ) : (
           <span className="font-display text-sm font-bold">{item.label[0]}</span>
         )

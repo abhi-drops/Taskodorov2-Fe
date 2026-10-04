@@ -4,6 +4,24 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-04 — One animated icon library replaces PNGs, inline SVGs and text glyphs
+
+Every icon now comes from `@animateicons/react` (Huge family). Before, icons were a mix of
+PNGs, hand-written inline SVGs and Unicode characters.
+
+- **New:** `components/ui/icons.ts` (the app's icon set, one place to change a glyph) and
+  `components/ui/AnimatedIcon.tsx` (renders an icon and animates it when its button or
+  link is hovered on web or tapped on Android).
+- **Replaced:** the nav, delete, add and close icons; chevrons, the sidebar menu
+  button, the Scrubber's play/pause; the `×`, `⚙`, `‹ ›`, `+`, `−` text buttons; and the
+  Diary's `✓ ○ ✎ ↔ → ↺ ▸` markers.
+- **Removed:** `ui/NavIcons.tsx` and `home.png`, `delete.png`, `pluse.png`, `power-tools.png`.
+- **Unchanged on purpose:** the note checkbox (`CheckCircle` and its two PNGs) and the
+  search icon (`search.png`).
+- **Cost:** the main JS chunk grew by about 80 kB (23 kB gzip).
+
+See `style-guide.md`, "Icons".
+
 ## 2026-10-04 — Default Completed Group for new users
 
 The first-run seed now sets the workspace's Diary "Completed Group" to the seeded

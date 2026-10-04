@@ -11,6 +11,7 @@
     "android": "npm run build && npx cap sync android && adb reverse tcp:8787 tcp:8787 && npx cap run android"
   },
   "dependencies": {
+    "@animateicons/react": "0.11.0",
     "@capacitor-community/sqlite": "^8.1.1",
     "@capacitor/android": "^8.5.0",
     "@capacitor/app": "^8.1.1",

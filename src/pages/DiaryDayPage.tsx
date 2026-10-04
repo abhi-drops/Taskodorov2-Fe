@@ -3,6 +3,8 @@ import { addDays, format, isToday } from 'date-fns'
 import { DIARY_DETAILS_PANEL_KEY, DiaryHeader, DiaryShell } from '../components/DiaryShell'
 import { DiaryReplayBoard } from '../components/DiaryReplayBoard'
 import { DiaryCounts, DiaryFeedList } from '../components/DiarySidebar'
+import { AnimatedIcon } from '../components/ui/AnimatedIcon'
+import { ArrowRightIcon, ChevronLeftIcon, ChevronRightIcon, CloseIcon } from '../components/ui/icons'
 import { Scrubber } from '../components/ui/Scrubber'
 import { SidePanel } from '../components/ui/SidePanel'
 import { parseDiaryDate, useDiaryDay } from '../common_logics/useDiaryDay'
@@ -11,7 +13,7 @@ import { useTransitionReady } from '../lib/motion/pageTransitions'
 import { useFillViewportHeight } from '../lib/layout/useFillViewportHeight'
 import { dayKey, formatTimeOfDay } from '../lib/diary/replay'
 
-/** Yellow square ‹ [SEP 15] › control from the wireframe. The date itself goes back to the month calendar. */
+/** Yellow square < [SEP 15] > control from the wireframe. The date itself goes back to the month calendar. */
 function DayStepper({ day }: { day: Date }) {
   const navigate = useNavigate()
   // Replace, not push: stepping through days shouldn't stack history, so back still
@@ -22,7 +24,7 @@ function DayStepper({ day }: { day: Date }) {
   return (
     <div className="flex shrink-0 items-center gap-2">
       <button type="button" aria-label="Previous day" onClick={() => go(addDays(day, -1))} className={square}>
-        ‹
+        <AnimatedIcon icon={ChevronLeftIcon} size={16} />
       </button>
       <button
         type="button"
@@ -39,7 +41,7 @@ function DayStepper({ day }: { day: Date }) {
         disabled={isToday(day) || day > new Date()}
         className={square}
       >
-        ›
+        <AnimatedIcon icon={ChevronRightIcon} size={16} />
       </button>
     </div>
   )
@@ -170,9 +172,9 @@ export default function DiaryDayPage() {
                   type="button"
                   aria-label="Close note details"
                   onClick={() => diary.setSelectedNoteId(null)}
-                  className="text-lg leading-none text-ink hover:opacity-70"
+                  className="shrink-0 text-ink hover:opacity-70"
                 >
-                  ×
+                  <AnimatedIcon icon={CloseIcon} size={16} />
                 </button>
               </div>
               <DiaryFeedList
@@ -190,7 +192,7 @@ export default function DiaryDayPage() {
                   className="flex w-full items-center justify-center gap-2 rounded-card border-2 border-ink bg-sticky-yellow px-3 py-2 font-display text-xs font-bold uppercase tracking-wide text-ink shadow-card transition hover:opacity-90 active:translate-y-px active:shadow-none"
                 >
                   Open note
-                  <span aria-hidden="true">→</span>
+                  <AnimatedIcon icon={ArrowRightIcon} size={14} />
                 </button>
               )}
             </>

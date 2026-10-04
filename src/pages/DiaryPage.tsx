@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router'
+import { AnimatedIcon } from '../components/ui/AnimatedIcon'
 import { Calendar } from '../components/ui/Calendar'
+import { EditIcon, MovedIcon, PlusIcon } from '../components/ui/icons'
 import { DayActivityChips, DiaryHeader, DiaryShell } from '../components/DiaryShell'
 import { useDiaryCalendar } from '../common_logics/useDiaryCalendar'
 import { useTransitionReady } from '../lib/motion/pageTransitions'
@@ -27,10 +29,11 @@ export default function DiaryPage() {
           return c ? <DayActivityChips {...c} /> : null
         }}
       />
-      <p className="text-xs text-slate-600">
-        <span className="font-bold text-ink">+</span> created · <span className="font-bold text-ink">↔</span> moved ·{' '}
-        <span className="font-bold text-ink">✎</span> edits, statuses &amp; deletions
-      </p>
+      <div className="flex flex-wrap items-center gap-x-1 text-xs text-slate-600">
+        <AnimatedIcon icon={PlusIcon} size={12} still className="text-ink" /> created ·
+        <AnimatedIcon icon={MovedIcon} size={12} still className="text-ink" /> moved ·
+        <AnimatedIcon icon={EditIcon} size={12} still className="text-ink" /> edits, statuses &amp; deletions
+      </div>
     </DiaryShell>
   )
 }

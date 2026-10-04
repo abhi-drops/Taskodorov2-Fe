@@ -14,10 +14,10 @@ import { resolveNoteColor } from '../lib/notes/resolveNoteColor'
 import { sortStatusesNewestFirst, formatStatusTimestamp } from '../lib/notes/noteStatus'
 import { Button } from '../components/ui/Button'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
-import { Icon } from '../components/ui/Icon'
+import { AnimatedIcon } from '../components/ui/AnimatedIcon'
+import { CloseIcon, TrashIcon } from '../components/ui/icons'
 import { useNoteForm } from '../common_logics/useNoteForm'
 import { noteMorphName, setNoteMorphColor, useTransitionReady } from '../lib/motion/pageTransitions'
-import deleteIcon from '../assets/delete.png'
 import type { CounterPayload, ListPayload } from '../types/note'
 
 function autoGrow(el: HTMLTextAreaElement) {
@@ -141,9 +141,9 @@ export default function NoteEditorPage() {
                       type="button"
                       onClick={() => form.removeItem(item.id)}
                       aria-label={`Remove ${item.text}`}
-                      className="mt-0.5 text-lg leading-none text-ink hover:opacity-70"
+                      className="mt-0.5 shrink-0 text-ink hover:opacity-70"
                     >
-                      ×
+                      <AnimatedIcon icon={CloseIcon} size={16} />
                     </button>
                   </div>
                 ))}
@@ -235,9 +235,9 @@ export default function NoteEditorPage() {
                       type="button"
                       onClick={() => form.removeStatus(s.id)}
                       aria-label="Remove status"
-                      className={`mt-0.5 text-lg font-semibold leading-none hover:opacity-70 ${statusTextColorClass}`}
+                      className={`mt-0.5 shrink-0 hover:opacity-70 ${statusTextColorClass}`}
                     >
-                      ×
+                      <AnimatedIcon icon={CloseIcon} size={16} />
                     </button>
                   </div>
                 ))}
@@ -311,7 +311,7 @@ export default function NoteEditorPage() {
 
             {!form.isNew && (
               <Button variant="danger" onClick={() => setConfirmDelete(true)}>
-                <Icon src={deleteIcon} alt="" size={16} />
+                <AnimatedIcon icon={TrashIcon} size={16} />
                 Delete
               </Button>
             )}

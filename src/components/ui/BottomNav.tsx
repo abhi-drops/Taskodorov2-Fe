@@ -1,7 +1,6 @@
 import { NavLink } from 'react-router'
-import { Icon } from './Icon'
-import { GearIcon, GridIcon } from './NavIcons'
-import homeIcon from '../../assets/home.png'
+import { AnimatedIcon } from './AnimatedIcon'
+import { AppsIcon, HomeIcon, SettingsIcon } from './icons'
 
 /**
  * Mobile bottom bar: Home / Apps / Settings, icon-only per the mobile wireframe. The
@@ -22,9 +21,9 @@ export function BottomNav() {
         end
         viewTransition
         aria-label="Home"
-        className="flex flex-1 items-center justify-center bg-sticky-yellow py-3"
+        className="flex flex-1 items-center justify-center bg-sticky-yellow py-3 text-nav-dark"
       >
-        <Icon src={homeIcon} alt="" size={22} />
+        <AnimatedIcon icon={HomeIcon} size={22} />
       </NavLink>
       <NavLink
         to="/apps"
@@ -32,7 +31,7 @@ export function BottomNav() {
         aria-label="Apps"
         className="flex flex-1 items-center justify-center bg-sticky-blue py-3 text-nav-dark"
       >
-        <GridIcon className="h-[22px] w-[22px]" />
+        <AnimatedIcon icon={AppsIcon} size={22} />
       </NavLink>
       <NavLink
         to="/settings"
@@ -40,7 +39,7 @@ export function BottomNav() {
         aria-label="Settings"
         className="flex flex-1 items-center justify-center bg-nav-dark py-3 text-sticky-yellow"
       >
-        <GearIcon className="h-[22px] w-[22px]" />
+        <AnimatedIcon icon={SettingsIcon} size={22} />
       </NavLink>
     </nav>
   )

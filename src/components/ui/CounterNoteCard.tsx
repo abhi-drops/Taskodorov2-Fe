@@ -1,4 +1,6 @@
+import { AnimatedIcon } from './AnimatedIcon'
 import { CheckCircle } from './CheckCircle'
+import { MinusIcon, PlusIcon } from './icons'
 import { noteMorphName, useOpenNote } from '../../lib/motion/pageTransitions'
 import { NoteStatusStrip } from './NoteStatusStrip'
 import { SWATCH_CLASSES } from './swatchColors'
@@ -63,9 +65,9 @@ export function CounterNoteCard({ note, group, onChange, readOnly = false, onSel
           <button
             type="button"
             onClick={() => adjust(payload.step)}
-            className="bg-white/50 px-3 py-2 font-display text-3xl font-bold text-ink hover:bg-white/60"
+            className="flex items-center bg-white/50 px-3 py-2 text-ink hover:bg-white/60"
           >
-            +
+            <AnimatedIcon icon={PlusIcon} size={26} className="[&_svg]:stroke-[2.5]" />
           </button>
           <span className="flex flex-1 items-center justify-center text-center font-display text-xl font-bold text-ink">
             {payload.target ? `${payload.value}/${payload.target}` : payload.value}
@@ -73,9 +75,9 @@ export function CounterNoteCard({ note, group, onChange, readOnly = false, onSel
           <button
             type="button"
             onClick={() => adjust(-payload.step)}
-            className="bg-white/50 px-3 py-2 font-display text-3xl font-bold text-ink hover:bg-white/60"
+            className="flex items-center bg-white/50 px-3 py-2 text-ink hover:bg-white/60"
           >
-            −
+            <AnimatedIcon icon={MinusIcon} size={26} className="[&_svg]:stroke-[2.5]" />
           </button>
         </div>
       </div>

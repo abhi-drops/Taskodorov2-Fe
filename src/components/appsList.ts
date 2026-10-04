@@ -1,5 +1,5 @@
 import type { SidebarItem } from './SidebarPanelLayout'
-import { BookIcon, ClockIcon } from './ui/NavIcons'
+import { DiaryIcon, PomodoroIcon } from './ui/icons'
 
 export type AppId = 'diary' | 'pomodoro'
 
@@ -12,6 +12,6 @@ export const APPS_PANEL_KEY = 'apps'
  * placeholder until it's actually built.
  */
 export const APPS: (SidebarItem & { id: AppId })[] = [
-  { id: 'diary', label: 'Diary', to: '/apps/diary', icon: BookIcon },
-  { id: 'pomodoro', label: 'Pomodoro', icon: ClockIcon, disabled: true },
+  { id: 'diary', label: 'Diary', to: '/apps/diary', icon: DiaryIcon },
+  { id: 'pomodoro', label: 'Pomodoro', icon: PomodoroIcon, disabled: true },
 ]

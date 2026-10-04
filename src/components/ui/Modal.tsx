@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { Icon } from './Icon'
-import pluseIcon from '../../assets/pluse.png'
+import { AnimatedIcon } from './AnimatedIcon'
+import { CloseIcon } from './icons'
 
 interface ModalProps {
   isOpen: boolean
@@ -70,7 +70,7 @@ export function Modal({
             aria-label="Close"
             className="ml-auto flex h-8 w-8 items-center justify-center rounded-full hover:bg-slate-100"
           >
-            <Icon src={pluseIcon} alt="" size={14} style={{ transform: 'rotate(45deg)' }} />
+            <AnimatedIcon icon={CloseIcon} size={18} className="text-ink" />
           </button>
         </div>
         <div className="overflow-y-auto">{children}</div>
