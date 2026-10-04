@@ -23,7 +23,7 @@ export {
   Menu01Icon as MenuIcon,
   MinusSignIcon as MinusIcon,
   PauseIcon,
-  PencilIcon as EditIcon,
+  Pen01Icon as EditIcon,
   PlayIcon,
   Refresh01Icon as ResetIcon,
   Settings01Icon as SettingsIcon,
