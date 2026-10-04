@@ -76,21 +76,39 @@ export function listEventsBefore(workspaceId: string, to: number): Promise<Activ
   })
 }
 
+/**
+ * Every status edit/deletion in the workspace, **regardless of date**, oldest first. A
+ * status deleted next week still existed today, so reconstructing any day's statuses
+ * needs deletions (and edits) from after that day too.
+ */
+export function listStatusEvents(workspaceId: string): Promise<ActivityEvent[]> {
+  return withDb(async (db) => {
+    const result = await db.query(
+      "SELECT * FROM activity_events WHERE workspace_id = ? AND field = 'status' ORDER BY created_at ASC, rowid ASC",
+      [workspaceId],
+    )
+    return ((result.values ?? []) as ActivityEventRow[]).map(rowToEvent)
+  })
+}
+
 export interface MonthActivitySource {
   events: ActivityEvent[]
   /** Every note in the workspace (incl. deleted), for its timestamped status entries. */
   notes: Note[]
+  /** All status edits/deletions, any date (see `listStatusEvents`). */
+  statusEvents: ActivityEvent[]
   completedGroupId: string | null
 }
 
 /** Raw material for the calendar's per-day counts over `[from, to)`. */
 export async function getMonthActivity(workspaceId: string, from: number, to: number): Promise<MonthActivitySource> {
-  const [events, notes, completedGroupId] = await Promise.all([
+  const [events, notes, statusEvents, completedGroupId] = await Promise.all([
     listEventsBetween(workspaceId, from, to),
     listAllNotesForHistory(workspaceId),
+    listStatusEvents(workspaceId),
     getCompletedGroupId(workspaceId),
   ])
-  return { events, notes, completedGroupId }
+  return { events, notes, statusEvents, completedGroupId }
 }
 
 export interface DayTimelineSource {
@@ -98,16 +116,19 @@ export interface DayTimelineSource {
   events: ActivityEvent[]
   notes: Note[]
   groups: Group[]
+  /** All status edits/deletions, any date (see `listStatusEvents`). */
+  statusEvents: ActivityEvent[]
   completedGroupId: string | null
 }
 
 /** Everything the day replay needs, loaded once, so scrubbing never queries SQLite. */
 export async function getDayTimeline(workspaceId: string, dayEnd: number): Promise<DayTimelineSource> {
-  const [events, notes, groups, completedGroupId] = await Promise.all([
+  const [events, notes, groups, statusEvents, completedGroupId] = await Promise.all([
     listEventsBefore(workspaceId, dayEnd),
     listAllNotesForHistory(workspaceId),
     listAllGroupsForHistory(workspaceId),
+    listStatusEvents(workspaceId),
     getCompletedGroupId(workspaceId),
   ])
-  return { events, notes, groups, completedGroupId }
+  return { events, notes, groups, statusEvents, completedGroupId }
 }

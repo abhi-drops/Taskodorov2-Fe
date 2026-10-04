@@ -1,7 +1,7 @@
 import { addDays, format, startOfDay } from 'date-fns'
 import type { ActivityEvent, DayTimelineSource, MonthActivitySource } from '../db/events'
-import type { ListSnapshotItem } from '../db/eventLog'
-import type { CounterPayload, ListPayload, Note } from '../../types/note'
+import type { ListSnapshotItem, StatusEventValue } from '../db/eventLog'
+import type { CounterPayload, ListPayload, Note, NoteStatus } from '../../types/note'
 import type { Group } from '../../types/group'
 
 /**
@@ -65,6 +65,90 @@ function parseList(value: string | null): ListSnapshotItem[] {
   }
 }
 
+// ---------------------------------------------------------------- status history
+
+/**
+ * Everything known about one status over time. Current statuses come from
+ * `notes.statuses`; deleted ones survive only through their `status` delete event, which
+ * keeps their `createdAt` and last text. Edits keep the before/after text.
+ */
+interface StatusHistory {
+  id: string
+  noteId: string
+  createdAt: number
+  /** Text now, if the status still exists. */
+  currentText: string | null
+  edits: { time: number; text: string; previousText: string }[]
+  deletedAt: number | null
+  deletedText: string | null
+}
+
+function parseStatusEvent(value: string | null): StatusEventValue | null {
+  try {
+    return JSON.parse(value ?? '') as StatusEventValue
+  } catch {
+    return null
+  }
+}
+
+/** Every status ever seen per note (current ones plus deleted ones), with edit history. */
+function buildStatusIndex(notes: Note[], statusEvents: ActivityEvent[]): Map<string, StatusHistory[]> {
+  const byId = new Map<string, StatusHistory>()
+  for (const note of notes) {
+    for (const st of note.statuses) {
+      byId.set(st.id, {
+        id: st.id,
+        noteId: note.id,
+        createdAt: st.createdAt,
+        currentText: st.text,
+        edits: [],
+        deletedAt: null,
+        deletedText: null,
+      })
+    }
+  }
+  for (const e of statusEvents) {
+    const v = parseStatusEvent(e.newValue)
+    if (!v) continue
+    let h = byId.get(v.id)
+    if (!h) {
+      h = { id: v.id, noteId: e.entityId, createdAt: v.createdAt, currentText: null, edits: [], deletedAt: null, deletedText: null }
+      byId.set(v.id, h)
+    }
+    if (v.op === 'edited') h.edits.push({ time: e.createdAt, text: v.text, previousText: v.previousText ?? '' })
+    else {
+      h.deletedAt = e.createdAt
+      h.deletedText = v.text
+    }
+  }
+  const byNote = new Map<string, StatusHistory[]>()
+  for (const h of byId.values()) {
+    h.edits.sort((a, b) => a.time - b.time)
+    const list = byNote.get(h.noteId) ?? []
+    list.push(h)
+    byNote.set(h.noteId, list)
+  }
+  for (const list of byNote.values()) list.sort((a, b) => a.createdAt - b.createdAt)
+  return byNote
+}
+
+/** A status's text at time `t`: after the latest edit up to then, else its original. */
+function statusTextAt(h: StatusHistory, t: number): string {
+  let text: string | null = null
+  for (const edit of h.edits) if (edit.time <= t) text = edit.text
+  if (text !== null) return text
+  if (h.edits.length > 0) return h.edits[0].previousText
+  return h.currentText ?? h.deletedText ?? ''
+}
+
+/** A note's statuses as they were at time `t` (created by then, not yet deleted). */
+function statusesAt(histories: StatusHistory[] | undefined, t: number): NoteStatus[] {
+  if (!histories) return []
+  return histories
+    .filter((h) => h.createdAt <= t && (h.deletedAt === null || h.deletedAt > t))
+    .map((h) => ({ id: h.id, text: statusTextAt(h, t), createdAt: h.createdAt }))
+}
+
 // ---------------------------------------------------------------- calendar counts
 
 export interface DayCounts {
@@ -102,7 +186,7 @@ export function bucketMonth(source: MonthActivitySource, from: number, to: numbe
       moves.add(`${e.entityId}@${e.createdAt}`)
       bump(e.createdAt, 'moved')
     } else if (e.action === 'deleted') bump(e.createdAt, 'changes')
-    else if (e.action === 'field_changed') {
+    else if (e.action === 'field_changed' && e.field !== 'status') {
       const prevList = e.field === 'list' ? lastList.get(e.entityId) : undefined
       if (e.field === 'list') lastList.set(e.entityId, parseList(e.newValue))
       if (!isGenesis(e)) {
@@ -119,10 +203,12 @@ export function bucketMonth(source: MonthActivitySource, from: number, to: numbe
     }
     previous = e
   }
-  for (const note of source.notes) {
-    for (const status of note.statuses) {
-      if (status.createdAt >= from && status.createdAt < to) bump(status.createdAt, 'changes')
-    }
+  // Statuses: additions (including statuses deleted since), edits and deletions.
+  for (const histories of buildStatusIndex(source.notes, source.statusEvents).values()) {
+    for (const h of histories) if (h.createdAt >= from && h.createdAt < to) bump(h.createdAt, 'changes')
+  }
+  for (const e of source.statusEvents) {
+    if (e.createdAt >= from && e.createdAt < to) bump(e.createdAt, 'changes')
   }
   return days
 }
@@ -140,6 +226,8 @@ export type FeedKind =
   | 'unchecked'
   | 'counter'
   | 'list'
+  | 'status_edited'
+  | 'status_deleted'
 
 export type ListChangeKind = 'added' | 'removed' | 'checked' | 'unchecked' | 'edited'
 
@@ -179,8 +267,10 @@ export interface FeedEntry {
   toGroup?: string
   /** `moved`: the same update automatically reset it to unchecked (On Check Move To). */
   resetOnMove?: boolean
-  /** `status`: the status text. */
+  /** `status` / `status_edited` / `status_deleted`: the status text (new text for an edit). */
   statusText?: string
+  /** `status_edited`: the status text before the edit. */
+  previousStatusText?: string
   /** `counter`: the value before the burst (null if unknown), and after it. */
   fromValue?: number | null
   toValue?: number
@@ -212,6 +302,8 @@ export interface DayCountsDetailed {
   unchecked: number
   counterChanges: number
   listChanges: number
+  statusEdits: number
+  statusDeletes: number
 }
 
 export interface DayReplay {
@@ -225,7 +317,14 @@ export interface DayReplay {
 
 type Step =
   | { kind: 'event'; time: number; event: ActivityEvent }
-  | { kind: 'status'; time: number; noteId: string; text: string }
+  | {
+      kind: 'status'
+      op: 'added' | 'edited' | 'deleted'
+      time: number
+      noteId: string
+      text: string
+      previousText?: string
+    }
 
 interface NoteState {
   groupId: string
@@ -257,7 +356,8 @@ export function diffList(before: ListSnapshotItem[] | null, after: ListSnapshotI
 }
 
 function describeListChange({ change, text, previousText }: ListChange): string {
-  if (change === 'edited') return `renamed ${quote(previousText ?? '')} to ${quote(text)}`
+  if (change === 'edited') return `edited ${quote(previousText ?? '')} to ${quote(text)}`
+  if (change === 'removed') return `deleted ${quote(text)}`
   return `${change} ${quote(text)}`
 }
 
@@ -275,6 +375,7 @@ export function buildDayReplay(source: DayTimelineSource, day: Date): DayReplay 
 
   const noteState = new Map<string, NoteState>()
   const liveGroups = new Set<string>()
+  const statusIndex = buildStatusIndex(source.notes, source.statusEvents)
 
   function apply(e: ActivityEvent) {
     if (e.entityType === 'group') {
@@ -317,13 +418,23 @@ export function buildDayReplay(source: DayTimelineSource, day: Date): DayReplay 
   // update's events in the order they were logged (`created` before its genesis fields,
   // `moved` before a same-update reset).
   const steps: Step[] = []
+  const inDay = (t: number) => t >= dayStart && t < dayEnd
   for (const e of source.events) {
-    if (e.createdAt >= dayStart && e.createdAt < dayEnd) steps.push({ kind: 'event', time: e.createdAt, event: e })
+    // Status edits/deletions come from the status index below (all dates), not here.
+    if (inDay(e.createdAt) && e.field !== 'status') steps.push({ kind: 'event', time: e.createdAt, event: e })
   }
-  for (const note of source.notes) {
-    for (const s of note.statuses) {
-      if (s.createdAt >= dayStart && s.createdAt < dayEnd) {
-        steps.push({ kind: 'status', time: s.createdAt, noteId: note.id, text: s.text })
+  for (const histories of statusIndex.values()) {
+    for (const h of histories) {
+      if (inDay(h.createdAt)) {
+        steps.push({ kind: 'status', op: 'added', time: h.createdAt, noteId: h.noteId, text: statusTextAt(h, h.createdAt) })
+      }
+      for (const edit of h.edits) {
+        if (inDay(edit.time)) {
+          steps.push({ kind: 'status', op: 'edited', time: edit.time, noteId: h.noteId, text: edit.text, previousText: edit.previousText })
+        }
+      }
+      if (h.deletedAt !== null && inDay(h.deletedAt)) {
+        steps.push({ kind: 'status', op: 'deleted', time: h.deletedAt, noteId: h.noteId, text: h.deletedText ?? '' })
       }
     }
   }
@@ -331,16 +442,18 @@ export function buildDayReplay(source: DayTimelineSource, day: Date): DayReplay 
 
   // Frame notes = the full current row with the historical fields overlaid, reused
   // while unchanged so consecutive frames share objects.
-  const noteCache = new Map<string, { state: NoteState; statusCount: number; note: Note }>()
+  const noteCache = new Map<string, { state: NoteState; statusKey: string; note: Note }>()
   function snapshot(time: number): ReplayFrame {
     const notes: Note[] = []
     for (const [id, state] of noteState) {
       if (!state.alive) continue
       const row = notesById.get(id)
       if (!row) continue
-      const statuses = row.statuses.filter((s) => s.createdAt <= time)
+      // Statuses as they were then: includes since-deleted ones, with pre-edit text.
+      const statuses = statusesAt(statusIndex.get(id), time)
+      const statusKey = statuses.map((st) => `${st.id}:${st.text}`).join('|')
       const cached = noteCache.get(id)
-      if (cached && cached.state === state && cached.statusCount === statuses.length) {
+      if (cached && cached.state === state && cached.statusKey === statusKey) {
         notes.push(cached.note)
         continue
       }
@@ -359,7 +472,7 @@ export function buildDayReplay(source: DayTimelineSource, day: Date): DayReplay 
         payload,
         statuses,
       }
-      noteCache.set(id, { state, statusCount: statuses.length, note })
+      noteCache.set(id, { state, statusKey, note })
       notes.push(note)
     }
     notes.sort((a, b) => a.position - b.position)
@@ -380,6 +493,8 @@ export function buildDayReplay(source: DayTimelineSource, day: Date): DayReplay 
     unchecked: 0,
     counterChanges: 0,
     listChanges: 0,
+    statusEdits: 0,
+    statusDeletes: 0,
   }
 
   function addFrame(entry: Omit<FeedEntry, 'frame'>) {
@@ -398,18 +513,24 @@ export function buildDayReplay(source: DayTimelineSource, day: Date): DayReplay 
 
     if (step.kind === 'status') {
       const state = noteState.get(step.noteId)
-      counts.statuses++
-      const title = state?.title ?? ''
-      addFrame({
-        kind: 'status',
-        noteId: step.noteId,
-        time: step.time,
-        title,
-        text: `Added a status to ${quote(title)}: ${quote(step.text)}`,
-        color: state?.color ?? null,
-        statusText: step.text,
-        completed: false,
-      })
+      const title = state?.title ?? notesById.get(step.noteId)?.title ?? ''
+      const base = { noteId: step.noteId, time: step.time, title, color: state?.color ?? null, completed: false }
+      if (step.op === 'added') {
+        counts.statuses++
+        addFrame({ ...base, kind: 'status', statusText: step.text, text: `Added a status to ${quote(title)}: ${quote(step.text)}` })
+      } else if (step.op === 'edited') {
+        counts.statusEdits++
+        addFrame({
+          ...base,
+          kind: 'status_edited',
+          statusText: step.text,
+          previousStatusText: step.previousText,
+          text: `Edited a status on ${quote(title)} from ${quote(step.previousText ?? '')} to ${quote(step.text)}`,
+        })
+      } else {
+        counts.statusDeletes++
+        addFrame({ ...base, kind: 'status_deleted', statusText: step.text, text: `Deleted a status from ${quote(title)}: ${quote(step.text)}` })
+      }
       continue
     }
 

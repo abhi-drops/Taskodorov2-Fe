@@ -35,6 +35,8 @@ const COUNT_TILES: { key: keyof DayCountsDetailed; label: string; tone: string }
   { key: 'titleEdits', label: 'Renamed', tone: YELLOW },
   { key: 'colorChanges', label: 'Color changes', tone: YELLOW },
   { key: 'statuses', label: 'Statuses', tone: STATUS },
+  { key: 'statusEdits', label: 'Status edits', tone: STATUS },
+  { key: 'statusDeletes', label: 'Statuses deleted', tone: 'bg-sticky-coral text-ink' },
   { key: 'deleted', label: 'Deleted', tone: 'bg-sticky-coral text-ink' },
 ]
 
@@ -67,6 +69,8 @@ const KIND_CHIP: Record<FeedKind, { label: string; tone: string }> = {
   title: { label: 'Renamed', tone: YELLOW },
   color: { label: 'Color', tone: YELLOW },
   status: { label: 'Status', tone: STATUS },
+  status_edited: { label: '✎ Status', tone: STATUS },
+  status_deleted: { label: 'Status deleted', tone: 'bg-sticky-coral text-ink' },
   deleted: { label: 'Deleted', tone: 'bg-sticky-coral text-ink' },
 }
 
@@ -182,14 +186,22 @@ function EntryDetail({ entry }: { entry: FeedEntry }) {
     case 'list':
       return <ListChanges changes={entry.listChanges ?? []} />
     case 'status':
+    case 'status_edited':
+    case 'status_deleted':
       // The same dark strip a note card uses for its statuses, in the note's colour.
+      // An edit shows old → new; a deletion shows the removed text struck through.
       return (
         <p
           className={`break-words bg-ink px-2 py-1 text-xs font-medium ${
             isSwatch(entry.color) ? SWATCH_TEXT_CLASSES[entry.color] : 'text-white'
           }`}
         >
-          {entry.statusText}
+          {entry.kind === 'status_edited' && (
+            <>
+              <span className="line-through opacity-60">{entry.previousStatusText}</span> →{' '}
+            </>
+          )}
+          <span className={entry.kind === 'status_deleted' ? 'line-through opacity-70' : ''}>{entry.statusText}</span>
         </p>
       )
     case 'checked':

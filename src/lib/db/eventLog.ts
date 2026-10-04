@@ -17,7 +17,11 @@ import type { SQLiteDBConnection } from '@capacitor-community/sqlite'
  *   - `counter`: the counter's value (counter notes);
  *   - `list`: a JSON snapshot of the items `[{ id, text, completed }]` (list notes), so
  *     any past state can be rebuilt and two snapshots diffed into "checked X, added Y".
- *   Description, priority, counter step/target and statuses are not logged here.
+ *   - `status`: a status **edit or deletion** (`StatusEventValue` JSON). Adding a status
+ *     isn't logged: each status already carries its own `createdAt`. Without these two,
+ *     deleting a status would erase it from history, and editing one would rewrite
+ *     the past with the new text.
+ *   Description, priority and counter step/target are not logged.
  *
  * A note's creation also logs every tracked field's starting value, at the same
  * timestamp as `created`. These are the **genesis** values that make "X as of time T" a
@@ -27,7 +31,21 @@ import type { SQLiteDBConnection } from '@capacitor-community/sqlite'
 
 export type EventEntity = 'note' | 'group'
 export type EventAction = 'created' | 'moved' | 'deleted' | 'field_changed'
-export type EventField = 'title' | 'color' | 'completed' | 'counter' | 'list'
+export type EventField = 'title' | 'color' | 'completed' | 'counter' | 'list' | 'status'
+
+/**
+ * `new_value` of a `status` event: one status edited or deleted. `createdAt` is the
+ * status's own creation time, so a deleted status can still be placed in history.
+ */
+export interface StatusEventValue {
+  op: 'edited' | 'deleted'
+  id: string
+  /** Edited: the new text. Deleted: its text at deletion. */
+  text: string
+  /** Edited: the text before. */
+  previousText?: string
+  createdAt: number
+}
 
 /** The minimal list item shape kept in a `list` snapshot. */
 export interface ListSnapshotItem {

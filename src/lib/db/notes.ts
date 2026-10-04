@@ -1,6 +1,6 @@
 import type { SQLiteDBConnection } from '@capacitor-community/sqlite'
 import { withDb } from './sqlite'
-import { logEvent, logNoteCreated, trackedNoteFields } from './eventLog'
+import { logEvent, logNoteCreated, trackedNoteFields, type StatusEventValue } from './eventLog'
 import type { Note, NotePayload, NoteStatus, NoteType, Priority } from '../../types/note'
 
 /** The fields the Diary log tracks, read before a write so changes can be diffed. */
@@ -12,11 +12,12 @@ interface TrackedRow {
   color: string | null
   completed: number
   payload: string
+  statuses: string
 }
 
 async function readTrackedFields(db: SQLiteDBConnection, id: string): Promise<TrackedRow | null> {
   const { values } = await db.query(
-    'SELECT workspace_id, group_id, type, title, color, completed, payload FROM notes WHERE id = ?',
+    'SELECT workspace_id, group_id, type, title, color, completed, payload, statuses FROM notes WHERE id = ?',
     [id],
   )
   return (values?.[0] ?? null) as TrackedRow | null
@@ -248,7 +249,7 @@ export function updateNote(
     // changes (no event for a no-op save). Every tracked field goes through the same
     // `trackedNoteFields` encoding as creation, so "changed" means the logged value
     // actually differs (e.g. a counter step edit doesn't log a counter change).
-    const tracksChange = ['groupId', 'title', 'color', 'completed', 'payload', 'type'].some((k) => k in patch)
+    const tracksChange = ['groupId', 'title', 'color', 'completed', 'payload', 'type', 'statuses'].some((k) => k in patch)
     const before = tracksChange ? await readTrackedFields(db, id) : null
 
     const now = Date.now()
@@ -276,6 +277,22 @@ export function updateNote(
       for (const [field, value] of trackedNoteFields(after)) {
         if (beforeValues.get(field) !== value) {
           await logEvent(db, { ...base, action: 'field_changed', field, newValue: value })
+        }
+      }
+      // Statuses: log edits and deletions (additions carry their own `createdAt`).
+      if ('statuses' in patch && patch.statuses) {
+        const previous = JSON.parse(before.statuses || '[]') as NoteStatus[]
+        const next = new Map(patch.statuses.map((st) => [st.id, st]))
+        for (const old of previous) {
+          const updated = next.get(old.id)
+          const change: StatusEventValue | null = !updated
+            ? { op: 'deleted', id: old.id, text: old.text, createdAt: old.createdAt }
+            : updated.text !== old.text
+              ? { op: 'edited', id: old.id, text: updated.text, previousText: old.text, createdAt: old.createdAt }
+              : null
+          if (change) {
+            await logEvent(db, { ...base, action: 'field_changed', field: 'status', newValue: JSON.stringify(change) })
+          }
         }
       }
     }

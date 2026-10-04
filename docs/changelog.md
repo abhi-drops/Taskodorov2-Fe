@@ -4,6 +4,32 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-04 — Diary tracks status edits and deletions; list wording
+
+**The status problem:** statuses were only read from the note's current status list.
+- **Deleting a status erased it from history:** its "added" entry vanished from past
+  days, and replay cards forgot it.
+- **Editing a status rewrote the past:** old frames showed the new text.
+
+**The fix:**
+- `updateNote` now logs a `status` event for every status **edit** (old → new text) and
+  **deletion** (its text and original `createdAt`).
+- The replay rebuilds each status's full history:
+  - a deleted status still shows "added" on its day and stays on the cards until the
+    moment it was deleted;
+  - an edited status shows its original text before the edit;
+  - edits and deletions get their own entries: **✎ Status** (old → new) and **Status
+    deleted** (coral, struck through).
+- Status events are loaded for all dates, because a status deleted next week was still
+  there today.
+- New count tiles: "Status edits" and "Statuses deleted".
+
+**List items:** deleting and editing items were already tracked through the list
+snapshots. Their wording is now "deleted" and "edited" (was "removed" and "renamed").
+
+Verified with a third check script (14 checks); the earlier 40 still pass. See
+`feat-diary.md`.
+
 ## 2026-10-03 — Smooth sidebar collapse/expand
 
 Collapsing and expanding the desktop sidebars (Apps list, Diary day details) was jumpy:

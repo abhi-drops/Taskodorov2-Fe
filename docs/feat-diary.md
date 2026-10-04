@@ -79,13 +79,16 @@ against the wireframes `docs/design-references/web/diary.png`, `diary_sidebar.pn
     - **Created:** "in [Group]";
     - **Renamed:** "was ~~old title~~";
     - **Color:** before → after swatches;
-    - **Status:** the text in the same dark strip notes use, in the note's colour;
+    - **Status** (added): the text in the same dark strip notes use, in the note's
+      colour;
+    - **✎ Status** (edited): ~~old text~~ → new text in that strip;
+    - **Status deleted** (coral chip): the removed text struck through in that strip;
     - **Counter:** `3 → 6` with the delta (`+3`). A merged burst has a separate
       "▸ Show N taps" toggle under the entry, listing each tap's time, value and delta.
       It's a separate button, so the entry stays one click target and buttons aren't
       nested;
-    - **List:** one line per item change: ✓ checked, ○ unchecked, + added, − removed
-      (struck through), ✎ ~~old~~ → new;
+    - **List:** one line per item change: ✓ checked, ○ unchecked, + added, − deleted
+      (struck through), ✎ edited (~~old~~ → new);
     - **Checked / Unchecked:** no detail line; the chip says it.
   - `FeedEntry.text` keeps a plain, grammatical sentence of the same change as the
     entry's accessible name: curly quotes, "from X to Y", for example `Renamed “A” to
@@ -116,9 +119,18 @@ The live tables only store *current* state, so the Diary reads an append-only
     - `counter`: the counter's value (counter notes; added 2026-10-03);
     - `list`: a JSON snapshot of the items `[{ id, text, completed }]` (list notes;
       added 2026-10-03). The replay diffs consecutive snapshots into item-level changes.
+    - `status` (added 2026-10-04): a status **edit** or **deletion**, as a
+      `StatusEventValue` JSON (`op`, `id`, new/last `text`, `previousText` for an
+      edit, and the status's own `createdAt`). Adding a status isn't logged, because
+      each status already carries its `createdAt`. `updateNote` diffs the old and new
+      `statuses` by id.
   - **Not** logged: description, priority, counter step/target. That keeps the log from
-    becoming noise. Status entries aren't logged either: they're read from
-    `notes.statuses`, which already carries timestamps.
+    becoming noise.
+  - **Why statuses need edit/delete events:** before them, statuses were read only from
+    `notes.statuses`.
+    - **Deleting a status erased it from history:** its "added" entry and its presence
+      on past frames disappeared.
+    - **Editing a status rewrote the past:** old frames showed the new text.
   - `updateNote` compares the *encoded* values before and after, so only real changes
     log (e.g. editing a counter's step doesn't log a counter change). It logs `moved`
     **before** field changes from the same update, which the replay relies on to fold
@@ -179,7 +191,7 @@ The live tables only store *current* state, so the Diary reads an append-only
       each with its time, value and ±delta.
     - Every tap is still in the log; only the display merges.
   - **List updates:** consecutive `list` snapshots are diffed by item id (`diffList`)
-    into added / removed / checked / unchecked / edited (renamed). A reorder-only update
+    into added / removed (shown as "deleted") / checked / unchecked / edited. A reorder-only update
     produces no entry, though the new order still applies to later frames.
   - **Reset on move:** On Check Move To with "reset on move" writes the move and the
     reset in one update. The reset's `completed`/`list` events share the move's
@@ -188,6 +200,18 @@ The live tables only store *current* state, so the Diary reads an append-only
   - `bucketMonth` applies the same burst merging, reset folding and reorder skipping,
     so the calendar chips agree with the day view. The one exception: a note's first
     list event in a month has no earlier snapshot in that query window, so it's counted.
+- **Status history** (`buildStatusIndex`, `statusesAt`):
+  - Every status ever seen per note is rebuilt from the current `notes.statuses` plus the
+    `status` edit/delete events. Deleted statuses survive only through their delete
+    event, which keeps their `createdAt` and last text.
+  - A frame shows the statuses that existed at that moment (created by then, not yet
+    deleted), each with its text *at that moment*: after the latest edit up to then,
+    otherwise its original pre-edit text.
+  - The feed lists an **added** entry at each status's `createdAt`, with its original
+    text, even if it was deleted later. Edits and deletions get their own entries.
+  - **Status events are loaded for all dates** (`listStatusEvents`), not just up to the
+    viewed day: a status deleted next week was still there today. The main event list
+    skips `status` events so they aren't double-counted.
 - **Historical vs current fields:** group, title, colour, existence, statuses, **checked
   state, counter value and list items** are historical: replay cards show them as they
   were at each frame. Description, priority and counter step/target show their
@@ -202,9 +226,12 @@ The live tables only store *current* state, so the Diary reads an append-only
   - unchanged notes being shared between frames;
   - genesis events not counting as calendar changes.
 
-  A second script (20 checks) covers the checked/counter/list tracking:
+  A second script (20 checks) covers the checked/counter/list tracking, and a third
+  (14 checks) covers status history: original text before an edit, a deleted status
+  still listed as added, a status deleted on a later day still on today's frames, and
+  the calendar rollup. The second script covers:
   - counter bursts merging, and splitting after a gap;
-  - list diffs (checked, renamed, added, removed);
+  - list diffs (checked, edited, added, deleted);
   - reorder-only updates skipped;
   - a reset folded into its move;
   - historical counter values, list ticks and checkmarks on frames;
