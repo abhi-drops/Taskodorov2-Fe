@@ -64,8 +64,9 @@ is the one code path, used by the first-run seed and by
   would deadlock.
 - It generates all group ids first (a group may move notes to a later group), then
   inserts groups, sets `completed_group_id`, then inserts notes.
-- It logs `logGroupCreated`/`logNoteCreated` for every row, so the Diary shows the sample
-  notes as created on that day.
+- It logs `logGroupCreated`/`logNoteCreated` for every row, with the notes marked
+  `seeded`, so the Diary shows them as one "Default notes" entry on that day
+  (`feat-diary.md`).
 - Blank checklist items are skipped.
 
 ## Templates app

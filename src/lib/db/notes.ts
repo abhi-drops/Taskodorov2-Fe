@@ -7,6 +7,7 @@ import {
   logTitleEdit,
   trackedNoteFields,
   type StatusEventValue,
+  WIPE_MARKER,
 } from './eventLog'
 import type { Note, NotePayload, NoteStatus, NoteType, Priority } from '../../types/note'
 
@@ -324,6 +325,40 @@ export function deleteNote(id: string): Promise<void> {
         createdAt: now,
       })
     }
+  })
+}
+
+/**
+ * "Wipe All Notes" (Settings): removes every note in a workspace in one write. The
+ * workspace, its groups and their settings stay, and so does the Diary's history: each
+ * note gets an ordinary `deleted` event, marked with `WIPE_MARKER` and sharing one
+ * timestamp, so the replay still rebuilds earlier days and shows this as a single
+ * "Wiped" entry. Returns how many notes were removed.
+ */
+export function wipeWorkspaceNotes(workspaceId: string): Promise<number> {
+  return withDb(async (db) => {
+    const now = Date.now()
+    const { values } = await db.query('SELECT id FROM notes WHERE workspace_id = ? AND deleted_at IS NULL', [
+      workspaceId,
+    ])
+    const ids = ((values ?? []) as { id: string }[]).map((row) => row.id)
+    if (ids.length === 0) return 0
+
+    await db.run(
+      'UPDATE notes SET deleted_at = ?, updated_at = ? WHERE workspace_id = ? AND deleted_at IS NULL',
+      [now, now, workspaceId],
+    )
+    for (const id of ids) {
+      await logEvent(db, {
+        workspaceId,
+        entityType: 'note',
+        entityId: id,
+        action: 'deleted',
+        newValue: WIPE_MARKER,
+        createdAt: now,
+      })
+    }
+    return ids.length
   })
 }
 

@@ -10,7 +10,8 @@ import type { SQLiteDBConnection } from '@capacitor-community/sqlite'
  * seeding and backfill without a circular import. See `docs/feat-diary.md`.
  *
  * Vocabulary (deliberately narrow, per `phase2-apps-diary-plan.md`):
- * - `created` / `deleted` for notes and groups (`to_group_id` = a note's group on create);
+ * - `created` / `deleted` for notes and groups (`to_group_id` = a note's group on create;
+ *   a note's `deleted` carries `WIPE_MARKER` when it was part of a workspace wipe);
  * - `moved` for a note changing group (`from_group_id` → `to_group_id`);
  * - `field_changed` for a note's tracked fields, with the value after the change
  *   (encoded by `trackedNoteFields`):
@@ -34,6 +35,22 @@ import type { SQLiteDBConnection } from '@capacitor-community/sqlite'
 export type EventEntity = 'note' | 'group'
 export type EventAction = 'created' | 'moved' | 'deleted' | 'field_changed'
 export type EventField = 'title' | 'color' | 'completed' | 'counter' | 'list' | 'status'
+
+/**
+ * `new_value` of a note's `deleted` event when it was removed by "Wipe All Notes"
+ * (Settings) rather than deleted on its own. A wipe logs one such event per note, all at
+ * the same timestamp; the Diary shows the run as a single "Wiped" entry (`replay.ts`).
+ * Ordinary deletions leave `new_value` null.
+ */
+export const WIPE_MARKER = 'wipe'
+
+/**
+ * `new_value` of a note's `created` event when the note came from a template (the
+ * first-run board, or a workspace made from a template) rather than from the user. The
+ * Diary shows those notes as one "Default notes" entry (`replay.ts`). A note the user
+ * creates leaves `new_value` null.
+ */
+export const SEED_MARKER = 'seed'
 
 /**
  * `new_value` of a `status` event: one status edited or deleted. `createdAt` is the
@@ -237,10 +254,12 @@ export async function logNoteCreated(
     completed: boolean | number
     payload: unknown
     createdAt: number
+    /** True for a template's sample note (see `SEED_MARKER`). */
+    seeded?: boolean
   },
 ): Promise<void> {
   const base = { workspaceId: note.workspaceId, entityType: 'note' as const, entityId: note.id, createdAt: note.createdAt }
-  await logEvent(db, { ...base, action: 'created', toGroupId: note.groupId })
+  await logEvent(db, { ...base, action: 'created', toGroupId: note.groupId, newValue: note.seeded ? SEED_MARKER : null })
   for (const [field, newValue] of trackedNoteFields(note)) {
     await logEvent(db, { ...base, action: 'field_changed', field, newValue })
   }

@@ -64,6 +64,12 @@ desktop wireframe — see `docs/style-guide.md`'s "Power Tools: row chips + desk
 - **Sync with Google** — disabled placeholder chip. Distinct, unspecified feature from
   Google Sign-In auth (unclear target product — Calendar/Tasks/Keep — and sync
   direction), not the same thing as the working Google Sign-In in `feat-auth.md`.
+- **Wipe All Notes** (Groups section, under Completed Group; 2026-10-05) — danger chip →
+  `ConfirmDialog` → `wipeWorkspaceNotes` (`lib/db/notes.ts`). Soft-deletes every note in
+  the **active workspace** in one write. The workspace, its groups and their settings
+  stay, and so does the Diary's history, which records it as a single "Wiped" entry
+  (`feat-diary.md`). Unlike Reset to Default it needs no reload: the board re-reads its
+  notes when it is next opened.
 - **Reset to Default** — danger chip → `ConfirmDialog` → `lib/db/reset.ts`'s
   `resetToDefault()` → `window.location.reload()`. Scope decided during
   implementation (no mockup/doc specified it precisely): since there's no separate

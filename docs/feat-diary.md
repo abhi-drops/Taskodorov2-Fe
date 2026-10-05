@@ -124,7 +124,9 @@ The live tables only store *current* state, so the Diary reads an append-only
     Half-typed text has no value as history, so it isn't stored.
 
 - **Vocabulary (deliberately narrow):**
-  - `created` / `deleted` for notes and groups;
+  - `created` / `deleted` for notes and groups. A note's `created` has `new_value =
+    'seed'` (`SEED_MARKER`) when it is a template's sample note. A note's `deleted` has `new_value =
+    'wipe'` (`WIPE_MARKER`) when it was removed by Settings' "Wipe All Notes";
   - `moved` (note `from_group_id → to_group_id`);
   - `field_changed` for a note's tracked fields. Encoding is in one place,
     `trackedNoteFields` (`eventLog.ts`), shared by create, update, backfill and
@@ -167,6 +169,30 @@ The live tables only store *current* state, so the Diary reads an append-only
   - **`reorderNotes`:** drag-and-drop between columns goes through this function, not
     `updateNote`, so it logs `moved` too.
   - **`deleteGroup`:** logs `deleted` for each note its cascade removes, then the group.
+  - **"On Check Move To" (auto-move) is one entry.** Checking a note with that rule is
+    two writes from one click: the check, then the move a few milliseconds later (and, in
+    the move's own update, the reset to unchecked). The replay folds a `moved` that
+    follows a check of the same note within `AUTO_MOVE_MS` (2 s) into **one "Moved" entry
+    and one frame**, with a green "Checked" chip in front of the "Moved" chip, the
+    from → to group chips and "reset to unchecked" when it applied. For a list note (its
+    last item ticked) the entry also shows which item was ticked. It counts as one Moved
+    (and Completed, if into the Completed group), not as a Checked; the calendar counts it
+    once too. A check followed by a later, separate move (e.g. a drag a minute after)
+    stays two entries. Done in the replay only, so existing history is folded as well.
+  - **Default notes** (a template's sample notes, including the first-run board):
+    `instantiateTemplate` logs each note's `created` with `new_value = 'seed'`
+    (`SEED_MARKER`). The replay folds the run into **one violet "Default notes" entry and
+    one frame**, listing how many notes the board started with and the first five titles.
+    Each note still counts towards "Created". Logs written before the marker existed are
+    folded too: two or more notes created in the same millisecond can only be a seed.
+  - **`wipeWorkspaceNotes`** ("Wipe All Notes", `feat-power-tools.md`): logs one `deleted`
+    per note, all marked `WIPE_MARKER` and sharing one timestamp. The replay folds that
+    run into **one "Wiped" feed entry and one frame** (the board empties at once): a coral
+    "Wiped" chip, "All notes", the number removed and the first five titles struck
+    through. `counts.wiped` (the "Wipes" tile) counts wipes, not notes, and the calendar
+    counts a wipe as one change. Nothing is removed from `activity_events`, so earlier
+    days replay exactly as before. No schema change: the marker reuses `new_value`, which
+    a `deleted` event otherwise leaves null.
   - `createGroup`.
   - **`seedIfEmpty`:** so data re-seeded by "Reset to Default" has history even though
     the log isn't empty any more.

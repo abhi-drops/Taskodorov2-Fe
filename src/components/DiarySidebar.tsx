@@ -9,6 +9,7 @@ import {
   MinusIcon,
   PlusIcon,
   ResetIcon,
+  TrashIcon,
   UncheckedIcon,
 } from './ui/icons'
 import { SWATCH_CLASSES, SWATCH_TEXT_CLASSES, type SwatchColor } from './ui/swatchColors'
@@ -50,6 +51,7 @@ const COUNT_TILES: { key: keyof DayCountsDetailed; label: string; tone: string }
   { key: 'statusEdits', label: 'Status edits', tone: STATUS },
   { key: 'statusDeletes', label: 'Statuses deleted', tone: 'bg-sticky-coral text-ink' },
   { key: 'deleted', label: 'Deleted', tone: 'bg-sticky-coral text-ink' },
+  { key: 'wiped', label: 'Wipes', tone: 'bg-sticky-coral text-ink' },
 ]
 
 /** Per-action counts as small square tiles. Zero tiles are hidden; Completed only shows when set up. */
@@ -73,6 +75,7 @@ export function DiaryCounts({ counts }: { counts: DayCountsDetailed }) {
 /** Action chip per kind, in the same colour scheme as the count tiles (see above). */
 const KIND_CHIP: Record<FeedKind, { label: string; tone: string; icon?: AnimatedIconComponent }> = {
   created: { label: 'Created', tone: VIOLET },
+  seeded: { label: 'Default notes', tone: VIOLET },
   moved: { label: 'Moved', tone: 'bg-sticky-blue text-ink' },
   checked: { label: 'Checked', tone: GREEN, icon: CheckIcon },
   unchecked: { label: 'Unchecked', tone: YELLOW, icon: UncheckedIcon },
@@ -84,6 +87,7 @@ const KIND_CHIP: Record<FeedKind, { label: string; tone: string; icon?: Animated
   status_edited: { label: 'Status', tone: STATUS, icon: EditIcon },
   status_deleted: { label: 'Status deleted', tone: 'bg-sticky-coral text-ink' },
   deleted: { label: 'Deleted', tone: 'bg-sticky-coral text-ink' },
+  wiped: { label: 'Wiped', tone: 'bg-sticky-coral text-ink', icon: TrashIcon },
 }
 
 const isSwatch = (color: string | null | undefined): color is SwatchColor => !!color && color in SWATCH_CLASSES
@@ -149,6 +153,9 @@ function ListChanges({ changes }: { changes: ListChange[] }) {
   )
 }
 
+/** How many titles a "Default notes" or "Wiped" entry lists before "and N more". */
+const NOTE_TITLES_SHOWN = 5
+
 /** The visual detail line under the title, specific to each kind of change. */
 function EntryDetail({ entry }: { entry: FeedEntry }) {
   switch (entry.kind) {
@@ -172,6 +179,8 @@ function EntryDetail({ entry }: { entry: FeedEntry }) {
               reset to unchecked
             </span>
           )}
+          {/* A list whose last tick fired the move: which item was ticked. */}
+          {entry.listChanges && entry.listChanges.length > 0 && <ListChanges changes={entry.listChanges} />}
         </div>
       )
     case 'title':
@@ -223,6 +232,30 @@ function EntryDetail({ entry }: { entry: FeedEntry }) {
           <span className={entry.kind === 'status_deleted' ? 'line-through opacity-70' : ''}>{entry.statusText}</span>
         </div>
       )
+    case 'seeded':
+    case 'wiped': {
+      // One entry for many notes: a board's default notes arriving, or "Wipe All Notes"
+      // removing everything. How many, then the first few titles (struck through for a wipe).
+      const titles = entry.noteTitles ?? []
+      const shown = titles.slice(0, NOTE_TITLES_SHOWN)
+      const wiped = entry.kind === 'wiped'
+      const noun = titles.length === 1 ? 'note' : 'notes'
+      return (
+        <div className="flex flex-col gap-0.5 text-xs text-slate-600">
+          <span>
+            {wiped
+              ? `${titles.length} ${noun} removed. Groups and history kept.`
+              : `${titles.length} sample ${noun} the board started with.`}
+          </span>
+          {shown.map((title, i) => (
+            <span key={i} className={`truncate text-ink ${wiped ? 'line-through opacity-70' : ''}`}>
+              {title || 'Untitled'}
+            </span>
+          ))}
+          {titles.length > shown.length && <span>and {titles.length - shown.length} more</span>}
+        </div>
+      )
+    }
     case 'checked':
     case 'unchecked':
     case 'deleted':
@@ -301,6 +334,13 @@ export function DiaryFeedList({ feed, frame, onSelect, empty = 'Nothing happened
               className="flex w-full flex-col gap-1.5 p-2 text-left"
             >
               <span className="flex items-center gap-1.5">
+                {/* One click that checked the note and so moved it (On Check Move To). */}
+                {entry.onCheck && (
+                  <Chip className={GREEN}>
+                    <AnimatedIcon icon={CheckIcon} size={10} />
+                    Checked
+                  </Chip>
+                )}
                 <Chip className={chip.tone}>
                   {chip.icon && <AnimatedIcon icon={chip.icon} size={10} />}
                   {chip.label}

@@ -100,6 +100,7 @@ export async function instantiateTemplate(
         completed: false,
         payload,
         createdAt: now,
+        seeded: true,
       })
     }
   }

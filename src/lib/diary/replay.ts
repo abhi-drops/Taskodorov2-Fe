@@ -1,6 +1,6 @@
 import { addDays, format, startOfDay } from 'date-fns'
 import type { ActivityEvent, DayTimelineSource, MonthActivitySource } from '../db/events'
-import type { ListSnapshotItem, StatusEventValue } from '../db/eventLog'
+import { SEED_MARKER, WIPE_MARKER, type ListSnapshotItem, type StatusEventValue } from '../db/eventLog'
 import type { CounterPayload, ListPayload, Note, NoteStatus } from '../../types/note'
 import type { Group } from '../../types/group'
 
@@ -55,6 +55,32 @@ function genesisChecker(events: ActivityEvent[]) {
 /** Field changes written by the same update as a move: an automatic reset on move. */
 const isResetField = (e: ActivityEvent) =>
   e.action === 'field_changed' && (e.field === 'completed' || e.field === 'list' || e.field === 'counter')
+
+/**
+ * "On Check Move To" is two writes from one click: the check, then the move a few
+ * milliseconds later. A move that follows a check of the same note within this window
+ * is that automatic move, and the two are shown as one change.
+ */
+export const AUTO_MOVE_MS = 2_000
+
+/** A change that can fire "On Check Move To": a note checked, or a list's last item ticked. */
+function isCheckThatCanMove(e: ActivityEvent): boolean {
+  if (e.action !== 'field_changed') return false
+  if (e.field === 'completed') return e.newValue === '1'
+  if (e.field === 'list') {
+    const items = parseList(e.newValue)
+    return items.length > 0 && items.every((item) => item.completed)
+  }
+  return false
+}
+
+/** True when `next` is the automatic move fired by the check `e`. */
+const isAutoMoveAfter = (e: ActivityEvent, next: ActivityEvent | undefined | null): next is ActivityEvent =>
+  !!next &&
+  next.action === 'moved' &&
+  next.entityId === e.entityId &&
+  next.createdAt >= e.createdAt &&
+  next.createdAt - e.createdAt <= AUTO_MOVE_MS
 
 function parseList(value: string | null): ListSnapshotItem[] {
   try {
@@ -174,19 +200,27 @@ export function bucketMonth(source: MonthActivitySource, from: number, to: numbe
 
   const isGenesis = genesisChecker(source.events)
   const moves = new Set<string>()
+  const wipes = new Set<number>()
   // Last list snapshot seen per note, so a reorder-only update (no visible change) isn't
   // counted, matching the day view. A note's first list event in the month has no
   // earlier snapshot in this query window and is counted as before.
   const lastList = new Map<string, ListSnapshotItem[]>()
   let previous: ActivityEvent | null = null
-  for (const e of source.events) {
+  for (let index = 0; index < source.events.length; index++) {
+    const e = source.events[index]
     if (e.entityType !== 'note') continue
     if (e.action === 'created') bump(e.createdAt, 'created')
     else if (e.action === 'moved') {
       moves.add(`${e.entityId}@${e.createdAt}`)
       bump(e.createdAt, 'moved')
-    } else if (e.action === 'deleted') bump(e.createdAt, 'changes')
-    else if (e.action === 'field_changed' && e.field !== 'status') {
+    } else if (e.action === 'deleted') {
+      // A wipe deletes many notes at once but is one change, as in the day view.
+      if (e.newValue !== WIPE_MARKER) bump(e.createdAt, 'changes')
+      else if (!wipes.has(e.createdAt)) {
+        wipes.add(e.createdAt)
+        bump(e.createdAt, 'changes')
+      }
+    } else if (e.action === 'field_changed' && e.field !== 'status') {
       const prevList = e.field === 'list' ? lastList.get(e.entityId) : undefined
       if (e.field === 'list') lastList.set(e.entityId, parseList(e.newValue))
       if (!isGenesis(e)) {
@@ -198,7 +232,10 @@ export function bucketMonth(source: MonthActivitySource, from: number, to: numbe
           e.createdAt - previous.createdAt <= COUNTER_MERGE_MS
         const noVisibleListChange =
           e.field === 'list' && prevList !== undefined && diffList(prevList, parseList(e.newValue)).length === 0
-        if (!foldedIntoMove && !continuesBurst && !noVisibleListChange) bump(e.createdAt, 'changes')
+        // A check that fires "On Check Move To" is counted once, as the move.
+        const firesAutoMove =
+          !isGenesis(e) && isCheckThatCanMove(e) && isAutoMoveAfter(e, source.events[index + 1])
+        if (!foldedIntoMove && !continuesBurst && !noVisibleListChange && !firesAutoMove) bump(e.createdAt, 'changes')
       }
     }
     previous = e
@@ -217,8 +254,10 @@ export function bucketMonth(source: MonthActivitySource, from: number, to: numbe
 
 export type FeedKind =
   | 'created'
+  | 'seeded'
   | 'moved'
   | 'deleted'
+  | 'wiped'
   | 'title'
   | 'color'
   | 'status'
@@ -267,6 +306,8 @@ export interface FeedEntry {
   toGroup?: string
   /** `moved`: the same update automatically reset it to unchecked (On Check Move To). */
   resetOnMove?: boolean
+  /** `moved`: the move was fired by checking the note (On Check Move To), one click. */
+  onCheck?: boolean
   /** `status` / `status_edited` / `status_deleted`: the status text (new text for an edit). */
   statusText?: string
   /** `status_edited`: the status text before the edit. */
@@ -278,6 +319,9 @@ export interface FeedEntry {
   taps?: { time: number; value: number }[]
   /** `list`: what changed, item by item. */
   listChanges?: ListChange[]
+  /** `wiped` / `seeded`: the titles of all the notes this one entry covers (`noteId` is
+   * the first of them). */
+  noteTitles?: string[]
   /** True when this change put the note into the workspace's Completed group. */
   completed: boolean
 }
@@ -294,6 +338,8 @@ export interface DayCountsDetailed {
   created: number
   moved: number
   deleted: number
+  /** How many times "Wipe All Notes" was used (not how many notes it removed). */
+  wiped: number
   titleEdits: number
   colorChanges: number
   statuses: number
@@ -485,6 +531,7 @@ export function buildDayReplay(source: DayTimelineSource, day: Date): DayReplay 
     created: 0,
     moved: 0,
     deleted: 0,
+    wiped: 0,
     titleEdits: 0,
     colorChanges: 0,
     statuses: 0,
@@ -549,6 +596,28 @@ export function buildDayReplay(source: DayTimelineSource, day: Date): DayReplay 
       }
     }
 
+    // A board's default notes (a template's sample notes) all arrive in one write. Fold
+    // the run into a single "Default notes" entry and frame. Marked events are always
+    // folded; logs from before the marker existed are recognised by two or more notes
+    // created in the same millisecond, which only a seed can do.
+    const seededIds: string[] = []
+    if (e.action === 'created') {
+      const sameSeed = (n: ActivityEvent) =>
+        n.entityType === 'note' && n.action === 'created' && n.createdAt === e.createdAt
+      let sibling: ActivityEvent | null
+      while ((sibling = nextEvent(i, sameSeed))) {
+        apply(sibling)
+        i++
+        seededIds.push(sibling.entityId)
+        const siblingId = sibling.entityId
+        let genesis: ActivityEvent | null
+        while ((genesis = nextEvent(i, (n) => n.entityId === siblingId && isGenesis(n)))) {
+          apply(genesis)
+          i++
+        }
+      }
+    }
+
     // Fold a same-update automatic reset into the move.
     let resetOnMove = false
     if (e.action === 'moved') {
@@ -580,12 +649,62 @@ export function buildDayReplay(source: DayTimelineSource, day: Date): DayReplay 
       }
     }
 
+    // "On Check Move To": the check and the move it fires are one click, so one change.
+    // Take the move (and its same-update reset) into this step; it is shown as a move
+    // that was caused by the check.
+    const afterCheck = noteState.get(e.entityId)
+    let autoMove: ActivityEvent | null = null
+    if (isCheckThatCanMove(e)) {
+      autoMove = nextEvent(i, (n) => isAutoMoveAfter(e, n))
+      if (autoMove) {
+        const moveTime = autoMove.createdAt
+        apply(autoMove)
+        i++
+        let reset: ActivityEvent | null
+        while ((reset = nextEvent(i, (n) => n.entityId === e.entityId && n.createdAt === moveTime && isResetField(n)))) {
+          apply(reset)
+          i++
+          resetOnMove = true
+        }
+      }
+    }
+
     const after = noteState.get(e.entityId)
     const title = after?.title ?? before?.title ?? ''
-    const time = taps.length > 0 ? taps[taps.length - 1].time : e.createdAt
+    const time = autoMove ? autoMove.createdAt : taps.length > 0 ? taps[taps.length - 1].time : e.createdAt
     const base = { noteId: e.entityId, time, title, color: after?.color ?? null, completed: false }
 
-    if (e.action === 'created') {
+    if (autoMove) {
+      const fromGroup = groupName(autoMove.fromGroupId)
+      const toGroup = groupName(autoMove.toGroupId)
+      const completed = intoCompleted(autoMove.toGroupId)
+      // A list's last tick is still worth showing: which item was checked.
+      const listChanges = e.field === 'list' ? diffList(before?.list ?? null, afterCheck?.list ?? []) : undefined
+      counts.moved++
+      if (completed) counts.completed++
+      addFrame({
+        ...base,
+        kind: 'moved',
+        onCheck: true,
+        fromGroup,
+        toGroup,
+        completed,
+        resetOnMove,
+        listChanges,
+        text: `Checked ${quote(title)}, which moved it from ${fromGroup} to ${toGroup}${resetOnMove ? ' and reset it to unchecked' : ''}`,
+      })
+    } else if (e.action === 'created' && (seededIds.length > 0 || e.newValue === SEED_MARKER)) {
+      const ids = [e.entityId, ...seededIds]
+      // Still one note each for the Created count: they are real notes on the board.
+      counts.created += ids.length
+      addFrame({
+        ...base,
+        kind: 'seeded',
+        title: 'Default notes',
+        noteTitles: ids.map((id) => noteState.get(id)?.title ?? ''),
+        text: `Started with ${ids.length} default ${ids.length === 1 ? 'note' : 'notes'}`,
+      })
+    } else if (e.action === 'created') {
       const toGroup = groupName(e.toGroupId)
       const completed = intoCompleted(e.toGroupId)
       counts.created++
@@ -605,6 +724,30 @@ export function buildDayReplay(source: DayTimelineSource, day: Date): DayReplay 
         completed,
         resetOnMove,
         text: `Moved ${quote(title)} from ${fromGroup} to ${toGroup}${resetOnMove ? ', and reset it to unchecked' : ''}`,
+      })
+    } else if (e.action === 'deleted' && e.newValue === WIPE_MARKER) {
+      // "Wipe All Notes": one `deleted` per note at one timestamp. Fold the run into a
+      // single entry and a single frame, where the whole board empties at once.
+      const noteTitles = [before?.title ?? '']
+      let wiped: ActivityEvent | null
+      while (
+        (wiped = nextEvent(
+          i,
+          (n) => n.action === 'deleted' && n.newValue === WIPE_MARKER && n.createdAt === e.createdAt,
+        ))
+      ) {
+        noteTitles.push(noteState.get(wiped.entityId)?.title ?? '')
+        apply(wiped)
+        i++
+      }
+      const count = noteTitles.length
+      counts.wiped++
+      addFrame({
+        ...base,
+        kind: 'wiped',
+        title: 'All notes',
+        noteTitles,
+        text: `Wiped all notes from the workspace (${count} ${count === 1 ? 'note' : 'notes'})`,
       })
     } else if (e.action === 'deleted') {
       const deletedTitle = before?.title ?? ''

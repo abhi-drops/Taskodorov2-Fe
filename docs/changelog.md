@@ -4,6 +4,30 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-05 — Diary: a check that auto-moves is one entry
+
+- Checking a note whose group has "On Check Move To" now shows in the Diary as a single
+  "Checked + Moved" entry and one replay frame, instead of a "Checked" entry followed by a
+  "Moved" one. Applies to existing history (`feat-diary.md`).
+- The templates AI Guide is not affected.
+
+## 2026-10-05 — Diary: default notes as one entry
+
+- A board's default notes (a template's sample notes, including the first-run board) now
+  show in the Diary as a single violet "Default notes" entry and one replay frame, instead
+  of one "Created" entry per note. Works for existing workspaces too (`feat-diary.md`).
+- The templates AI Guide is not affected.
+
+## 2026-10-05 — Wipe All Notes
+
+- **Settings → Groups:** a "Wipe All Notes" danger chip removes every note in the active
+  workspace after a confirm. Groups, their settings and the Diary's history are kept
+  (`feat-power-tools.md`).
+- **Diary:** a wipe shows as one coral "Wiped" entry with the number of notes and the
+  first few titles, one replay frame, and a "Wipes" count tile (`feat-diary.md`).
+- No schema change. The templates AI Guide is not affected (a wipe is not part of a
+  template).
+
 ## 2026-10-05 — Workspace templates: Templates app, template picker, export and import
 
 - **Templates app** (`/apps/templates`): lists the stored templates, with a live

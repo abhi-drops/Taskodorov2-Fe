@@ -7,7 +7,7 @@ import { useAuth } from '../lib/auth/useAuth'
 import { useWorkspace } from '../lib/workspace/useWorkspace'
 import { usePlatform } from '../lib/platform/usePlatform'
 import { AnimatedIcon } from '../components/ui/AnimatedIcon'
-import { CloseIcon, GroupIcon, SettingsIcon } from '../components/ui/icons'
+import { CloseIcon, GroupIcon, SettingsIcon, TrashIcon } from '../components/ui/icons'
 import { Button } from '../components/ui/Button'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { useGroupForm } from '../common_logics/useGroupForm'
@@ -15,6 +15,7 @@ import { useAddButtonSettings } from '../common_logics/useAddButtonSettings'
 import { Tabs } from '../components/ui/Tabs'
 import { ADD_BUTTON_POSITIONS, type AddButtonPosition } from '../lib/storage/preferences'
 import { listGroups, deleteGroup } from '../lib/db/groups'
+import { wipeWorkspaceNotes } from '../lib/db/notes'
 import { getCompletedGroupId, setCompletedGroupId } from '../lib/db/workspaces'
 import { Select } from '../components/ui/Select'
 import { resetToDefault } from '../lib/db/reset'
@@ -69,6 +70,7 @@ function GroupsSection({
   onDeleteRequest,
   completedGroupId,
   onCompletedGroupChange,
+  onWipeRequest,
 }: {
   groups: Group[]
   name: string
@@ -77,6 +79,7 @@ function GroupsSection({
   onDeleteRequest: (group: Group) => void
   completedGroupId: string | null
   onCompletedGroupChange: (groupId: string | null) => void
+  onWipeRequest: () => void
 }) {
   return (
     <div className="flex flex-col gap-3">
@@ -134,6 +137,17 @@ function GroupsSection({
           Notes moved into this group count as Completed in the Diary.
         </p>
       </div>
+
+      {/* Empties this workspace's board. Groups, their settings and the Diary stay. */}
+      <div className="flex flex-col gap-1.5 pt-2">
+        <button type="button" onClick={onWipeRequest} className={DANGER_CHIP}>
+          <AnimatedIcon icon={TrashIcon} size={16} />
+          Wipe All Notes
+        </button>
+        <p className="px-1 text-xs text-slate-600">
+          Removes every note in this workspace. Its groups and Diary history are kept.
+        </p>
+      </div>
     </div>
   )
 }
@@ -182,7 +196,8 @@ function AccountSection({
 
 export default function PowerToolsPage() {
   const auth = useAuth()
-  const { activeWorkspaceId } = useWorkspace()
+  const { activeWorkspaceId, workspaces } = useWorkspace()
+  const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId)
   const { isNative } = usePlatform()
   const [searchParams] = useSearchParams()
   // Anything other than 'account' (including an old `?tab=addons` link) lands on Groups.
@@ -192,6 +207,7 @@ export default function PowerToolsPage() {
   const [completedGroupId, setCompletedGroupIdState] = useState<string | null>(null)
   const [confirmDeleteGroup, setConfirmDeleteGroup] = useState<Group | null>(null)
   const [confirmReset, setConfirmReset] = useState(false)
+  const [confirmWipe, setConfirmWipe] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -229,6 +245,11 @@ export default function PowerToolsPage() {
     await refreshGroups()
   }
 
+  async function handleWipe() {
+    if (!activeWorkspaceId) return
+    await wipeWorkspaceNotes(activeWorkspaceId)
+  }
+
   async function handleReset() {
     await resetToDefault()
     window.location.reload()
@@ -249,6 +270,7 @@ export default function PowerToolsPage() {
       onDeleteRequest={setConfirmDeleteGroup}
       completedGroupId={completedGroupId}
       onCompletedGroupChange={handleCompletedGroupChange}
+      onWipeRequest={() => setConfirmWipe(true)}
     />
   )
   const accountSection = <AccountSection auth={auth} onResetRequest={() => setConfirmReset(true)} />
@@ -284,6 +306,15 @@ export default function PowerToolsPage() {
         onConfirm={handleDeleteGroup}
         title="Delete group"
         message={`Delete "${confirmDeleteGroup?.name}" and every note in it?`}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmWipe}
+        onClose={() => setConfirmWipe(false)}
+        onConfirm={handleWipe}
+        title="Wipe all notes"
+        message={`Remove every note in "${activeWorkspace?.name ?? 'this workspace'}"? Its groups, their settings and the Diary's history are kept, but the notes can't be brought back.`}
+        confirmLabel="Wipe"
       />
 
       <ConfirmDialog
