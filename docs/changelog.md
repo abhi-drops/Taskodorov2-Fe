@@ -4,6 +4,12 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-05 — Pointer cursor on everything clickable
+
+- Buttons, links, tabs, switches and checkboxes now show the hand cursor on hover across
+  the whole app, from one rule in `src/index.css` (Tailwind v4 defaults buttons to the
+  arrow). Disabled controls keep the arrow (`style-guide.md`, "Pointer cursor").
+
 ## 2026-10-05 — "Use the Taskodoro app" notice on phone-sized web
 
 - Opening the web version at a phone-sized width (under 640px) shows a closable overlay

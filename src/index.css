@@ -20,6 +20,27 @@ body {
   margin: 0;
 }
 
+/* Tailwind v4's reset gives buttons the default arrow cursor (v3 used a pointer). This
+   app has clickable chips, icons and tabs everywhere, so every enabled clickable gets
+   the pointer here, once, instead of a `cursor-pointer` class at each call site. It is
+   in the base layer, so a utility on the element still wins: `disabled:cursor-not-allowed`
+   (Button, Select), `cursor-default` (disabled sidebar items), `cursor-grab` (drag
+   chips). Disabled controls are left out and keep the arrow. */
+@layer base {
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  [role='tab'],
+  [role='switch']:not(:disabled),
+  [role='checkbox']:not(:disabled),
+  [role='radio'],
+  a[href],
+  select:not(:disabled),
+  summary,
+  label:has(input[type='checkbox'], input[type='radio']) {
+    cursor: pointer;
+  }
+}
+
 @keyframes marquee {
   from {
     transform: translateX(0);

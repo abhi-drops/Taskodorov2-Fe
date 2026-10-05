@@ -216,6 +216,16 @@ edges, hard offset shadows, no blur, no overshoot.**
 
 Full system: `feat-navigation.md` ("Page transitions").
 
+## Pointer cursor
+
+Every enabled clickable shows the hand cursor, from **one base-layer rule in
+`src/index.css`** (buttons, links, `role="button"`/`tab`/`switch`/`checkbox`/`radio`,
+selects). Tailwind v4's reset gives buttons the arrow, which is why this rule exists.
+Don't add `cursor-pointer` to buttons or links; it is only needed on a clickable element
+that is none of those (a clickable `<div>`, as on the note cards). Because the rule is in
+the base layer, utilities still override it: `disabled:cursor-not-allowed`,
+`cursor-default`, `cursor-grab`. Disabled controls keep the arrow.
+
 ## Shared primitives (`src/components/ui/`)
 
 All follow the same shape: extend the matching native HTML element's attributes
