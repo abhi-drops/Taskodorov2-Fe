@@ -4,6 +4,15 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-05 — Mobile modals are full pages
+
+- On mobile, modals (workspace switcher, New workspace, New template, Generate with AI,
+  the template editor's group and note settings) now cover the whole screen with a close
+  button in the top corner, instead of a bottom sheet about three quarters high. Confirm
+  dialogs stay small and centred (`style-guide.md`, `Modal`).
+- The Android back button now closes an open modal before navigating
+  (`feat-navigation.md`).
+
 ## 2026-10-05 — Diary: a check that auto-moves is one entry
 
 - Checking a note whose group has "On Check Move To" now shows in the Diary as a single

@@ -241,6 +241,11 @@ feedback automatically, including ones added later.** No per-component work is n
 
 ## Android hardware back button / edge-swipe
 
+**An open modal closes first.** `Modal` registers its close function in
+`lib/platform/backHandlers.ts` while it is open, and `useAndroidBackButton` runs the newest
+one before doing anything else, so a back press on a full-page modal closes it instead of
+navigating the page underneath.
+
 Handled by `src/lib/platform/useAndroidBackButton.ts`, mounted once in `AppShell.tsx`
 so it's active on every route regardless of page. Without this, Capacitor's
 `BridgeActivity` exits the app on any back press — hardware button or the right-edge

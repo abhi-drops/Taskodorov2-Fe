@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { App } from '@capacitor/app'
+import { runBackHandler } from './backHandlers'
 import { usePlatform } from './usePlatform'
 
 const EXIT_CONFIRM_WINDOW_MS = 2000
@@ -13,6 +14,9 @@ export function useAndroidBackButton() {
     if (!isNative) return
 
     const listenerPromise = App.addListener('backButton', ({ canGoBack }) => {
+      // An open modal closes first; the page under it stays where it is.
+      if (runBackHandler()) return
+
       if (canGoBack) {
         window.history.back()
         return

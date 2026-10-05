@@ -120,7 +120,7 @@ A live preview of the board the template makes, with a settings sidebar beside i
     a template doesn't carry.
 - **Mobile** has no sidebar: `Tabs` for the groups, the active group's notes, "Add
   sample note" and "<group> settings" chips, the "+ New group" chip, then the workspace
-  settings inline. Group and note settings are the same two components in a bottom sheet.
+  settings inline. Group and note settings are the same two components in a full-page modal.
 - **The cards are the real note cards** (`BasicNoteCard`, `CounterNoteCard`,
   `ListNoteCard`) in their `readOnly` + `onSelect` mode, fed by `lib/templates/preview.ts`,
   which turns template groups and notes into `Group`/`Note` shapes with the keys as ids.

@@ -44,7 +44,7 @@ style of its own):
   file it returns, then "Import and create workspace", which stores the file as a new template
   and creates the workspace from it in one step (named with what was typed, or after the
   template). It replaces the dialog instead of stacking a second `Modal`, because every
-  open `Modal` closes on Escape. See `feat-templates.md`, "AI Guide". It is a large centred `Modal` on web (`size="large"`: about 60% of the screen wide, 90% tall, big tiles, the grid scrolls and the buttons stay pinned) and a bottom sheet on mobile,
+  open `Modal` closes on Escape. See `feat-templates.md`, "AI Guide". It is a large centred `Modal` on web (`size="large"`: about 60% of the screen wide, 90% tall, big tiles, the grid scrolls and the buttons stay pinned) and a full-page modal on mobile,
   with the same frosted overlay and deep shadow as the switcher. The template editor's
   "Use template" opens the same dialog with its template preselected.
 - Trigger: the workspace name + chevron, in the board's header (only there — the
@@ -53,7 +53,7 @@ style of its own):
 - Web: an anchored dropdown (`position: relative`/`absolute`, closes on outside
   click/Escape) whose panel is a `border-neutral-300 bg-surface` backdrop card (same
   board-backdrop treatment as `GroupColumn`/`TopNav`/`PowerToolsDesktopLayout`)
-  wrapping the row chips. Mobile: a `Modal` with `variant="bottom-sheet"` — same row
+  wrapping the row chips. Mobile: a `Modal` with `variant="full-page"` — same row
   chips inside.
 - **Deeper "lifted" feel than the rest of the app, on both platforms**: opening the
   switcher shows a frosted white dim behind it — `SWITCHER_OVERLAY` (`bg-white/60

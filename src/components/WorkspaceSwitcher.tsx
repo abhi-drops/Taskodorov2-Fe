@@ -172,7 +172,7 @@ export function WorkspaceSwitcher() {
           isOpen={isOpen}
           onClose={closeAll}
           title="Workspaces"
-          variant="bottom-sheet"
+          variant="full-page"
           overlayClassName={SWITCHER_OVERLAY}
           panelClassName={SWITCHER_SHADOW}
         >

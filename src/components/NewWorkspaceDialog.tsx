@@ -71,7 +71,7 @@ export function NewWorkspaceDialog({ onClose, onCreated, initialTemplateId }: Ne
       isOpen
       onClose={onClose}
       title="New workspace"
-      variant={isNative ? 'bottom-sheet' : 'center'}
+      variant={isNative ? 'full-page' : 'center'}
       size={isNative ? 'default' : 'large'}
       overlayClassName={DIALOG_OVERLAY}
       panelClassName={DIALOG_SHADOW}

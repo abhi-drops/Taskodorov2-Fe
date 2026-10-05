@@ -44,7 +44,7 @@ import { useFillViewportHeight } from '../lib/layout/useFillViewportHeight'
 import { usePlatform } from '../lib/platform/usePlatform'
 import type { TemplateContent } from '../types/template'
 
-/** What the settings sidebar (desktop) or bottom sheet (mobile) is showing. */
+/** What the settings sidebar (desktop) or full-page modal (mobile) is showing. */
 type Selection = { kind: 'group'; key: string } | { kind: 'note'; key: string } | null
 
 type Confirming =
@@ -339,12 +339,12 @@ export default function TemplateEditorPage() {
           <NewTemplateGroupInput onAdd={(name) => edit((c) => addGroup(c, name))} />
           {workspaceSettings}
 
-          {/* Mobile has no sidebar: group and note settings open in a bottom sheet. */}
+          {/* Mobile has no sidebar: group and note settings open in a full-page modal. */}
           <Modal
             isOpen={selectedGroup !== null || selectedNote !== null}
             onClose={() => select(null)}
             title={selectedNote ? 'Sample note' : undefined}
-            variant="bottom-sheet"
+            variant="full-page"
             overlayClassName={DIALOG_OVERLAY}
             panelClassName={DIALOG_SHADOW}
           >

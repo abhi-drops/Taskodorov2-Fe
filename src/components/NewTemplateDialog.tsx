@@ -40,7 +40,7 @@ export function NewTemplateDialog({ onClose, onCreated }: NewTemplateDialogProps
       isOpen
       onClose={onClose}
       title="New template"
-      variant={isNative ? 'bottom-sheet' : 'center'}
+      variant={isNative ? 'full-page' : 'center'}
       overlayClassName={DIALOG_OVERLAY}
       panelClassName={DIALOG_SHADOW}
     >

@@ -29,7 +29,7 @@ import type { TemplateContent, TemplateGroup, TemplateNote } from '../types/temp
  *   colour, priority, delete).
  *
  * They are plain content with no frame of their own: the desktop editor shows them in
- * its right sidebar, the mobile editor in a bottom sheet. Changes apply as they are made.
+ * its right sidebar, the mobile editor in a full-page modal. Changes apply as they are made.
  */
 
 function SectionHeading({ children }: { children: string }) {

@@ -44,7 +44,7 @@ export function AiGuideDialog({
       isOpen
       onClose={onClose}
       title="Generate with AI"
-      variant={isNative ? 'bottom-sheet' : 'center'}
+      variant={isNative ? 'full-page' : 'center'}
       overlayClassName={DIALOG_OVERLAY}
       panelClassName={DIALOG_SHADOW}
     >
