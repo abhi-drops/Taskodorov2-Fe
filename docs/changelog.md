@@ -4,6 +4,12 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-05 — "Use the Taskodoro app" notice on phone-sized web
+
+- Opening the web version at a phone-sized width (under 640px) shows a closable overlay
+  suggesting the Taskodoro app. It stays closed for the browser session once dismissed
+  (`feat-navigation.md`, "Responsiveness").
+
 ## 2026-10-05 — Mobile modals are full pages
 
 - On mobile, modals (workspace switcher, New workspace, New template, Generate with AI,

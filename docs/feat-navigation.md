@@ -270,6 +270,14 @@ emulator — browser resizing can't exercise it.
 
 ## Responsiveness
 
+**Phone-sized web shows a notice** (`components/MobileWebNotice.tsx`, mounted in
+`App.tsx`). On web only, when the window is under 640px wide, a centred `Modal` overlay
+says to use the Taskodoro app. The X (or Escape, or a click outside) closes it and the
+user carries on in the browser; the dismissal is kept in `sessionStorage`, so it returns
+in a new browser session. Tablet widths and up never see it, and nor does the native app.
+The width check only decides whether to show this notice: layout is still chosen by
+`isNative` alone, never by a breakpoint.
+
 Per an explicit product decision (not a mockup requirement): web content should be
 responsive on its own merits across browser widths — it does not need to pixel-match
 the Capacitor mobile screens. The board is the clearest example: mobile renders groups
