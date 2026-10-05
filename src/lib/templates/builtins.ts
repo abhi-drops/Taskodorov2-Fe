@@ -99,9 +99,9 @@ const SHOPPING_LIST: TemplateContent = {
         counter('n2', 'Water bottles', 'blue', 6),
         basic('n3', 'Check for coupons before paying', 'yellow'),
       ],
-      { moveTo: 'in-cart' },
+      // Straight to Bought, still checked: there is no step in between.
+      { moveTo: 'bought', resetOnMove: false },
     ),
-    group('in-cart', 'In cart', [], { moveTo: 'bought', resetOnMove: false }),
     group('bought', 'Bought'),
   ],
   completedGroupKey: 'bought',

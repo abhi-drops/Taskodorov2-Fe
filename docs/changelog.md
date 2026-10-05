@@ -4,6 +4,13 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-05 — Shopping list template: two groups
+
+- The built-in Shopping list template no longer has an "In cart" group: checking a note in
+  "To buy" moves it straight to "Bought", still checked. An install that already has the
+  template keeps its stored copy until "Reset to Default" is used on it
+  (`feat-templates.md`, "Built-in templates"). The AI Guide is not affected.
+
 ## 2026-10-05 — Pointer cursor on everything clickable
 
 - Buttons, links, tabs, switches and checkboxes now show the hand cursor on hover across
