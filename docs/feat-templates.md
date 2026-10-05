@@ -50,8 +50,9 @@ day plus Done), Project kanban, Study plan.
   the "New workspace" dialog shows before "More templates".
 - **Default is also the first-run board.** `seedIfEmpty` (and so Settings' global "Reset
   to Default") instantiates the `DEFAULT_TEMPLATE_CONTENT` constant directly, not the
-  user's edited copy, so a factory reset really is factory. The `templates` table itself
-  is left alone by that reset.
+  user's edited copy, so a factory reset really is factory. That reset also empties
+  the `templates` table and re-seeds the built-ins: the user's own templates are deleted
+  and edited built-ins go back to factory (`feat-power-tools.md`).
 
 ## Making a workspace from a template
 

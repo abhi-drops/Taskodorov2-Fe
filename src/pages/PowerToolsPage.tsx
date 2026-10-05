@@ -322,7 +322,7 @@ export default function PowerToolsPage() {
         onClose={() => setConfirmReset(false)}
         onConfirm={handleReset}
         title="Reset to Default"
-        message="This deletes every workspace, group, and note, and starts fresh with a single default workspace. This can't be undone."
+        message="This erases everything Taskodoro has stored on this device: every workspace, group and note, the Diary's history, your own templates and your settings. It also signs you out here. The app starts again as new. This can't be undone."
         confirmLabel="Reset"
       />
     </AppShell>

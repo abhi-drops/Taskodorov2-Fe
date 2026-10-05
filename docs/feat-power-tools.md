@@ -71,12 +71,19 @@ desktop wireframe — see `docs/style-guide.md`'s "Power Tools: row chips + desk
   (`feat-diary.md`). Unlike Reset to Default it needs no reload: the board re-reads its
   notes when it is next opened.
 - **Reset to Default** — danger chip → `ConfirmDialog` → `lib/db/reset.ts`'s
-  `resetToDefault()` → `window.location.reload()`. Scope decided during
-  implementation (no mockup/doc specified it precisely): since there's no separate
-  "Power Tools settings" object anywhere in this app, the only meaningful reset is
-  wiping every workspace/group/note back to the first-run seed state. Uses the same
-  soft-delete cascade as every other delete in the app, then re-seeds — see
-  `feat-offline-data-layer.md`.
+  `resetToDefault()` → `window.location.reload()`. Since 2026-10-05 it is a **full
+  factory reset**: it erases everything stored on the device and seeds a new app.
+  - Database: `DELETE FROM` `notes`, `groups`, `workspaces`, `activity_events` and
+    `templates` (real deletes, not the soft-delete cascade), then `seedBuiltinTemplates`
+    and `seedIfEmpty`. So the Diary's history and the user's own templates go too, and
+    edited built-in templates return to their factory form.
+  - Preferences: `Preferences.clear()`, which drops the auth session (the user is signed
+    out on this device; nothing is sent to the backend), the active workspace and the
+    add-button settings.
+  - Browser storage: `localStorage.clear()` and `sessionStorage.clear()` (panel widths,
+    the phone-web notice dismissal).
+  The confirm dialog spells all of this out. To clear only one workspace's notes and keep
+  everything else, use Wipe All Notes above.
 
 ## Why nothing here has a Save button
 

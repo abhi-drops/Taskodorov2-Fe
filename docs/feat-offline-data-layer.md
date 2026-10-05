@@ -81,7 +81,7 @@ plain `SELECT *`.
 - **`workspaces.completed_group_id`** (Diary, 2.8): nullable, no FK. Added via
   `ensureColumn`.
 - **`activity_events`** (Diary, 2.8): an **append-only** log, the one table that is
-  never soft-deleted or updated.
+  never soft-deleted or updated (only "Reset to Default" empties it, with everything else).
   - Columns: `workspace_id`, `entity_type` (`note|group`), `entity_id`, `action`
     (`created|moved|deleted|field_changed`), `from_group_id`, `to_group_id`, `field`
     (`title|color|completed|counter|list`), `new_value`, `created_at`.
@@ -105,7 +105,7 @@ plain `SELECT *`.
   - `seedIfEmpty` is now one call to `instantiateTemplate` (`lib/templates/instantiate.ts`)
     with the factory Default template. That function takes the raw `db`, so it must be
     called inside a single `withDb` and must never call the `withDb`-based CRUD functions.
-  - Settings' "Reset to Default" does not touch this table.
+  - Settings' "Reset to Default" empties this table and re-seeds the built-ins.
   - See `feat-templates.md`.
 
 `lastSyncedAt` — deliberately **not implemented**, despite an early planning doc
@@ -119,8 +119,10 @@ Each exports `list*`/`get*ById`/`create*`/`update*`/`delete*`, all funneled thro
 `withDb`. Cascading deletes are real, not just documentation: `deleteWorkspace`
 soft-deletes the workspace, then its groups, then all notes in those groups;
 `deleteGroup` soft-deletes the group then its notes. `resetToDefault()`
-(`src/lib/db/reset.ts`) wipes every workspace via the same cascade, then re-runs the
-seed function — used by Power Tools' "Reset to Default."
+(`src/lib/db/reset.ts`), used by Settings' "Reset to Default", is the one exception to
+soft deletes: it really deletes every row of every table (including `activity_events`
+and `templates`), clears Preferences and browser storage, then re-runs the seeds. See
+`feat-power-tools.md`.
 
 ## Verified on a real Android device (not just browser/emulator)
 

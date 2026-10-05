@@ -4,6 +4,14 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-05 — Reset To Default is a full factory reset
+
+- Settings' "Reset To Default" now erases everything stored on the device, not just the
+  workspaces: the Diary's history, the user's own templates (built-ins return to factory),
+  the signed-in session, all settings, and browser storage. Then it seeds a new app
+  (`feat-power-tools.md`).
+- The AI Guide is not affected.
+
 ## 2026-10-05 — Shopping list template: two groups
 
 - The built-in Shopping list template no longer has an "In cart" group: checking a note in
