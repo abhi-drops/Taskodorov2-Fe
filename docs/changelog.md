@@ -17,11 +17,17 @@ from each entry. See `CLAUDE.md` for the rule on keeping this updated.
   workspace is no longer created empty (`feat-workspaces.md`).
 - **Export / import:** templates travel as `.taskodoro.json` files: a download on web,
   the share sheet on Android. Adds `@capacitor/filesystem` and `@capacitor/share`.
-- **AI Guide:** the Templates toolbar downloads a Markdown guide to paste into an AI
+- **AI Guide:** the Templates toolbar opens a "Generate with AI" dialog (steps, guide
+  download, import), shared with the New workspace dialog. It downloads a Markdown guide to paste into an AI
   assistant so it can write or edit a template file (`src/lib/templates/aiGuide.md`).
-  It tells the assistant to write sample-note titles as next-step instructions that match
-  each group's settings.
+  It tells the assistant to ask the user questions first when the request is unclear
+  (personalised from what it knows of them, and never ones it can already answer), to
+  always deliver the result as a downloadable file, and to write sample-note titles as
+  next-step instructions that match each group's settings.
   `CLAUDE.md` now requires updating it with any template-related change.
+- **Generate with AI:** a tile in the New workspace dialog with step-by-step instructions,
+  the guide download, and "Import and create workspace" (saves the file as a template
+  and creates the workspace from it). AI guide updated to describe it.
 - **More ways to bring a file in:** "Import template" in the New workspace dialog, and
   "Replace from file" in the template editor, which swaps an existing template's content
   for an updated file and keeps its name.

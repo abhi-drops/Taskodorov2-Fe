@@ -4,6 +4,7 @@ import { TemplatesShell, TemplatesToolbar, TOOLBAR_BUTTON } from '../components/
 import { CHIP } from '../components/SidebarPanelLayout'
 import { TemplateThumb } from '../components/TemplateThumb'
 import { NewTemplateDialog } from '../components/NewTemplateDialog'
+import { AiGuideDialog } from '../components/AiGuideDialog'
 import { AnimatedIcon } from '../components/ui/AnimatedIcon'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { FormError } from '../components/ui/FormError'
@@ -62,6 +63,7 @@ function TemplateRow({
 export default function TemplatesPage() {
   const navigate = useNavigate()
   const [isCreating, setIsCreating] = useState(false)
+  const [isAiOpen, setIsAiOpen] = useState(false)
   const {
     builtinTemplates,
     userTemplates,
@@ -97,8 +99,8 @@ export default function TemplatesPage() {
           <h1 className="font-display text-lg font-bold">Templates</h1>
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          {/* A Markdown file to paste into an AI assistant, so it can write a template. */}
-          <button type="button" onClick={handleDownloadGuide} className={`${TOOLBAR_BUTTON} bg-white hover:bg-slate-50`}>
+          {/* The steps for having an AI assistant write a template: guide download + import. */}
+          <button type="button" onClick={() => setIsAiOpen(true)} className={`${TOOLBAR_BUTTON} bg-white hover:bg-slate-50`}>
             <AnimatedIcon icon={AiGuideIcon} size={16} />
             AI Guide
           </button>
@@ -115,7 +117,8 @@ export default function TemplatesPage() {
 
       <p className="text-slate-600">Boards you can start a new workspace from: groups, their settings and a few sample notes.</p>
 
-      <FormError message={error} />
+      {/* While the AI dialog is open it shows the error itself. */}
+      <FormError message={isAiOpen ? null : error} />
 
       {status === 'loading' ? (
         <p className="text-center text-slate-500">Loading…</p>
@@ -138,6 +141,20 @@ export default function TemplatesPage() {
             )}
           </div>
         </div>
+      )}
+
+      {isAiOpen && (
+        <AiGuideDialog
+          onClose={() => setIsAiOpen(false)}
+          onDownload={handleDownloadGuide}
+          onImport={async () => {
+            // Stay open on a wrong file, so its error is seen; close once it's in the list.
+            if (await handleImport()) setIsAiOpen(false)
+          }}
+          importLabel="Import template"
+          importDescription={'Import that file. It is saved as a new template under "Yours", ready to edit or to start a workspace from.'}
+          error={error}
+        />
       )}
 
       {isCreating && (

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { createTemplate, listTemplates } from '../lib/db/templates'
 import { DEFAULT_BUILTIN_ID } from '../lib/templates/builtins'
 import { useWorkspace } from '../lib/workspace/useWorkspace'
-import { NOT_A_TEMPLATE_MESSAGE, pickTemplateFile } from './useTemplates'
+import { downloadAiGuide, NOT_A_TEMPLATE_MESSAGE, pickTemplateFile } from './useTemplates'
 import type { Template } from '../types/template'
 
 /** How many templates the picker shows before "More templates" is pressed. */
@@ -24,6 +24,8 @@ export function useNewWorkspace(initialTemplateId: string | undefined, onCreated
   const [showAll, setShowAll] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
+  const [isAiOpen, setIsAiOpen] = useState(false)
+  const [aiError, setAiError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -61,6 +63,35 @@ export function useNewWorkspace(initialTemplateId: string | undefined, onCreated
     setShowAll(true)
   }
 
+  async function handleDownloadGuide() {
+    setAiError(null)
+    try {
+      await downloadAiGuide()
+    } catch {
+      setAiError("Couldn't save the AI guide. Try again.")
+    }
+  }
+
+  /**
+   * The "Generate with AI" path's last step: import the file the assistant wrote, keep
+   * it as a new template, and create the workspace from it straight away. The workspace
+   * takes the name already typed in the dialog, or the template's own name if none was.
+   */
+  async function handleImportAndCreate() {
+    if (isCreating) return
+    setAiError(null)
+    const parsed = await pickTemplateFile()
+    if (parsed === null) return
+    if (parsed === 'invalid') {
+      setAiError(NOT_A_TEMPLATE_MESSAGE)
+      return
+    }
+    setIsCreating(true)
+    const created = await createTemplate(parsed)
+    await createWorkspace(name.trim() || created.name, created.id)
+    onCreated()
+  }
+
   async function handleCreate() {
     const trimmed = name.trim()
     if (!trimmed || isCreating) return
@@ -81,6 +112,16 @@ export function useNewWorkspace(initialTemplateId: string | undefined, onCreated
     setSelectedTemplateId,
     importError,
     handleImport,
+    isAiOpen,
+    openAi: () => setIsAiOpen(true),
+    closeAi: () => {
+      setIsAiOpen(false)
+      setAiError(null)
+    },
+    aiError,
+    isCreating,
+    handleDownloadGuide,
+    handleImportAndCreate,
     canCreate,
     handleCreate,
   }

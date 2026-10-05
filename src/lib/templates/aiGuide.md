@@ -6,12 +6,74 @@ This guide explains the Taskodoro workspace template file, so that an AI assista
 **If you are a person:** paste this whole guide into your AI assistant, then say what you
 want, for example "Make me a template for planning a wedding". To change a template you
 already have, export it from the Templates app and paste the file's contents after the
-guide, with what you want changed. Save the assistant's answer as a file ending in
-`.json` and bring it into Taskodoro (see "Using the file" at the end).
+guide, with what you want changed. The assistant will give you a file to download; bring
+it into Taskodoro (see "Using the file" at the end).
 
-**If you are an AI assistant:** follow the rules below exactly. Reply with one JSON
-document in a single code block and nothing that the user could mistake for part of the
-file. If the request is unclear, ask before writing.
+**If you are an AI assistant:** follow the rules below exactly. Two of them come first:
+
+1. **Ask before you write, when you need to.** See "Questions to ask first".
+2. **Always give the result as a file.** See "How to deliver the result".
+
+## Questions to ask first
+
+Do not guess at something that changes the shape of the board. If the request leaves any
+of these open, ask the user before generating the file, in one short message (two to
+four questions, not a long form):
+
+- **What the board is for**, if the request is only a word or two ("a work board").
+- **The stages or categories** they think in, if they are not obvious from the subject:
+  these become the groups.
+- **Whether notes move through the groups** (a flow with a "done" group at the end) or
+  the groups are only places to sort things.
+- **What a typical note is**: a single task, a checklist of steps, or something counted
+  towards a goal. This decides the note types.
+- **Anything they named but did not explain** that affects the board.
+
+Skip the questions when the request already answers them, or when the user says to just
+make it; then use sensible choices and say in one or two lines what you assumed. When
+editing an existing template, ask only if the requested change is ambiguous.
+
+### Only ask what you cannot already tell
+
+- **Do not ask a question whose answer you can predict.** If you are about 90% sure which
+  answer the user would pick, do not ask: take that answer, and mention it as an
+  assumption beside the file so they can correct it. Ask only where the likely answers
+  are genuinely split and the choice changes the board.
+- Never ask about things this guide already decides (the file format, field names, how
+  many sample notes to write) or about small details the user can change in the app in a
+  few seconds, such as a note's colour.
+- If nothing is left to ask after this, ask nothing and make the file.
+
+### Make it personal
+
+- **Use what you already know about the user.** If you have memory of earlier
+  conversations, or the current conversation tells you about their work, studies,
+  projects, routines or how they like to organise things, use it: choose groups, note
+  types and sample notes that fit their real life, not a generic example.
+- **Shape the questions the same way.** Ask about their actual situation ("Is this for
+  the bakery orders you mentioned, or for the catering side too?") instead of an abstract
+  version of the question, and leave out anything their history already answers.
+- **Greet them by name in your first question** if you know their name with more than
+  about 80% confidence. If you are less sure, do not guess a name; just ask the question.
+  Use the name once, not in every message.
+- Only use what the user has shared with you. Do not invent facts about them, and do not
+  put private details (other people's names, health, money, addresses) into sample notes
+  unless they asked for that; a template file may be shared with others.
+- If you know nothing about the user, say nothing about it: ask your questions plainly.
+
+## How to deliver the result
+
+- **Always give the user a file they can download**, never only text in the chat. Create
+  the file with whatever file or document tool you have.
+- Name it after the template, in lower case with hyphens, ending in `.taskodoro.json`, for
+  example `wedding-planning.taskodoro.json`.
+- The file must contain the JSON document and nothing else: no explanation, no Markdown
+  code fences, no comments.
+- Beside the file, add one or two lines saying what the board contains and what you
+  assumed. Do not paste the whole JSON into the chat as well.
+- **Only if you cannot create files at all:** say so, put the complete JSON in a single
+  code block with nothing else in it, and tell the user to save that text as a file with
+  the name above.
 
 ## What a template is
 
@@ -187,7 +249,7 @@ When the user pastes an exported template:
   `completedGroupKey` still points at a group that exists.
 - When you delete a group, also clear or re-point anything that linked to it.
 - Give new groups and notes new keys that nothing else in the file uses.
-- Return the whole file, not just the changed part.
+- Return the whole template as a new file, not just the changed part.
 
 ## A complete example
 
@@ -280,13 +342,18 @@ When the user pastes an exported template:
 
 ## Using the file
 
-1. Save the assistant's JSON as a file ending in `.json`, for example
-   `trip-planning.taskodoro.json`.
+1. Download the file the assistant gave you, for example `trip-planning.taskodoro.json`.
+   (If it could only give you text, save that text as a file ending in `.json`.)
 2. In Taskodoro, open **Apps**, then **Templates**.
-3. **A new template:** press **Import** and choose the file. It appears under "Yours". If
+3. **A new template:** press **Import** (or **AI Guide**, then **Import template**) and
+   choose the file. It appears under "Yours". If
    a template with that name already exists, the new one is named "Name (2)".
 4. **An updated version of a template you already have:** open that template and press
    **Replace from file**. Its groups and sample notes are replaced by the file's; its
    name stays the same.
-5. You can also press **Import template** in the "New workspace" dialog to import a file
-   and start a workspace from it in one go.
+5. **Straight into a new workspace:** in the "New workspace" dialog, press **Generate
+   with AI**, then **Import and create workspace**. The file is saved as a new template
+   and a workspace is created from it at once (named with what you typed in the dialog,
+   or after the template if you typed nothing). **Import template** in the same dialog
+   only adds and selects the template, so you can still name the workspace before
+   pressing Create workspace.

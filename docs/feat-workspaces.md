@@ -38,7 +38,13 @@ style of its own):
   `TemplateThumb` and the name; the selected tile is `sticky-yellow`). It shows the first
   three templates, with "More templates" expanding the grid in place. Default is
   selected to begin with. "Import template" beside it imports a template file, stores it
-  and selects it. It is a large centred `Modal` on web (`size="large"`: about 60% of the screen wide, 90% tall, big tiles, the grid scrolls and the buttons stay pinned) and a bottom sheet on mobile,
+  and selects it. The grid's last tile, **Generate with AI** (dashed border, the ChatGPT,
+  Claude and Gemini logos from the icon library), swaps the dialog for a four-step
+  "Generate with AI" view: download the AI Guide, give it to an assistant, download the
+  file it returns, then "Import and create workspace", which stores the file as a new template
+  and creates the workspace from it in one step (named with what was typed, or after the
+  template). It replaces the dialog instead of stacking a second `Modal`, because every
+  open `Modal` closes on Escape. See `feat-templates.md`, "AI Guide". It is a large centred `Modal` on web (`size="large"`: about 60% of the screen wide, 90% tall, big tiles, the grid scrolls and the buttons stay pinned) and a bottom sheet on mobile,
   with the same frosted overlay and deep shadow as the switcher. The template editor's
   "Use template" opens the same dialog with its template preselected.
 - Trigger: the workspace name + chevron, in the board's header (only there — the

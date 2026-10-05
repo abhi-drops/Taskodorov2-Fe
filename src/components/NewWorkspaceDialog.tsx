@@ -1,7 +1,8 @@
 import { Modal } from './ui/Modal'
 import { Button } from './ui/Button'
 import { AnimatedIcon } from './ui/AnimatedIcon'
-import { ChevronDownIcon, ImportIcon } from './ui/icons'
+import { AiGuideIcon, ChatGptIcon, ChevronDownIcon, ClaudeIcon, GeminiIcon, ImportIcon } from './ui/icons'
+import { AiGuideDialog } from './AiGuideDialog'
 import { FormError } from './ui/FormError'
 import { DIALOG_OVERLAY, DIALOG_SHADOW, FIELD_INPUT, FIELD_LABEL } from './ui/dialogStyles'
 import { TemplateThumb } from './TemplateThumb'
@@ -35,9 +36,35 @@ export function NewWorkspaceDialog({ onClose, onCreated, initialTemplateId }: Ne
     setSelectedTemplateId,
     importError,
     handleImport,
+    isAiOpen,
+    openAi,
+    closeAi,
+    aiError,
+    isCreating,
+    handleDownloadGuide,
+    handleImportAndCreate,
     canCreate,
     handleCreate,
   } = useNewWorkspace(initialTemplateId, onCreated)
+
+  // "Generate with AI" takes the dialog's place (rather than stacking a second modal on
+  // top, where one Escape would close both). Closing it comes back here, with the name
+  // and selection as they were.
+  if (isAiOpen) {
+    return (
+      <AiGuideDialog
+        onClose={closeAi}
+        onDownload={handleDownloadGuide}
+        onImport={handleImportAndCreate}
+        importLabel="Import and create workspace"
+        importDescription={`Import that file. It is saved as a new template, and ${
+          name.trim() ? `"${name.trim()}"` : 'a new workspace named after it'
+        } is created from it.`}
+        busy={isCreating}
+        error={aiError}
+      />
+    )
+  }
 
   return (
     <Modal
@@ -103,6 +130,28 @@ export function NewWorkspaceDialog({ onClose, onCreated, initialTemplateId }: Ne
                   </button>
                 )
               })}
+              {/* Not a template: opens the steps for having an AI assistant write one. */}
+              <button
+                type="button"
+                onClick={openAi}
+                className={`flex min-w-0 flex-col rounded-card border-[3px] border-dashed border-ink bg-white text-left transition-colors hover:bg-slate-50 ${
+                  isNative ? 'gap-1.5 p-1.5' : 'gap-3 p-3'
+                }`}
+              >
+                <span
+                  className={`flex items-center justify-center border border-neutral-300 bg-surface text-ink ${
+                    isNative ? 'h-12 gap-2' : 'h-32 gap-5'
+                  }`}
+                >
+                  <AnimatedIcon icon={ChatGptIcon} size={isNative ? 18 : 36} />
+                  <AnimatedIcon icon={ClaudeIcon} size={isNative ? 18 : 36} />
+                  <AnimatedIcon icon={GeminiIcon} size={isNative ? 18 : 36} />
+                </span>
+                <span className={`flex items-center gap-1.5 font-medium text-ink ${isNative ? 'text-xs' : 'text-base'}`}>
+                  <AnimatedIcon icon={AiGuideIcon} size={isNative ? 12 : 16} still />
+                  <span className="line-clamp-2">Generate with AI</span>
+                </span>
+              </button>
             </div>
           )}
           <div className="mt-1 flex flex-wrap items-center gap-x-6 gap-y-2">

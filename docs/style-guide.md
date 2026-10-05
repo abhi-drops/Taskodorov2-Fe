@@ -262,7 +262,7 @@ both the web multi-column layout and the mobile single-active-tab view in
 board drawn from the board's own shapes (ink bar per group, a sticky-coloured block per
 sample note). `TemplatesShell.tsx` also exports `TOOLBAR_BUTTON`, a labelled version of
 `SidebarToggle`'s square `border-2 border-ink shadow-card` toolbar control. New icons in
-`icons.ts`: `TemplatesIcon`, `ExportIcon`, `ImportIcon`, `DuplicateIcon`, `AiGuideIcon`. See
+`icons.ts`: `TemplatesIcon`, `ExportIcon`, `ImportIcon`, `DuplicateIcon`, `AiGuideIcon`, and the brand marks `ChatGptIcon`, `ClaudeIcon`, `GeminiIcon` (used only to name those assistants on the Generate with AI tile). See
 `feat-templates.md`.
 
 ## Platform detection

@@ -174,15 +174,24 @@ three shown first in the picker are fixed).
 
 ## AI Guide
 
-The Templates toolbar's **AI Guide** button downloads (shares, on Android)
+The Templates toolbar's **AI Guide** button opens `AiGuideDialog` ("Generate with AI"):
+four numbered steps with a "Download AI Guide" button and an "Import template" button
+that adds the assistant's file under "Yours". The download gives (shares, on Android)
 `taskodoro-template-ai-guide.md`: a self-contained Markdown guide the user pastes into an
 AI assistant such as ChatGPT or Claude, so it can write a new template file or edit an
-exported one. It covers the file format field by field, how to write sample-note titles
+exported one. It tells the assistant to ask questions first when the request is unclear
+(skipping any whose answer it can predict about 90% of the time, personalising from what
+it already knows of the user, and using their name in the first question only when it is
+over about 80% sure of it)
+and to always hand back a downloadable `.taskodoro.json` file. It covers the file format
+field by field, how to write sample-note titles
 as next-step instructions that match the group's settings ("Click the checkbox when a
 task is off hold"), what the importer does with
 mistakes, advice on making a good board, rules for editing an existing template, a
 complete example, and how to bring the file back into the app.
 
+- The same `AiGuideDialog` opens from the "New workspace" dialog's **Generate with AI**
+  tile, where its last step is "Import and create workspace" (`feat-workspaces.md`).
 - Source: `src/lib/templates/aiGuide.md`, bundled into the app with Vite's `?raw` import
   (so it works offline) and written out by `downloadAiGuide` (`useTemplates.ts`).
 - **It must be kept in step with the code.** It is the only description of the file
