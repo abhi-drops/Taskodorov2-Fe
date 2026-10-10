@@ -16,6 +16,12 @@ Entry format:
 
 ---
 
+## 2026-10-10 — No text label in the footer
+- Said: "in the existing poster remove 'your comfort planner' from 1-cover, 'taskodoro ideology' from other pages footer"
+- Decision: removed the footer's left-hand label on the cover and on slides 2-4 of the ideology post. The footer now holds only the "Swipe" chip, right-aligned. The closing slide's tagline under the wordmark is untouched.
+- Scope: asked for this post. My interpretation: the label is unwanted in general, so the template and `aesthetics.md` now leave it out by default. Confirm or reverse if a later post should have one.
+- Status: active
+
 ## 2026-10-10 — Keep the skill's memory in files
 - Said: "make this instagram promotion poster maker into a claude skill in this project with a file saving new decisions and feedback from me for future use and save aesthetics in it for future use"
 - Decision: this file holds decisions and feedback; `aesthetics.md` holds the visual system. Both are updated as part of the work, not as an afterthought.

@@ -66,8 +66,9 @@ Mixed case with a full stop on headlines. No all-caps, no emoji, no exclamation 
 
 - **Logo row** (`.brand`): logo image + "Taskodoro" wordmark on the left, page chip
   "n / total" (`.pg`) on the right.
-- **Footer** (`.foot`): a short label on the left (the post title; the tagline on the
-  cover) and a yellow "Swipe →" chip on the right. The last slide has no Swipe chip.
+- **Footer** (`.foot`): only a yellow "Swipe →" chip, right-aligned. No text label on
+  the left (the user removed the post title and tagline from it). The last slide has no
+  Swipe chip.
 
 ## Slide patterns
 
