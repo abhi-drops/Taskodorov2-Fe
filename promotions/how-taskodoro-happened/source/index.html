@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1350" />
+    <title>How Taskodoro happened (Instagram carousel)</title>
+    <script src="assets/vendor/gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "Geomini"; font-weight: 400; src: url("assets/fonts/geomini-latin-400-normal.woff2") format("woff2"); }
+      @font-face { font-family: "Geomini"; font-weight: 700; src: url("assets/fonts/geomini-latin-700-normal.woff2") format("woff2"); }
+      @font-face { font-family: "Google Sans Flex"; font-weight: 100 1000; src: url("assets/fonts/google-sans-flex-latin-wght-normal.woff2") format("woff2"); }
+      :root {
+        --yellow: #fbe05d;
+        --coral: #ff7c8f;
+        --blue: #96c3f7;
+        --green: #c0ff91;
+        --purple: #8b5cf6;
+        --nav: #1e1e2a;
+        --surface: #f4f5f7;
+        --ink: #3c3c3c;
+        --sh: 3px 7px 0 0 rgba(0, 0, 0, 0.2);
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1080px; height: 1350px; overflow: hidden; background: #f4f5f7; }
+      #root { position: relative; width: 1080px; height: 1350px; overflow: hidden; font-family: "Google Sans Flex", sans-serif; color: #000; }
+      .slide {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 1080px;
+        height: 1350px;
+        padding: 72px 80px 172px;
+        display: flex;
+        flex-direction: column;
+        background:
+          linear-gradient(rgba(244, 245, 247, 0.82), rgba(244, 245, 247, 0.82)),
+          url("assets/img/background.jpg") center / 1900px auto,
+          #f4f5f7;
+      }
+      .display { font-family: "Geomini", sans-serif; }
+      .yellow { background: var(--yellow); }
+      .coral { background: var(--coral); }
+      .blue { background: var(--blue); }
+      .green { background: var(--green); }
+
+      /* brand row and footer, the same on every slide */
+      .brand { display: flex; align-items: center; justify-content: space-between; }
+      .brand .l { display: flex; align-items: center; gap: 18px; font-family: "Geomini", sans-serif; font-weight: 700; font-size: 40px; line-height: 48px; color: var(--nav); }
+      .brand img { width: 68px; height: 69px; display: block; }
+      .pg { display: inline-flex; align-items: center; height: 56px; padding: 0 20px; border: 5px solid var(--ink); background: #fff; box-shadow: var(--sh); font-family: "Geomini", sans-serif; font-weight: 700; font-size: 26px; color: var(--ink); }
+      .foot { position: absolute; left: 80px; right: 80px; bottom: 64px; display: flex; align-items: center; justify-content: space-between; font-size: 28px; line-height: 36px; font-weight: 500; color: var(--ink); }
+      .swipe { display: inline-flex; align-items: center; gap: 14px; height: 64px; padding: 0 24px; border: 5px solid var(--ink); background: var(--yellow); box-shadow: var(--sh); font-weight: 600; color: var(--nav); }
+
+      .num { width: 104px; height: 104px; margin-top: 64px; display: flex; align-items: center; justify-content: center; border: 7px solid var(--ink); box-shadow: var(--sh); font-family: "Geomini", sans-serif; font-weight: 700; font-size: 64px; color: var(--nav); }
+      h2 { margin-top: 84px; font-family: "Geomini", sans-serif; font-weight: 700; font-size: 78px; line-height: 88px; color: var(--nav); }
+      .sub { margin-top: 24px; font-size: 38px; line-height: 50px; font-weight: 500; color: var(--ink); }
+      .vis { margin-top: auto; }
+
+      /* app pieces */
+      .chip { display: inline-flex; align-items: center; height: 64px; padding: 0 24px; border: 6px solid var(--ink); background: #cbd5e1; box-shadow: var(--sh); font-family: "Geomini", sans-serif; font-size: 30px; color: var(--ink); white-space: nowrap; position: relative; z-index: 2; }
+      .backdrop { border: 2px solid #d4d4d4; background: var(--surface); box-shadow: var(--sh); padding: 56px 26px 28px; margin-top: -32px; margin-left: -6px; display: flex; flex-direction: column; gap: 20px; }
+      .note { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 26px; box-shadow: var(--sh); font-size: 28px; line-height: 38px; font-weight: 500; color: #000; }
+      .note .txt { flex: 1; min-width: 0; }
+      .ck { --s: 42px; position: relative; flex: none; width: var(--s); height: var(--s); }
+      .ck .ring { display: block; width: var(--s); height: var(--s); object-fit: contain; }
+      .ck .tick { position: absolute; left: calc(var(--s) * 0.064); top: calc(var(--s) * -0.3); width: calc(var(--s) * 1.4); height: calc(var(--s) * 1.4); max-width: none; object-fit: contain; }
+      .done { text-decoration: line-through; opacity: 0.7; }
+      .fld .lb { font-size: 24px; line-height: 32px; font-weight: 500; color: #334155; }
+      .fld .sel { margin-top: 6px; display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 18px; border: 5px solid var(--ink); background: #fff; box-shadow: var(--sh); font-size: 28px; font-weight: 500; color: var(--ink); }
+      .counter { display: flex; align-items: stretch; height: 80px; margin-top: 18px; border: 6px solid var(--ink); }
+      .counter .b { width: 84px; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.5); }
+      .counter .v { flex: 1; display: flex; align-items: center; justify-content: center; border-left: 6px solid var(--ink); border-right: 6px solid var(--ink); font-family: "Geomini", sans-serif; font-weight: 700; font-size: 40px; color: var(--ink); }
+      .li { display: flex; align-items: center; gap: 16px; font-size: 28px; line-height: 38px; font-weight: 400; }
+      .li .ck { --s: 34px; }
+      .strip { background: var(--ink); height: 60px; padding: 0 22px; display: flex; align-items: center; justify-content: flex-end; font-size: 26px; font-weight: 600; box-shadow: var(--sh); }
+      .later { display: flex; align-items: center; height: 72px; padding: 0 24px; border: 5px solid var(--ink); background: #fff; box-shadow: var(--sh); font-size: 30px; font-weight: 600; color: var(--nav); white-space: nowrap; }
+      .lbl { font-size: 26px; line-height: 34px; font-weight: 600; color: #334155; }
+      .sq { position: absolute; width: 300px; height: 300px; box-shadow: 5px 11px 0 0 rgba(0, 0, 0, 0.2); display: flex; align-items: flex-end; padding: 22px 28px; font-family: "Geomini", sans-serif; font-weight: 700; font-size: 110px; line-height: 100px; color: var(--nav); }
+      .hd { display: flex; align-items: center; gap: 18px; position: relative; z-index: 2; }
+      .addbtn { width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; border: 6px solid var(--ink); background: var(--purple); box-shadow: var(--sh); }
+      .navpill { display: inline-flex; padding: 12px; border: 2px solid #d4d4d4; background: var(--surface); box-shadow: var(--sh); }
+      .navpill div { display: flex; align-items: center; height: 64px; padding: 0 26px; font-size: 26px; font-weight: 500; }
+      .sw { width: 56px; height: 56px; border-radius: 50%; display: block; }
+      .sw.on { box-shadow: 0 0 0 5px var(--surface), 0 0 0 10px var(--ink); }
+      .shot { position: absolute; border: 7px solid var(--ink); background: var(--surface); box-shadow: 5px 11px 0 0 rgba(0, 0, 0, 0.22); overflow: hidden; }
+      .shot img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: left top; }
+      .shot.phone { border-width: 9px; border-radius: 30px; }
+      .dot3 { width: 44px; height: 44px; border-radius: 50%; background: var(--nav); margin: 0 14px; display: block; }
+      .mini { height: 150px; padding: 22px 20px; display: flex; flex-direction: column; justify-content: space-between; background: #fff; border: 5px solid var(--ink); box-shadow: var(--sh); }
+      .mini .r { display: flex; align-items: center; gap: 12px; }
+      .mini .r i { flex: none; width: 22px; height: 22px; border: 4px solid var(--ink); display: block; }
+      .mini .r b { height: 10px; background: #cbd5e1; display: block; }
+      .plain { width: 640px; padding: 40px 44px; background: #fff; border: 6px solid var(--ink); box-shadow: var(--sh); display: flex; flex-direction: column; gap: 28px; }
+      .plain .t { font-size: 40px; line-height: 48px; font-weight: 600; color: var(--ink); }
+      .plain .r { display: flex; align-items: center; gap: 22px; font-size: 36px; line-height: 44px; color: var(--ink); }
+      .plain .r i { flex: none; width: 38px; height: 38px; border: 5px solid var(--ink); display: block; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="6" data-width="1080" data-height="1350">
+      <div class="clip slide" data-start="0" data-duration="1" data-track-index="0">
+        <div class="brand"><div class="l"><img src="assets/img/logo.png" alt="" />Taskodoro</div><div class="pg">1 / 6</div></div>
+        <div class="display" style="margin-top: 110px; font-weight: 700; font-size: 128px; line-height: 134px; color: var(--nav)">One day,<br />I randomly<br />thought…</div>
+        <div class="vis" style="position: relative; height: 380px">
+          <div class="sq blue" style="right: 150px; top: 40px; transform: rotate(5deg)"></div>
+          <div class="sq yellow" style="right: 30px; top: 60px; transform: rotate(-4deg); align-items: center; justify-content: center; padding: 0"><span class="dot3"></span><span class="dot3"></span><span class="dot3"></span></div>
+        </div>
+        <div class="foot" style="justify-content: flex-end"><span class="swipe">Swipe <svg width="34" height="24" viewBox="0 0 34 24" fill="none" stroke="#1e1e2a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h28M21 3l9 9-9 9" /></svg></span></div>
+      </div>
+      <div class="clip slide" data-start="1" data-duration="1" data-track-index="1">
+        <div class="brand"><div class="l"><img src="assets/img/logo.png" alt="" />Taskodoro</div><div class="pg">2 / 6</div></div>
+        <h2>What is the most recreated software tool in the world?</h2>
+        <div class="vis" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px">
+          <div class="mini"><div class="r"><i></i><b style="width: 70%"></b></div><div class="r"><i></i><b style="width: 50%"></b></div><div class="r"><i></i><b style="width: 62%"></b></div></div><div class="mini"><div class="r"><i></i><b style="width: 70%"></b></div><div class="r"><i></i><b style="width: 50%"></b></div><div class="r"><i></i><b style="width: 62%"></b></div></div><div class="mini"><div class="r"><i></i><b style="width: 70%"></b></div><div class="r"><i></i><b style="width: 50%"></b></div><div class="r"><i></i><b style="width: 62%"></b></div></div><div class="mini"><div class="r"><i></i><b style="width: 70%"></b></div><div class="r"><i></i><b style="width: 50%"></b></div><div class="r"><i></i><b style="width: 62%"></b></div></div><div class="mini"><div class="r"><i></i><b style="width: 70%"></b></div><div class="r"><i></i><b style="width: 50%"></b></div><div class="r"><i></i><b style="width: 62%"></b></div></div><div class="mini"><div class="r"><i></i><b style="width: 70%"></b></div><div class="r"><i></i><b style="width: 50%"></b></div><div class="r"><i></i><b style="width: 62%"></b></div></div><div class="mini"><div class="r"><i></i><b style="width: 70%"></b></div><div class="r"><i></i><b style="width: 50%"></b></div><div class="r"><i></i><b style="width: 62%"></b></div></div><div class="mini"><div class="r"><i></i><b style="width: 70%"></b></div><div class="r"><i></i><b style="width: 50%"></b></div><div class="r"><i></i><b style="width: 62%"></b></div></div><div class="mini"><div class="r"><i></i><b style="width: 70%"></b></div><div class="r"><i></i><b style="width: 50%"></b></div><div class="r"><i></i><b style="width: 62%"></b></div></div><div class="mini"><div class="r"><i></i><b style="width: 70%"></b></div><div class="r"><i></i><b style="width: 50%"></b></div><div class="r"><i></i><b style="width: 62%"></b></div></div><div class="mini"><div class="r"><i></i><b style="width: 70%"></b></div><div class="r"><i></i><b style="width: 50%"></b></div><div class="r"><i></i><b style="width: 62%"></b></div></div>
+          <div class="mini coral" style="background: var(--coral); align-items: center; justify-content: center; font-family: Geomini, sans-serif; font-weight: 700; font-size: 96px; line-height: 96px; color: var(--nav)">?</div>
+        </div>
+        <div class="foot" style="justify-content: flex-end"><span class="swipe">Swipe <svg width="34" height="24" viewBox="0 0 34 24" fill="none" stroke="#1e1e2a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h28M21 3l9 9-9 9" /></svg></span></div>
+      </div>
+      <div class="clip slide" data-start="2" data-duration="1" data-track-index="2">
+        <div class="brand"><div class="l"><img src="assets/img/logo.png" alt="" />Taskodoro</div><div class="pg">3 / 6</div></div>
+        <h2>A todo app.</h2>
+        <div class="plain" style="margin-top: 70px">
+          <div class="t">To-do list</div>
+          <div class="r"><i></i><span>Buy milk</span></div>
+          <div class="r"><i></i><span>Call mom</span></div>
+          <div class="r"><i></i><span>Pay the bills</span></div>
+        </div>
+        <h2 style="margin-top: auto; text-align: right">But what if…</h2>
+        <div class="foot" style="justify-content: flex-end"><span class="swipe">Swipe <svg width="34" height="24" viewBox="0 0 34 24" fill="none" stroke="#1e1e2a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h28M21 3l9 9-9 9" /></svg></span></div>
+      </div>
+      <div class="clip slide" data-start="3" data-duration="1" data-track-index="3">
+        <div class="brand"><div class="l"><img src="assets/img/logo.png" alt="" />Taskodoro</div><div class="pg">4 / 6</div></div>
+        <h2>…we push it to the extreme?</h2>
+        <div class="vis" style="position: relative; height: 700px">
+          <div class="navpill" style="position: absolute; left: 0; top: 0; transform: rotate(-3deg)">
+            <div style="background: var(--yellow); color: var(--nav)">Home</div>
+            <div style="background: var(--nav); color: var(--yellow)">Settings</div>
+            <div style="background: var(--blue); color: var(--nav)">Apps</div>
+          </div>
+          <div style="position: absolute; right: 0; top: 10px; display: flex; gap: 14px; transform: rotate(4deg)">
+            <span class="sw yellow"></span><span class="sw coral"></span><span class="sw blue"></span><span class="sw green"></span>
+          </div>
+          <div style="position: absolute; left: 20px; top: 150px; width: 430px; transform: rotate(-5deg)">
+            <div class="note yellow"><div class="txt">Finish the course</div><div class="ck"><img class="ring" src="assets/img/check-circle.png" alt="" /></div></div>
+            <div class="strip" style="color: var(--yellow)">Chapter 3 of 12</div>
+          </div>
+          <div class="note blue" style="position: absolute; right: 10px; top: 120px; width: 440px; display: block; transform: rotate(4deg)">
+            <div style="display: flex; justify-content: space-between; gap: 20px"><div class="txt">Water bottles</div><div class="ck"><img class="ring" src="assets/img/check-circle.png" alt="" /></div></div>
+            <div class="counter">
+              <div class="b"><svg width="38" height="38" viewBox="0 0 24 24" stroke="#3c3c3c" stroke-width="3" stroke-linecap="round"><path d="M12 4v16M4 12h16" /></svg></div>
+              <div class="v">3/6</div>
+              <div class="b"><svg width="38" height="38" viewBox="0 0 24 24" stroke="#3c3c3c" stroke-width="3" stroke-linecap="round"><path d="M4 12h16" /></svg></div>
+            </div>
+          </div>
+          <div style="position: absolute; left: 60px; top: 400px; width: 400px; transform: rotate(3deg)">
+            <div class="note green" style="padding-bottom: 14px"><div class="txt">Groceries</div></div>
+            <div class="note green" style="margin-left: 32px; display: flex; flex-direction: column; gap: 12px; padding-top: 14px">
+              <div class="li"><div class="ck"><img class="ring" src="assets/img/check-circle.png" alt="" /><img class="tick" src="assets/img/check-tick.png" alt="" /></div><span class="done">Milk</span></div>
+              <div class="li"><div class="ck"><img class="ring" src="assets/img/check-circle.png" alt="" /><img class="tick" src="assets/img/check-tick.png" alt="" /></div><span class="done">Eggs</span></div>
+              <div class="li"><div class="ck"><img class="ring" src="assets/img/check-circle.png" alt="" /></div><span>Bread</span></div>
+            </div>
+          </div>
+          <div class="note coral" style="position: absolute; right: 40px; top: 400px; width: 380px; transform: rotate(-4deg)"><div class="txt done">Fix the bug blocking release</div><div class="ck"><img class="ring" src="assets/img/check-circle.png" alt="" /><img class="tick" src="assets/img/check-tick.png" alt="" /></div></div>
+          <div class="hd" style="position: absolute; right: 20px; top: 560px; transform: rotate(3deg)"><div class="chip">In Progress</div><div class="addbtn"><svg width="30" height="30" viewBox="0 0 24 24" stroke="#fff" stroke-width="3.2" stroke-linecap="round"><path d="M12 4v16M4 12h16" /></svg></div></div>
+          <div class="later" style="position: absolute; left: 500px; top: 300px; background: var(--yellow); transform: rotate(-7deg)">Templates</div>
+          <div class="later" style="position: absolute; right: 250px; top: 640px; transform: rotate(-3deg)">Diary</div>
+        </div>
+        <div class="foot" style="justify-content: flex-end"><span class="swipe">Swipe <svg width="34" height="24" viewBox="0 0 34 24" fill="none" stroke="#1e1e2a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h28M21 3l9 9-9 9" /></svg></span></div>
+      </div>
+      <div class="clip slide" data-start="4" data-duration="1" data-track-index="4">
+        <div class="brand"><div class="l"><img src="assets/img/logo.png" alt="" />Taskodoro</div><div class="pg">5 / 6</div></div>
+        <h2>Then Taskodoro happened.</h2>
+        <div class="vis" style="position: relative; height: 640px">
+          <div class="shot" style="left: 0; top: 0; width: 760px; height: 480px"><img src="assets/img/app-desktop.png" alt="" /></div>
+          <div class="shot phone" style="left: 632px; top: 44px; width: 288px; height: 596px"><img src="assets/img/app-mobile.png" alt="" /></div>
+        </div>
+        <div class="foot" style="justify-content: flex-end"><span class="swipe">Swipe <svg width="34" height="24" viewBox="0 0 34 24" fill="none" stroke="#1e1e2a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h28M21 3l9 9-9 9" /></svg></span></div>
+      </div>
+      <div class="clip slide" data-start="5" data-duration="1" data-track-index="5" style="align-items: center">
+        <div class="brand" style="align-self: stretch"><div class="l"><img src="assets/img/logo.png" alt="" />Taskodoro</div><div class="pg">6 / 6</div></div>
+        <img src="assets/img/logo.png" alt="" style="margin-top: 170px; width: 280px; height: 284px; display: block" />
+        <h2 style="margin-top: 70px; text-align: center">Follow to find out more about the journey.</h2>
+        <div class="sub" style="margin-top: 44px; text-align: center; font-size: 44px; line-height: 56px">Coming soon for web + Android.</div>
+      </div>
+    </div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      tl.set({}, {}, 6);
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

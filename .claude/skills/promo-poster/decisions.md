@@ -16,6 +16,19 @@ Entry format:
 
 ---
 
+## 2026-10-10 — Hold the "free and open source" claim
+- Said: "remove 7th - we will say that later" (post: how-taskodoro-happened)
+- Decision: the seventh slide is removed and the post is back to six slides. Do not put "free and open source" on any poster or caption until the user says it is time.
+- Scope: all posts, until lifted
+- Status: active
+- Note: the user did not say where "Coming soon for web + Android." should go once slide 7 was gone. Claude put it back on the "Follow" slide, where the user's original script had it (interpretation).
+
+## 2026-10-10 — "Free and open source" is a selling point
+- Said: "add free and open source at the end - 7th slide and also remove coming soon for web and android in 6th and put it in 7th" (post: how-taskodoro-happened)
+- Decision: the story post ends on a seventh slide, "Free and open source." with "Coming soon for web + Android." under it; the "Follow" slide before it carries only the follow line.
+- Scope: this post for the slide order. My interpretation: "free and open source" and "coming soon for web + Android" are approved claims that later posts may reuse.
+- Status: superseded by "Hold the free and open source claim"
+
 ## 2026-10-10 — No text label in the footer
 - Said: "in the existing poster remove 'your comfort planner' from 1-cover, 'taskodoro ideology' from other pages footer"
 - Decision: removed the footer's left-hand label on the cover and on slides 2-4 of the ideology post. The footer now holds only the "Swipe" chip, right-aligned. The closing slide's tagline under the wordmark is untouched.
