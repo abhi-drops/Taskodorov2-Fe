@@ -23,3 +23,16 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Claude Code: keep project skills, ignore machine-local files
+.claude/*
+!.claude/skills/
+
+# Brag videos (renders, narration virtualenv, temp files)
+brag-output*/
+
+# Promotion posters: scratch files from exporting
+promotions/.tmp/
+promotions/*/source/snapshots/
+promotions/*/source/snapshot.log
+promotions/*/source/contact-sheet.jpg
