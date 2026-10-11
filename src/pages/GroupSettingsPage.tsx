@@ -13,7 +13,7 @@ import { usePlatform } from '../lib/platform/usePlatform'
 export default function GroupSettingsPage() {
   const { groupId } = useParams<{ groupId: string }>()
   const navigate = useNavigate()
-  const { isNative } = usePlatform()
+  const { isMobile } = usePlatform()
   const [confirmDelete, setConfirmDelete] = useState(false)
   const {
     group,
@@ -92,14 +92,14 @@ export default function GroupSettingsPage() {
       // An <input> doesn't inherit `text-align` from the mobile header's `text-center`
       // wrapper, so it needs its own.
       className={`w-full bg-transparent font-display text-2xl font-bold text-nav-dark outline-none ${
-        isNative ? 'text-center' : ''
+        isMobile ? 'text-center' : ''
       }`}
     />
   )
 
   return (
     <AppShell>
-      {isNative ? (
+      {isMobile ? (
         <div className="mx-auto flex w-full max-w-sm flex-1 flex-col gap-6">
           <div className="text-center">
             {nameField}

@@ -11,9 +11,9 @@ import { usePlatform } from '../lib/platform/usePlatform'
  * tile list to push-navigate from, same precedent as Settings. See `docs/feat-apps.md`.
  */
 export default function AppsPage() {
-  const { isNative } = usePlatform()
+  const { isMobile } = usePlatform()
 
-  if (!isNative) {
+  if (!isMobile) {
     const firstEnabled = APPS.find((app) => !app.disabled && app.to)
     return <Navigate to={firstEnabled?.to ?? '/'} replace />
   }

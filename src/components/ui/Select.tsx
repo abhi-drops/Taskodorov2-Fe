@@ -39,12 +39,12 @@ export function Select<T extends string>({
   className = '',
 }: SelectProps<T>) {
   const labelId = useId()
-  const { isNative } = usePlatform()
+  const { isMobile } = usePlatform()
   const trigger = `w-full rounded-card border-[3px] bg-white px-3.5 py-2 text-left font-medium text-ink shadow-card outline-none focus-visible:bg-sticky-yellow disabled:cursor-not-allowed disabled:opacity-50 ${
     error ? 'border-sticky-coral' : 'border-ink'
   }`
 
-  if (isNative) {
+  if (isMobile) {
     return (
       <div className={`flex flex-col gap-1.5 text-left ${className}`}>
         <label htmlFor={labelId} className="text-sm font-medium text-slate-700">

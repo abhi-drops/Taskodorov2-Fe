@@ -36,7 +36,7 @@ function SidebarItemContent({ item }: { item: SidebarItem }) {
  * (`AppsDesktopLayout`): a left rail of items plus the selected item's content, each on
  * its own backdrop card — `border-neutral-300 bg-surface shadow-card`, the same "light
  * panel behind the content" treatment `GroupColumn`'s note-list backdrop and `TopNav`'s
- * pill backdrop use on the board. Mobile never renders this; see the `isNative` branch
+ * pill backdrop use on the board. Mobile never renders this; see the `isMobile` branch
  * in each page.
  */
 export function SidebarPanelLayout({

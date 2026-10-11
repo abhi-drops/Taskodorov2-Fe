@@ -59,7 +59,7 @@ function DayStepper({ day }: { day: Date }) {
 export default function DiaryDayPage() {
   const { date } = useParams<{ date: string }>()
   const navigate = useNavigate()
-  const { isNative } = usePlatform()
+  const { isMobile } = usePlatform()
   const day = parseDiaryDate(date)
   const diary = useDiaryDay(day)
   useTransitionReady(diary.loaded || day === null)
@@ -74,7 +74,7 @@ export default function DiaryDayPage() {
   const replay = diary.replay
   const openNote = (noteId: string) => navigate(`/notes/${noteId}/edit`, { viewTransition: true })
 
-  if (isNative) {
+  if (isMobile) {
     return (
       <DiaryShell>
         <DiaryHeader>

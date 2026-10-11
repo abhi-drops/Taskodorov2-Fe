@@ -4,6 +4,24 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-11 — Mobile UI on phone-sized web, with a notice every time
+
+- A web window under 640px wide now renders the mobile UI (bottom nav, tabbed board with
+  the floating "+", full-page modals, mobile Settings and Apps), the same one the Android
+  app shows, instead of the desktop layout. It switches live on resize or rotation.
+- `usePlatform()` gained `isMobile` (native app, or phone-sized web) for layout;
+  `isNative` now gates native APIs only, so haptics, the Android back button, the share
+  sheet and native Google sign-in stay off in a browser (`style-guide.md`, "Platform
+  detection").
+- The phone-sized-web notice was reworded: Taskodoro works best in the Android app, some
+  features may not work well here, with a "Continue on web" button. It is no longer
+  remembered for the session and shows on every page load (`feat-navigation.md`,
+  "Responsiveness"). No download link yet.
+- Settings' "Dynamic Add Button" (idle shrink and tilt) is off and disabled on
+  phone-sized web, labelled "Android app only"; the floating "+" there stays full size. Add
+  Button Position still works (`feat-power-tools.md`).
+- The templates AI Guide is not affected.
+
 ## 2026-10-05 — Reset To Default is a full factory reset
 
 - Settings' "Reset To Default" now erases everything stored on the device, not just the

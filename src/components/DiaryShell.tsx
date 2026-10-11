@@ -19,9 +19,9 @@ import searchIcon from '../assets/search.png'
  * - Mobile: a plain full page; navigation comes from the bottom nav and back.
  */
 export function DiaryShell({ wide = false, children }: { wide?: boolean; children: ReactNode }) {
-  const { isNative } = usePlatform()
+  const { isMobile } = usePlatform()
 
-  if (isNative) {
+  if (isMobile) {
     return (
       <AppShell>
         <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-5">{children}</div>
@@ -56,16 +56,16 @@ export const DIARY_DETAILS_PANEL_KEY = 'diary-day-details'
  * stay put whether their sidebars are open or not.
  */
 export function DiaryHeader({ detailsToggle = false, children }: { detailsToggle?: boolean; children?: ReactNode }) {
-  const { isNative } = usePlatform()
+  const { isMobile } = usePlatform()
   return (
     <div className="flex items-center gap-3">
-      {!isNative && <SidebarToggle storageKey={APPS_PANEL_KEY} label="apps list" />}
+      {!isMobile && <SidebarToggle storageKey={APPS_PANEL_KEY} label="apps list" />}
       <div className="flex shrink-0 items-center gap-2 text-nav-dark">
         <AnimatedIcon icon={DiaryIcon} size={20} />
         <h1 className="font-display text-lg font-bold">Diary</h1>
       </div>
       {children}
-      {!isNative && detailsToggle && <SidebarToggle storageKey={DIARY_DETAILS_PANEL_KEY} label="day details" />}
+      {!isMobile && detailsToggle && <SidebarToggle storageKey={DIARY_DETAILS_PANEL_KEY} label="day details" />}
     </div>
   )
 }

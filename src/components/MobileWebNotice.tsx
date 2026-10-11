@@ -1,66 +1,41 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { Button } from './ui/Button'
 import { Modal } from './ui/Modal'
 import { DIALOG_OVERLAY, DIALOG_SHADOW } from './ui/dialogStyles'
+import { useIsPhoneWidth } from '../lib/platform/mobileLayout'
 import { usePlatform } from '../lib/platform/usePlatform'
 
-/** Phone-sized windows only: tablets (640px and up) get the web layout as usual. */
-const PHONE_QUERY = '(max-width: 639px)'
-const DISMISSED_KEY = 'taskodoro.ui.mobileWebNoticeDismissed'
-
-function wasDismissed(): boolean {
-  try {
-    return sessionStorage.getItem(DISMISSED_KEY) === '1'
-  } catch {
-    return false
-  }
-}
-
 /**
- * Web only: when the site is opened at a phone-sized width, an overlay suggests the
- * Taskodoro app, since the web layout (board columns, top nav) is built for wider
- * screens. Closing it (the X, Escape or a click outside) lets the user carry on, and it
- * stays closed for the rest of the browser session.
+ * Web only: a phone-sized window gets the mobile layout (see `usePlatform().isMobile`),
+ * and this overlay says the Android app is the better way to use it there, since the
+ * native-only parts (haptics, the back button, the share sheet) don't exist in a browser.
+ * "Continue on web" (or the X, Escape, a click outside) closes it.
  *
- * The width check decides only whether to show this notice. It is **not** platform
- * detection: which layout renders is still `isNative` alone (see `usePlatform.ts`), and
- * the native app never shows this.
+ * The dismissal is deliberately not stored: the notice returns on every page load. The
+ * native app never shows it.
  */
 export function MobileWebNotice() {
   const { isNative } = usePlatform()
-  const [isPhoneWidth, setIsPhoneWidth] = useState(() => !isNative && window.matchMedia(PHONE_QUERY).matches)
-  const [dismissed, setDismissed] = useState(wasDismissed)
-
-  useEffect(() => {
-    if (isNative) return
-    const query = window.matchMedia(PHONE_QUERY)
-    const update = () => setIsPhoneWidth(query.matches)
-    query.addEventListener('change', update)
-    return () => query.removeEventListener('change', update)
-  }, [isNative])
-
-  function dismiss() {
-    setDismissed(true)
-    try {
-      sessionStorage.setItem(DISMISSED_KEY, '1')
-    } catch {
-      // Private mode or blocked storage: it just shows again on the next load.
-    }
-  }
+  const isPhoneWidth = useIsPhoneWidth()
+  const [dismissed, setDismissed] = useState(false)
 
   return (
     <Modal
       isOpen={!isNative && isPhoneWidth && !dismissed}
-      onClose={dismiss}
-      title="Use the Taskodoro app"
+      onClose={() => setDismissed(true)}
+      title="Taskodoro works best in the Android app"
       variant="center"
       overlayClassName={DIALOG_OVERLAY}
       panelClassName={DIALOG_SHADOW}
     >
       <div className="flex flex-col gap-3 text-left">
         <p className="text-slate-700">
-          This screen is too small for the web version. Taskodoro works best on a phone in the Taskodoro app.
+          You're using the web version on a small screen. Some features may not work well here.
         </p>
-        <p className="text-sm text-slate-600">On a tablet or computer, make this window wider to use it here.</p>
+        <p className="text-sm text-slate-600">For the full experience, download the Taskodoro Android app.</p>
+        <Button className="mt-2 w-full" onClick={() => setDismissed(true)}>
+          Continue on web
+        </Button>
       </div>
     </Modal>
   )

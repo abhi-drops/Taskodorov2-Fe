@@ -23,7 +23,7 @@ interface NewWorkspaceDialogProps {
  * `isOpen` prop), so each opening starts with a clean form.
  */
 export function NewWorkspaceDialog({ onClose, onCreated, initialTemplateId }: NewWorkspaceDialogProps) {
-  const { isNative } = usePlatform()
+  const { isMobile } = usePlatform()
   const {
     status,
     visibleTemplates,
@@ -71,15 +71,15 @@ export function NewWorkspaceDialog({ onClose, onCreated, initialTemplateId }: Ne
       isOpen
       onClose={onClose}
       title="New workspace"
-      variant={isNative ? 'full-page' : 'center'}
-      size={isNative ? 'default' : 'large'}
+      variant={isMobile ? 'full-page' : 'center'}
+      size={isMobile ? 'default' : 'large'}
       overlayClassName={DIALOG_OVERLAY}
       panelClassName={DIALOG_SHADOW}
     >
       {/* p-1: room for the chips' offset shadows inside Modal's scroll box. On desktop the
           form fills the large panel: the template grid scrolls, the buttons stay put. */}
       <form
-        className={`flex flex-col gap-4 p-1 text-left ${isNative ? '' : 'h-full'}`}
+        className={`flex flex-col gap-4 p-1 text-left ${isMobile ? '' : 'h-full'}`}
         onSubmit={(e) => {
           e.preventDefault()
           handleCreate()
@@ -96,14 +96,14 @@ export function NewWorkspaceDialog({ onClose, onCreated, initialTemplateId }: Ne
           />
         </label>
 
-        <div className={`flex flex-col gap-1.5 ${isNative ? '' : '-m-1 min-h-0 flex-1 overflow-y-auto p-1'}`}>
+        <div className={`flex flex-col gap-1.5 ${isMobile ? '' : '-m-1 min-h-0 flex-1 overflow-y-auto p-1'}`}>
           <span id="new-workspace-template" className={FIELD_LABEL}>
             Start from
           </span>
           {status === 'loading' ? (
             <p className="text-sm text-slate-500">Loading…</p>
           ) : (
-            <div role="radiogroup" aria-labelledby="new-workspace-template" className={`grid grid-cols-3 ${isNative ? 'gap-2' : 'gap-4'}`}>
+            <div role="radiogroup" aria-labelledby="new-workspace-template" className={`grid grid-cols-3 ${isMobile ? 'gap-2' : 'gap-4'}`}>
               {visibleTemplates.map((template) => {
                 const selected = template.id === selectedTemplateId
                 return (
@@ -114,14 +114,14 @@ export function NewWorkspaceDialog({ onClose, onCreated, initialTemplateId }: Ne
                     aria-checked={selected}
                     onClick={() => setSelectedTemplateId(template.id)}
                     className={`flex min-w-0 flex-col rounded-card border-[3px] border-ink text-left shadow-card transition-colors ${
-                      isNative ? 'gap-1.5 p-1.5' : 'gap-3 p-3'
+                      isMobile ? 'gap-1.5 p-1.5' : 'gap-3 p-3'
                     } ${
                       selected ? 'bg-sticky-yellow' : 'bg-white hover:bg-slate-50'
                     }`}
                   >
-                    <TemplateThumb content={template.content} size={isNative ? 'small' : 'large'} />
+                    <TemplateThumb content={template.content} size={isMobile ? 'small' : 'large'} />
                     <span
-                      className={`line-clamp-2 text-ink ${isNative ? 'text-xs' : 'text-base'} ${
+                      className={`line-clamp-2 text-ink ${isMobile ? 'text-xs' : 'text-base'} ${
                         selected ? 'font-bold' : 'font-medium'
                       }`}
                     >
@@ -135,20 +135,20 @@ export function NewWorkspaceDialog({ onClose, onCreated, initialTemplateId }: Ne
                 type="button"
                 onClick={openAi}
                 className={`flex min-w-0 flex-col rounded-card border-[3px] border-dashed border-ink bg-white text-left transition-colors hover:bg-slate-50 ${
-                  isNative ? 'gap-1.5 p-1.5' : 'gap-3 p-3'
+                  isMobile ? 'gap-1.5 p-1.5' : 'gap-3 p-3'
                 }`}
               >
                 <span
                   className={`flex items-center justify-center border border-neutral-300 bg-surface text-ink ${
-                    isNative ? 'h-12 gap-2' : 'h-32 gap-5'
+                    isMobile ? 'h-12 gap-2' : 'h-32 gap-5'
                   }`}
                 >
-                  <AnimatedIcon icon={ChatGptIcon} size={isNative ? 18 : 36} />
-                  <AnimatedIcon icon={ClaudeIcon} size={isNative ? 18 : 36} />
-                  <AnimatedIcon icon={GeminiIcon} size={isNative ? 18 : 36} />
+                  <AnimatedIcon icon={ChatGptIcon} size={isMobile ? 18 : 36} />
+                  <AnimatedIcon icon={ClaudeIcon} size={isMobile ? 18 : 36} />
+                  <AnimatedIcon icon={GeminiIcon} size={isMobile ? 18 : 36} />
                 </span>
-                <span className={`flex items-center gap-1.5 font-medium text-ink ${isNative ? 'text-xs' : 'text-base'}`}>
-                  <AnimatedIcon icon={AiGuideIcon} size={isNative ? 12 : 16} still />
+                <span className={`flex items-center gap-1.5 font-medium text-ink ${isMobile ? 'text-xs' : 'text-base'}`}>
+                  <AnimatedIcon icon={AiGuideIcon} size={isMobile ? 12 : 16} still />
                   <span className="line-clamp-2">Generate with AI</span>
                 </span>
               </button>

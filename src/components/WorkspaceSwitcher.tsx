@@ -16,7 +16,7 @@ const SWITCHER_OVERLAY = 'bg-white/60 backdrop-blur-sm'
 const SWITCHER_SHADOW = 'shadow-[6px_10px_0px_0px_rgba(0,0,0,0.25)]'
 
 export function WorkspaceSwitcher() {
-  const { isNative } = usePlatform()
+  const { isMobile } = usePlatform()
   const {
     workspaces,
     activeWorkspaceId,
@@ -45,7 +45,7 @@ export function WorkspaceSwitcher() {
   }
 
   useEffect(() => {
-    if (isNative || !isOpen) return
+    if (isMobile || !isOpen) return
 
     function handlePointerDown(e: PointerEvent) {
       // The delete ConfirmDialog renders through Modal's createPortal(..., document.body),
@@ -71,7 +71,7 @@ export function WorkspaceSwitcher() {
       document.removeEventListener('pointerdown', handlePointerDown)
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [isNative, isOpen, close, confirmingDeleteId])
+  }, [isMobile, isOpen, close, confirmingDeleteId])
 
   function renderList() {
     return (
@@ -156,7 +156,7 @@ export function WorkspaceSwitcher() {
         <AnimatedIcon icon={ChevronDownIcon} size={14} />
       </button>
 
-      {!isNative && isOpen && (
+      {!isMobile && isOpen && (
         <>
           <div className={`fixed inset-0 z-40 ${SWITCHER_OVERLAY}`} onClick={closeAll} />
           <div
@@ -167,7 +167,7 @@ export function WorkspaceSwitcher() {
         </>
       )}
 
-      {isNative && (
+      {isMobile && (
         <Modal
           isOpen={isOpen}
           onClose={closeAll}

@@ -103,7 +103,7 @@ function BoardWithSettings({
 export default function TemplateEditorPage() {
   const { templateId } = useParams<{ templateId: string }>()
   const navigate = useNavigate()
-  const { isNative } = usePlatform()
+  const { isMobile } = usePlatform()
   const { template, status, edit, rename, reset, remove, flush } = useTemplateEditor(templateId ?? '')
 
   const [selection, setSelection] = useState<Selection>(null)
@@ -231,7 +231,7 @@ export default function TemplateEditorPage() {
     <TemplateWorkspaceSettings
       content={content}
       isBuiltin={isBuiltin}
-      showGroups={!isNative}
+      showGroups={!isMobile}
       onSelectGroup={(key) => select({ kind: 'group', key })}
       onAddGroup={(name) => edit((c) => addGroup(c, name))}
       onDeleteGroup={(groupKey) => setConfirming({ kind: 'delete-group', groupKey })}
@@ -298,13 +298,13 @@ export default function TemplateEditorPage() {
             <AnimatedIcon icon={PlusIcon} size={16} />
             Use template
           </button>
-          {!isNative && <SidebarToggle storageKey={TEMPLATE_SETTINGS_PANEL_KEY} label="settings" />}
+          {!isMobile && <SidebarToggle storageKey={TEMPLATE_SETTINGS_PANEL_KEY} label="settings" />}
         </div>
       </TemplatesToolbar>
 
       <FormError message={fileError} />
 
-      {isNative ? (
+      {isMobile ? (
         <div className="flex flex-col gap-4">
           {content.groups.length > 0 && (
             <Tabs

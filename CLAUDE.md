@@ -66,12 +66,12 @@ Copy `.env.example` to `.env.local` (gitignored) and fill in:
 Every screen follows the same three-way split:
 - **`common_logics/`** — platform-agnostic hooks (no JSX): all form/state/validation/submit logic. Both web and mobile UI consume the exact same hook.
 - **`pages/`** — the web UI implementation lives directly here (as a private, unexported component in the same file) plus a thin platform switch. This is also the only layer `router/routes.tsx` imports from.
-- **`mobile/screens/`** — native-specific UI (different layout/touch targets/safe-area handling), imported by `pages/*` and rendered instead of the inline web content when `usePlatform().isNative` is true. Reserved for screens with a *real* interaction difference (e.g. auth's safe-area/touch-target handling) — a page-layout-only difference (e.g. the board's tabs-vs-columns, or `PowerToolsPage`/`GroupSettingsPage`'s desktop 2-panel sidebar+drill-down vs mobile's flat page stack) is instead handled with an inline `isNative` branch in the same `pages/*` file, not a full separate file. `SearchPage` has no mobile variant at all — single shared component, no meaningful platform difference to split on.
+- **`mobile/screens/`** — native-specific UI (different layout/touch targets/safe-area handling), imported by `pages/*` and rendered instead of the inline web content when `usePlatform().isMobile` is true. Reserved for screens with a *real* interaction difference (e.g. auth's safe-area/touch-target handling) — a page-layout-only difference (e.g. the board's tabs-vs-columns, or `PowerToolsPage`/`GroupSettingsPage`'s desktop 2-panel sidebar+drill-down vs mobile's flat page stack) is instead handled with an inline `isMobile` branch in the same `pages/*` file, not a full separate file. `SearchPage` has no mobile variant at all — single shared component, no meaningful platform difference to split on.
 - **`components/`** — dumb, presentational building blocks (`components/ui/*`) shared verbatim by both web and mobile UI. See `docs/style-guide.md` for the full primitive set and their conventions (extend native HTML attrs, `className` passthrough, `rounded-card` everywhere).
 
-Platform detection is always `Capacitor.isNativePlatform()` (wrapped in `lib/platform/usePlatform.ts`), never a viewport-width breakpoint — a native Android WebView and a narrow browser window must be distinguishable. Concretely: this also means **browser-based testing can never exercise the native-only code path** in anything gated on `isNative`/`Capacitor.getPlatform() === 'web'` (e.g. `lib/db/sqlite.ts`'s native-vs-web branch) — those need an actual device/emulator to verify, not just a resized browser window.
+Platform detection has two flags, both from `lib/platform/usePlatform.ts`: **`isNative`** (`Capacitor.isNativePlatform()`) gates native APIs, and **`isMobile`** (`isNative`, or a web window under 640px) gates layout, so a phone-sized browser renders the mobile UI (plus `MobileWebNotice`) without touching any native-only code. Never pick a layout with a breakpoint of your own. Concretely: **browser-based testing can exercise the mobile layout but never the native-only code path** in anything gated on `isNative`/`Capacitor.getPlatform() === 'web'` (e.g. `lib/db/sqlite.ts`'s native-vs-web branch) — those need an actual device/emulator to verify, not just a resized browser window.
 
-When adding a new screen, follow the same shape: hook in `common_logics/`, web JSX inline in `pages/<Name>Page.tsx` (private component + `isNative` switch only if the layout actually differs), mobile variant in `mobile/screens/` only if the interaction meaningfully differs.
+When adding a new screen, follow the same shape: hook in `common_logics/`, web JSX inline in `pages/<Name>Page.tsx` (private component + `isMobile` switch only if the layout actually differs), mobile variant in `mobile/screens/` only if the interaction meaningfully differs.
 
 ### Guest-first & routing
 
@@ -90,7 +90,7 @@ The core data model and UI, in dependency order: a workspace contains groups, a 
 Self-hosted fonts (never a Google Fonts CDN link — this is an offline-first app), the grid background, and the shared `components/ui/*` primitive set. `docs/style-guide.md`.
 
 - **Icons** come from one library, `@animateicons/react` (Huge family, pinned exactly). Add icons in `components/ui/icons.ts` and render them with `components/ui/AnimatedIcon.tsx`, never as text characters, inline SVGs or direct library imports. Exceptions: the note checkbox (`CheckCircle`) and the search icon are still PNGs.
-- **Dropdowns** go through `components/ui/Select.tsx`: a styled Radix Select on web, a native `<select>` on Android (`isNative`). It takes an `options` array, not `<option>` children.
+- **Dropdowns** go through `components/ui/Select.tsx`: a styled Radix Select on web, a native `<select>` on mobile (`isMobile`). It takes an `options` array, not `<option>` children.
 
 ### Auth
 

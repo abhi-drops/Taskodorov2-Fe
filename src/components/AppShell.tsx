@@ -12,20 +12,20 @@ interface AppShellProps {
 }
 
 export function AppShell({ children, headerStart, headerEnd }: AppShellProps) {
-  const { isNative } = usePlatform()
+  const { isMobile } = usePlatform()
   const { showExitToast } = useAndroidBackButton()
 
   return (
     <div className="bg-grid flex min-h-svh flex-col">
-      {!isNative && (
+      {!isMobile && (
         <div className="flex items-center gap-4 p-6">
           <div className="flex flex-1 justify-start">{headerStart}</div>
           <TopNav />
           <div className="flex flex-1 justify-end">{headerEnd}</div>
         </div>
       )}
-      <div className={`flex flex-1 flex-col p-6 ${isNative ? 'pb-24' : ''}`}>{children}</div>
-      {isNative && <BottomNav />}
+      <div className={`flex flex-1 flex-col p-6 ${isMobile ? 'pb-24' : ''}`}>{children}</div>
+      {isMobile && <BottomNav />}
       {showExitToast && <ExitToast />}
     </div>
   )

@@ -52,6 +52,6 @@ function WebLoginContent() {
 }
 
 export default function LoginPage() {
-  const { isNative } = usePlatform()
-  return isNative ? <MobileLoginScreen /> : <WebLoginContent />
+  const { isMobile } = usePlatform()
+  return isMobile ? <MobileLoginScreen /> : <WebLoginContent />
 }

@@ -54,8 +54,12 @@ desktop wireframe — see `docs/style-guide.md`'s "Power Tools: row chips + desk
     of screen height).
 
   See
-  `feat-navigation.md` ("Dynamic Add Button"). Not shown on web, which has no
-  floating "+".
+  `feat-navigation.md` ("Dynamic Add Button"). Not shown on desktop web, which has no
+  floating "+". On phone-sized web (the mobile layout in a browser) the section shows,
+  but "Dynamic Add Button" is forced off and its switch is disabled with an "Android app
+  only" hint: `useAddButtonSettings` returns `dynamic: false` and
+  `dynamicAvailable: false` whenever `isNative` is false, without touching the stored
+  value. The position picker works as usual.
 - **Account** — built before the rest of this page existed (Phase 2.2, as the
   guest-first routing rework's login/signup entry point): shows email + Log out when
   authenticated, Log in/Sign up links otherwise (`useAuth()`, same auth system as

@@ -175,7 +175,7 @@ and `GroupSettingsPage` both render through `PowerToolsDesktopLayout` (and Apps'
 (mobile skips it entirely, going straight to `AppShell`'s plain `.bg-grid` content
 area) — same as `GroupColumn`'s backdrop, this is `bg-surface`, not `bg-white`; don't
 swap it for pure white, that's a different (and here, wrong) token.
-This is a genuine `isNative` branch, not a CSS breakpoint (unlike `NoteEditorPage`'s
+This is a genuine `isMobile` branch, not a CSS breakpoint (unlike `NoteEditorPage`'s
 `lg:` grid) — the sidebar+drill-down is a real interaction/navigation-model
 difference from mobile's flat page stack, not just a layout reflow at the same width.
 
@@ -193,7 +193,7 @@ card.
 or not the slots are used — every page except `HomePage` leaves them empty and gets the exact
 same centered-nav row as before). `HomePage` is the only current consumer: it feeds
 `WorkspaceSwitcher` (left) and the search icon link (right) into these slots on web, merging
-what used to be two stacked header rows into one — but **only when `!isNative`**. On native,
+what used to be two stacked header rows into one — but **only when `!isMobile`**. On mobile,
 `AppShell` doesn't render a top bar at all (there's `BottomNav` instead), so `HomePage` still
 renders its own `WorkspaceSwitcher` + search row inline as page content for that platform,
 unchanged from before. If you add a new page that needs left/right header content on web,
@@ -237,7 +237,7 @@ system" above).
 |---|---|
 | `Button.tsx` | `primary`/`secondary`/`ghost`/`danger` variants. `danger` (coral) was added in 2.4 once destructive actions crossed 3 call sites. |
 | `TextField.tsx` | Labeled text input, label-above-control shape. |
-| `Select.tsx` | Labeled dropdown on **Radix Select** (`@radix-ui/react-select`, headless: Radix supplies keyboard, typeahead, focus and screen-reader behaviour; the styling is ours). Web only: a native `<select>`'s option list can't be styled. **On Android (`isNative`) it renders a native `<select>`**, so the options open in the system picker; the closed control keeps the same chip look.<br>• Trigger and menu are both the board's chip shape: square, `border-[3px] border-ink`, `shadow-card`, white. The trigger turns `sticky-yellow` while open or keyboard-focused (no violet focus ring).<br>• The highlighted option is `sticky-yellow`; the chosen one is bold with a `CheckIcon`. The menu is as wide as the trigger and opens in a portal (`z-[70]`).<br>• API: `label`, `value`, `onChange(value)`, `options: { value, label }[]` (generic over the value's string type, so no casts at call sites). **Gotcha:** an option's value can't be `''` (Radix reserves it); use `'none'`. |
+| `Select.tsx` | Labeled dropdown on **Radix Select** (`@radix-ui/react-select`, headless: Radix supplies keyboard, typeahead, focus and screen-reader behaviour; the styling is ours). Web only: a native `<select>`'s option list can't be styled. **On mobile (`isMobile`: Android, or phone-sized web) it renders a native `<select>`**, so the options open in the system picker; the closed control keeps the same chip look.<br>• Trigger and menu are both the board's chip shape: square, `border-[3px] border-ink`, `shadow-card`, white. The trigger turns `sticky-yellow` while open or keyboard-focused (no violet focus ring).<br>• The highlighted option is `sticky-yellow`; the chosen one is bold with a `CheckIcon`. The menu is as wide as the trigger and opens in a portal (`z-[70]`).<br>• API: `label`, `value`, `onChange(value)`, `options: { value, label }[]` (generic over the value's string type, so no casts at call sites). **Gotcha:** an option's value can't be `''` (Radix reserves it); use `'none'`. |
 | `Modal.tsx` | `variant: 'center' \| 'full-page'`. Portal-rendered, closes on Escape/backdrop click and, on Android, on the back button (`lib/platform/backHandlers.ts`: the newest open modal closes first, before any navigation). **`full-page` is the mobile variant** (it replaced the old 85%-height bottom sheet): it covers the whole screen with the title and the close (X) button in the top corner, pads for the status and gesture bars with `env(safe-area-inset-*)`, scrolls its content, and has no overlay, border or shadow, so `overlayClassName`/`panelClassName` don't apply to it. A centred panel always has the chips' `border-[3px] border-ink`, so every dialog is bordered. Default overlay/panel are still `bg-black/40`/`shadow-lg`, not migrated to `shadow-card`. Optional `overlayClassName`/`panelClassName` fully *replace* (not append to) those defaults when passed, since two same-specificity Tailwind utilities for the same CSS property have no guaranteed winner by JSX class-string order; `ConfirmDialog.tsx` (see below) and the centred template dialogs use them, both opting into the same frosted-white-dim + deeper-shadow look. `size="large"` (centre variant only) makes the panel about 60% of the screen's width and 90% of its height, with the content area filling it so a child can pin a footer; the desktop New workspace dialog uses it. |
 | `ConfirmDialog.tsx` | Wraps `Modal` — message + Cancel/danger-confirm button pair. Added in 2.4 once destructive confirmations (group delete, note delete, Reset to Default) crossed 3 uses. Uses `Modal`'s `overlayClassName`/`panelClassName` for the same frosted-white-dim + deeper-offset-shadow look `WorkspaceSwitcher` introduced — every confirm dialog in the app (notes, groups, workspaces, Reset to Default) gets it automatically, since they all go through this one component. |
 | `CheckCircle.tsx` | The note-complete/list-item toggle. Composites `check-circle.png` (ring, always shown) + `check-tick.png` (overlaid when checked) — **not** two same-size icons: the tick is deliberately oversized (`size * 1.4`) and offset with proportional inline styles (`marginLeft`, tick `left`/`top` all computed as a fraction of `size`, not fixed px/rem) so the same "bold stamp" look holds at every call-site size (18 in list items, 20-22 elsewhere) instead of only looking right at whichever size it was last eyeballed against. Also carries `max-w-none` on the tick `<img>` — **required**, not decorative: Tailwind's preflight sets `img { max-width: 100% }`, and since the tick is absolutely positioned inside the small `size`×`size` button (its containing block for percentage resolution), `max-width: 100%` silently resolves to the *button's* small size and clamps the oversized tick's width back down — height isn't affected (no `max-height` rule), so the symptom is a squashed/stretched icon, not a missing one. Any future absolutely-positioned icon that needs to render larger than its positioned-ancestor box will hit this exact clamp; add `max-w-none` again if so. |
@@ -260,7 +260,7 @@ system" above).
 `components/ui/` — they're layout/domain composites, not dumb primitives) follow the
 same pattern as `WorkspaceSwitcher.tsx`: tied to one page's concept, not generic enough
 to live in `ui/`. `AppShell` wraps page content with `.bg-grid` + `TopNav`/`BottomNav`
-based on `usePlatform().isNative` (plus the `headerStart`/`headerEnd` slots above) —
+based on `usePlatform().isMobile` (plus the `headerStart`/`headerEnd` slots above) —
 every page routes through it. `GroupColumn` is the board's column renderer, used by
 both the web multi-column layout and the mobile single-active-tab view in
 `HomePage.tsx`. `SidebarPanelLayout.tsx` is the generic desktop 2-panel shell;
@@ -277,10 +277,18 @@ sample note). `TemplatesShell.tsx` also exports `TOOLBAR_BUTTON`, a labelled ver
 
 ## Platform detection
 
-Always `Capacitor.isNativePlatform()`, wrapped in `lib/platform/usePlatform.ts` — never
-a viewport-width breakpoint. Verified the hard way: a resized/narrow browser window
-still renders the *web* layout (columns, `TopNav`), not the mobile one (tabs,
-`BottomNav`) — that's correct, intentional behavior per this rule, not a bug, and it's
-the reason this project's browser-based testing could never actually exercise the
-native-only UI paths (confirmed separately on a real Android device — see
-`feat-offline-data-layer.md`).
+`lib/platform/usePlatform.ts` returns two flags, and they mean different things:
+
+- **`isNative`** (`Capacitor.isNativePlatform()`): running inside the Android app. Gate
+  **native APIs** on this: haptics, the back button, the share sheet, native Google
+  sign-in, native SQLite.
+- **`isMobile`** (`isNative`, or a web window under 640px): the mobile layout is showing.
+  Gate **layout** on this: tabs vs columns, `BottomNav` vs `TopNav`, full-page vs centred
+  modals, the native `<select>`.
+
+So a phone-sized browser window renders the mobile layout (see `feat-navigation.md`,
+"Responsiveness"), but never the native API paths. Don't add a third rule (a CSS
+breakpoint or a `matchMedia` call of your own) to pick a layout: read `isMobile`, or
+`isMobileLayout()` from `lib/platform/mobileLayout.ts` outside React. Browser testing can
+now exercise the mobile UI, but still not anything gated on `isNative`; that needs a real
+device or emulator (see `feat-offline-data-layer.md`).

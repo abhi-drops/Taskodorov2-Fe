@@ -35,7 +35,7 @@ export function AiGuideDialog({
   busy = false,
   error,
 }: AiGuideDialogProps) {
-  const { isNative } = usePlatform()
+  const { isMobile } = usePlatform()
   const step =
     'flex h-6 w-6 shrink-0 items-center justify-center rounded-card border-2 border-ink bg-sticky-yellow font-display text-sm font-bold text-ink'
 
@@ -44,7 +44,7 @@ export function AiGuideDialog({
       isOpen
       onClose={onClose}
       title="Generate with AI"
-      variant={isNative ? 'full-page' : 'center'}
+      variant={isMobile ? 'full-page' : 'center'}
       overlayClassName={DIALOG_OVERLAY}
       panelClassName={DIALOG_SHADOW}
     >

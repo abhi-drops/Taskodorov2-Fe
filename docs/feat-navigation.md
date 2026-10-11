@@ -32,7 +32,7 @@ again.
 
 Every page wraps in `AppShell` (`src/components/AppShell.tsx`), which applies the
 `.bg-grid` background and renders `TopNav` (web) or `BottomNav` (mobile) based on
-`usePlatform().isNative` — see `style-guide.md` for why this is never a
+`usePlatform().isMobile` — see `style-guide.md` for why this is never a
 viewport check. Since Phase 2.7 both navs have the same 3 destinations, in the order
 each wireframe shows: web's pill is **Home / Settings / Apps** (labelled), mobile's bar
 is **Home / Apps / Settings** (icon-only, `aria-label`s).
@@ -41,7 +41,7 @@ is **Home / Apps / Settings** (icon-only, `aria-label`s).
 
 Mobile's "+" used to be the middle cell of `BottomNav`; since 2.7 it's
 `components/ui/FloatingAddButton.tsx` — a purple bell-curve bump (exact Penpot path, see `style-guide.md`) pinned to the right screen
-edge, rendered by `HomePage`'s `isNative` board branch only. It links to
+edge, rendered by `HomePage`'s `isMobile` board branch only. It links to
 `/notes/new?group=<activeGroupId>`, i.e. the active tab's group — the same target the
 old nav "+" used and the same thing web's per-column "+" (`GroupColumn` header, unchanged,
 hidden on mobile via `showHeader={false}`) does per column. So there's still exactly one
@@ -270,20 +270,30 @@ emulator — browser resizing can't exercise it.
 
 ## Responsiveness
 
-**Phone-sized web shows a notice** (`components/MobileWebNotice.tsx`, mounted in
-`App.tsx`). On web only, when the window is under 640px wide, a centred `Modal` overlay
-says to use the Taskodoro app. The X (or Escape, or a click outside) closes it and the
-user carries on in the browser; the dismissal is kept in `sessionStorage`, so it returns
-in a new browser session. Tablet widths and up never see it, and nor does the native app.
-The width check only decides whether to show this notice: layout is still chosen by
-`isNative` alone, never by a breakpoint.
+**Phone-sized web gets the mobile layout, and a notice.** On web, a window under 640px
+wide (`PHONE_QUERY` in `lib/platform/mobileLayout.ts`) renders the same mobile UI as the
+Android app: `BottomNav`, the tabbed board with the floating "+", full-page modals, the
+flat Settings pages, the Apps tile list. It switches live when the window is resized or
+the phone rotated. `usePlatform()` exposes this as **`isMobile`** (`isNative` or
+phone-width web), and every layout branch reads `isMobile`. **`isNative` now gates native
+APIs only** (haptics, the Android back button, the share sheet, native Google sign-in,
+native SQLite), so on phone-sized web those fall back to their web behaviour: no haptics,
+the browser's own back, a browser download, the web Google button. Code outside React
+(`lib/motion/pageTransitions.ts`) calls `isMobileLayout()` instead of the hook.
+
+`components/MobileWebNotice.tsx` (mounted in `App.tsx`) shows a centred `Modal` over that
+layout: Taskodoro works best in the Android app, some features may not work well here,
+and a **Continue on web** button. The X, Escape or a click outside also close it. The
+dismissal is not stored, so the notice returns on every page load at phone width (but not
+after a rotation within one load). Tablet widths and up never see it, and nor does the
+native app. It has no download link yet: there is no store URL to point to.
 
 Per an explicit product decision (not a mockup requirement): web content should be
 responsive on its own merits across browser widths — it does not need to pixel-match
 the Capacitor mobile screens. The board is the clearest example: mobile renders groups
 as `Tabs`-switched single-column content, web renders them as parallel columns — same
 underlying data and components (`common_logics/useBoard.ts`, the note cards), just a
-different `isNative` branch inside `HomePage.tsx` rather than a full separate
+different `isMobile` branch inside `HomePage.tsx` rather than a full separate
 `mobile/screens/` file (that split is reserved for cases with real interaction
 differences, like auth's touch-target/safe-area handling — a page-layout difference
 alone doesn't warrant it).

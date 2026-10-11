@@ -67,6 +67,6 @@ function WebSignupContent() {
 }
 
 export default function SignupPage() {
-  const { isNative } = usePlatform()
-  return isNative ? <MobileSignupScreen /> : <WebSignupContent />
+  const { isMobile } = usePlatform()
+  return isMobile ? <MobileSignupScreen /> : <WebSignupContent />
 }

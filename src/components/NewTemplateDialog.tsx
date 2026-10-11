@@ -18,7 +18,7 @@ interface NewTemplateDialogProps {
  * as sample notes. Render it only while it should be open (it has no `isOpen` prop).
  */
 export function NewTemplateDialog({ onClose, onCreated }: NewTemplateDialogProps) {
-  const { isNative } = usePlatform()
+  const { isMobile } = usePlatform()
   const {
     workspaces,
     name,
@@ -40,7 +40,7 @@ export function NewTemplateDialog({ onClose, onCreated }: NewTemplateDialogProps
       isOpen
       onClose={onClose}
       title="New template"
-      variant={isNative ? 'full-page' : 'center'}
+      variant={isMobile ? 'full-page' : 'center'}
       overlayClassName={DIALOG_OVERLAY}
       panelClassName={DIALOG_SHADOW}
     >

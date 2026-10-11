@@ -36,7 +36,7 @@ function DragGhost({ item, groups }: { item: NonNullable<ReturnType<typeof useBo
 }
 
 export default function HomePage() {
-  const { isNative } = usePlatform()
+  const { isMobile } = usePlatform()
   const board = useBoard()
   useTransitionReady(board.loaded)
   const { dynamic: dynamicAddButton, position: addButtonPosition } = useAddButtonSettings()
@@ -45,7 +45,7 @@ export default function HomePage() {
     // Mobile only: after dragging a note into a different group via GroupDropTargets,
     // switch the tab strip to that group so the user sees where it landed — on web all
     // columns are visible at once, so there's no "active" column to update.
-    onNoteMovedToGroup: isNative ? setActiveGroupId : undefined,
+    onNoteMovedToGroup: isMobile ? setActiveGroupId : undefined,
   })
   const activeGroup = groups.find((g) => g.id === activeGroupId)
 
@@ -58,10 +58,10 @@ export default function HomePage() {
 
   return (
     <AppShell
-      headerStart={!isNative ? workspaceSwitcher : undefined}
-      headerEnd={!isNative ? searchLink : undefined}
+      headerStart={!isMobile ? workspaceSwitcher : undefined}
+      headerEnd={!isMobile ? searchLink : undefined}
     >
-      {isNative && (
+      {isMobile && (
         <div className="flex items-center justify-between gap-4">
           {workspaceSwitcher}
           {searchLink}
@@ -77,7 +77,7 @@ export default function HomePage() {
         </div>
       ) : (
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
-          {isNative ? (
+          {isMobile ? (
             <div className="mt-6 flex flex-1 flex-col gap-4">
               {activeDragItem?.type === 'note' ? (
                 <GroupDropTargets groups={groups.filter((g) => g.id !== activeGroupId)} />

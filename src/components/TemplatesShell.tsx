@@ -17,9 +17,9 @@ import searchIcon from '../assets/search.png'
  * - Mobile: a plain full page; navigation comes from the bottom nav and back.
  */
 export function TemplatesShell({ wide = false, children }: { wide?: boolean; children: ReactNode }) {
-  const { isNative } = usePlatform()
+  const { isMobile } = usePlatform()
 
-  if (isNative) {
+  if (isMobile) {
     return (
       <AppShell>
         <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-5">{children}</div>
@@ -55,10 +55,10 @@ export const TOOLBAR_BUTTON =
  * Diary), then whatever the page puts in it (title, actions).
  */
 export function TemplatesToolbar({ children }: { children: ReactNode }) {
-  const { isNative } = usePlatform()
+  const { isMobile } = usePlatform()
   return (
     <div className="flex flex-wrap items-center gap-3">
-      {!isNative && <SidebarToggle storageKey={APPS_PANEL_KEY} label="apps list" />}
+      {!isMobile && <SidebarToggle storageKey={APPS_PANEL_KEY} label="apps list" />}
       {children}
     </div>
   )

@@ -30,7 +30,7 @@ const ADD_BUTTON_POSITION_LABELS: Record<AddButtonPosition, string> = { high: 'H
 
 /** Mobile-only: web has no floating "+". */
 function BoardSection() {
-  const { dynamic: enabled, setDynamic: setEnabled, position, setPosition } = useAddButtonSettings()
+  const { dynamic: enabled, dynamicAvailable, setDynamic: setEnabled, position, setPosition } = useAddButtonSettings()
 
   return (
     <div className="flex flex-col gap-3">
@@ -39,11 +39,14 @@ function BoardSection() {
         type="button"
         role="switch"
         aria-checked={enabled === true}
-        disabled={enabled === null}
+        disabled={enabled === null || !dynamicAvailable}
         onClick={() => setEnabled(!enabled)}
-        className={`${CHIP} justify-between text-left`}
+        className={`${CHIP} justify-between text-left disabled:cursor-not-allowed disabled:opacity-50`}
       >
-        <span className="font-medium text-ink">Dynamic Add Button</span>
+        <span className="flex flex-col">
+          <span className="font-medium text-ink">Dynamic Add Button</span>
+          {!dynamicAvailable && <span className="text-sm text-slate-600">Android app only</span>}
+        </span>
         <span className="shrink-0 font-display text-sm font-bold uppercase text-ink">
           {enabled === null ? '' : enabled ? 'On' : 'Off'}
         </span>
@@ -198,7 +201,7 @@ export default function PowerToolsPage() {
   const auth = useAuth()
   const { activeWorkspaceId, workspaces } = useWorkspace()
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId)
-  const { isNative } = usePlatform()
+  const { isMobile } = usePlatform()
   const [searchParams] = useSearchParams()
   // Anything other than 'account' (including an old `?tab=addons` link) lands on Groups.
   const activeTab = searchParams.get('tab') === 'account' ? 'account' : 'groups'
@@ -277,7 +280,7 @@ export default function PowerToolsPage() {
 
   return (
     <AppShell>
-      {isNative ? (
+      {isMobile ? (
         <div className="mx-auto flex w-full max-w-sm flex-1 flex-col gap-8">
           <div className="text-center">
             <h1 className="font-display text-2xl font-bold text-nav-dark">Settings</h1>

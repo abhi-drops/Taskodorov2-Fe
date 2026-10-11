@@ -1,7 +1,7 @@
 import { useCallback, useLayoutEffect, type MouseEvent } from 'react'
 import { useNavigate } from 'react-router'
 import type { createBrowserRouter } from 'react-router'
-import { Capacitor } from '@capacitor/core'
+import { isMobileLayout } from '../platform/mobileLayout'
 
 /**
  * Page transitions: one visual vocabulary, chosen by *kind of navigation*. Square edges,
@@ -56,8 +56,6 @@ export const NOTE_MORPH_NAME = 'note-morph'
 const MORPH_ATTR = 'data-vt-morph'
 /** Upper bound on holding the "after" snapshot for data; a cold first SQLite read can take a few hundred ms. */
 const READY_TIMEOUT_MS = 500
-
-const isNative = Capacitor.isNativePlatform()
 
 // ---------------------------------------------------------------- note morph state
 
@@ -164,21 +162,23 @@ function tabIndex(path: string): number | null {
 export function pageTransitionKind(from: string, to: string): PageTransitionKind {
   if (from === to) return 'none'
 
+  // Read per navigation: on web the layout follows the window's width.
+  const isMobile = isMobileLayout()
   const toEditor = isEditorPath(to)
   const fromEditor = isEditorPath(from)
 
   if (toEditor && !fromEditor) {
     if (morphNoteId && editedNoteId(to) === morphNoteId) return 'note-open'
-    return isNative ? 'sheet-in' : 'fade'
+    return isMobile ? 'sheet-in' : 'fade'
   }
   if (fromEditor && !toEditor) {
     if (morphNoteId && editedNoteId(from) === morphNoteId) return 'note-close'
-    return isNative ? 'sheet-out' : 'fade'
+    return isMobile ? 'sheet-out' : 'fade'
   }
 
   const fromTab = tabIndex(from)
   const toTab = tabIndex(to)
-  if (isNative && fromTab !== null && toTab !== null && fromTab !== toTab) {
+  if (isMobile && fromTab !== null && toTab !== null && fromTab !== toTab) {
     return toTab > fromTab ? 'slide-next' : 'slide-prev'
   }
   return 'fade'
