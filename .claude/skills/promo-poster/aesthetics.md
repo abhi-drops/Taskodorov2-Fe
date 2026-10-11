@@ -49,7 +49,9 @@ never lighter: light grey text fails contrast on the surface colour.
 | Labels | 24–26, weight 500–600 |
 | Footer | 28 / 36 |
 
-Mixed case with a full stop on headlines. No all-caps, no emoji, no exclamation marks.
+Mixed case with a full stop on headlines. No all-caps, no exclamation marks. Emoji only
+where the user's own text has them, in supporting lines (wrap in `<span class="emo">`,
+font "Noto Color Emoji"), never added by Claude and never in a Geomini headline.
 
 ## Shape
 

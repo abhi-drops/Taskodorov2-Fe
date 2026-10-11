@@ -16,11 +16,29 @@ Entry format:
 
 ---
 
+## 2026-10-10 — More air between a headline and the lines under it
+- Said: "add more space between main title and subtexts below in page 8" (post: why-the-name-taskodoro)
+- Decision: the gap between the closing slide's headline and its supporting lines went from 48px to 110px.
+- Scope: this slide. My interpretation: on centred closing slides, keep roughly 100px or more between the headline and the lines under it in future posts.
+- Status: active
+
+## 2026-10-10 — "Free and open source" is now said
+- Said: "also make an 8th slide to say 'follow to find more about the journey, coming soon on web + android, free and open source'" (post: why-the-name-taskodoro)
+- Decision: added that closing slide. The earlier hold on "free and open source" is lifted: the user chose to say it here. The how-taskodoro-happened post still does not carry it, since it was removed from that one on request.
+- Scope: the claim may be used on posts from now on (interpretation); the closing-slide wording is a reusable pattern: follow line, then "Coming soon on web + Android.", then "Free and open source."
+- Status: active
+
+## 2026-10-10 — Emoji are fine when the user writes them
+- Said: the script for the "why-the-name-taskodoro" post included 😅 🙂 😂 in its own text.
+- Decision: keep the user's emoji where they put them, in supporting lines and captions. Do not add emoji of Claude's own, and keep them out of big Geomini headlines. They render with the machine's "Noto Color Emoji" font (class `.emo`).
+- Scope: all posts (interpretation: the user did not state a rule; this follows from their script)
+- Status: active
+
 ## 2026-10-10 — Hold the "free and open source" claim
 - Said: "remove 7th - we will say that later" (post: how-taskodoro-happened)
 - Decision: the seventh slide is removed and the post is back to six slides. Do not put "free and open source" on any poster or caption until the user says it is time.
 - Scope: all posts, until lifted
-- Status: active
+- Status: superseded by "Free and open source is now said"
 - Note: the user did not say where "Coming soon for web + Android." should go once slide 7 was gone. Claude put it back on the "Follow" slide, where the user's original script had it (interpretation).
 
 ## 2026-10-10 — "Free and open source" is a selling point
