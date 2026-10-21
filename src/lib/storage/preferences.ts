@@ -96,13 +96,13 @@ const SYNC_STATE_KEY = 'taskodoro.sync.state'
 
 /**
  * The opaque cursor from the last successful sync, which account it belongs to, and
- * when it happened. Account-scoped (not cleared on logout): `loadSyncState` returns
- * `null` when the stored `accountId` doesn't match the one asked for, which is what
- * makes a *different* account's first sync on this device correctly hit `cursor:
- * null`, while the *same* account logging out and back in resumes incrementally
- * instead of re-triggering the first-sync "keep local vs use account" prompt every
- * time (docs/phase3-sync-plan-from-be.md §4) — a mis-tap on that prompt is
- * unrecoverable, so avoiding spurious re-prompts matters.
+ * when it happened. `SyncContext.tsx` clears this (and the local data it points at)
+ * on every logout from a Google session — a device with no local data is never at risk
+ * of a *different* account's next sign-in silently finding and uploading someone
+ * else's leftover rows, and the next sign-in's `cursor: null` always does a full fresh
+ * pull, same account or not. The `accountId` field is kept mainly as a sanity check
+ * (`loadSyncState` ignores a stored record that doesn't match who's asking) rather than
+ * something callers need to actively manage.
  */
 export interface SyncState {
   accountId: string
@@ -123,4 +123,50 @@ export async function loadSyncState(accountId: string): Promise<SyncState | null
 
 export async function clearSyncState(): Promise<void> {
   await Preferences.remove({ key: SYNC_STATE_KEY })
+}
+
+const PENDING_FRESH_LOGIN_KEY = 'taskodoro.sync.pendingFreshLogin'
+
+/**
+ * Set whenever logout wipes this device's local data (`SyncContext.tsx`). The very
+ * next sign-in's first sync is, by construction, a `cursor: null` request against
+ * whatever cloud data that account already has — which the server treats as a genuine
+ * conflict (409) regardless of how empty the local push is. Without this marker, that
+ * would surface the "keep local vs use account" dialog on every ordinary logout→login
+ * cycle, even back into the same account with nothing local worth keeping — exactly
+ * the prompt this device-switch fix is supposed to avoid. `syncEngine.ts#doSync`
+ * checks (and clears) this via `consumePendingFreshLogin()` the one time it matters:
+ * when that first sync actually hits a 409. If set, it retries silently with
+ * `strategy: 'use_account'` instead of asking. A later, unrelated conflict (e.g. true
+ * multi-device first sync on a install that was never through this logout path) never
+ * sees this marker set, so the dialog still shows exactly as before for that case.
+ */
+export async function markPendingFreshLogin(): Promise<void> {
+  await Preferences.set({ key: PENDING_FRESH_LOGIN_KEY, value: '1' })
+}
+
+/** Reads and clears the marker in one step — it's meant to apply to the next conflict
+ *  it's checked against, not linger and auto-resolve some later, unrelated one. */
+export async function consumePendingFreshLogin(): Promise<boolean> {
+  const { value } = await Preferences.get({ key: PENDING_FRESH_LOGIN_KEY })
+  if (value !== null) await Preferences.remove({ key: PENDING_FRESH_LOGIN_KEY })
+  return value !== null
+}
+
+const DEVICE_ID_KEY = 'taskodoro.sync.deviceId'
+
+/**
+ * A per-install id, independent of login session — generated once and persisted, never
+ * regenerated while this install lives (a reinstall naturally gets a new one, which is
+ * correct: from the account's perspective that's a new device). Sent on every `/sync`
+ * call so the backend can tell whether another of the account's devices is active right
+ * now (docs/phase3-sync-plan-from-be.md's device-activity section) — not tied to any one
+ * account, since the same physical install could sync a different account later.
+ */
+export async function getOrCreateDeviceId(): Promise<string> {
+  const { value } = await Preferences.get({ key: DEVICE_ID_KEY })
+  if (value) return value
+  const id = crypto.randomUUID()
+  await Preferences.set({ key: DEVICE_ID_KEY, value: id })
+  return id
 }

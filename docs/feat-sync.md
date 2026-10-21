@@ -109,6 +109,35 @@ outcome (same family as the backend contract's own accepted per-row-reorder cave
 - **Manual**: "Sync Now" in the Settings chip. No pull-to-refresh gesture on the board
   — it's a `@dnd-kit` drag surface on mobile, and a vertical pull would compete with
   note drags.
+- **Device-activity poll**: a 10s timer, only while another device is active right now —
+  see its own section below. The one trigger that's genuinely periodic rather than
+  event-driven.
+
+## Device-aware adaptive polling
+
+The triggers above are all event-driven — none of them tell *this* device about a change
+made on another device until something happens locally (foreground, an edit, etc.). To
+close that gap without building realtime push (websockets/Durable Objects, explicitly
+deferred — `docs/phase3-sync-plan-from-be.md` §9), a 10-second poll runs, but **only**
+while there's a real chance of catching a live cross-device edit:
+
+- `getOrCreateDeviceId()` (`preferences.ts`) — a per-**install** id, independent of login
+  session, generated once via `crypto.randomUUID()` and sent as `deviceId` on every
+  `/sync` call. A reinstall gets a new one — correct, since that's a new device from the
+  account's perspective.
+- The backend tracks `lastSeenAt` per `(account, device)` and returns
+  `deviceActivity.otherDeviceActiveNow` — whether some *other* device has synced in the
+  last 90 seconds (not just whether one exists; an idle second device shouldn't cost
+  anything). `otherDeviceCount` (any other device in 30 days) also comes back but isn't
+  surfaced anywhere client-side yet.
+- `SyncContext` remembers the last response's `otherDeviceActiveNow` and runs
+  `setInterval(() => trigger(), 10_000)` only while it's `true` **and**
+  `useIsAppForeground()` (`lib/platform/useIsAppForeground.ts`, new — unlike
+  `useAppForeground`, which only fires a one-shot callback on resume, this tracks live
+  foreground state, which an interval needs to gate on continuously). Either condition
+  going false clears the interval on the next render.
+- No extra dedup needed: `runSync`'s existing in-flight guard already collapses a poll
+  tick that lands while another trigger's sync is still running.
 
 ## First-sync conflict
 
@@ -134,15 +163,60 @@ The dialog is dismissible (closes to a `needs-strategy` status, re-openable from
 Settings chip) rather than forced, since the user may not be ready to make an
 irreversible choice the moment they sign in.
 
-## Cursor storage
+## Cursor storage, and why logout wipes local data
 
 One `taskodoro.sync.state` Preferences key (`lib/storage/preferences.ts`'s
-`SyncState`: `{accountId, cursor, lastSyncedAt}`), **account-scoped rather than cleared
-on logout**. `loadSyncState(accountId)` returns `null` when the stored `accountId`
-doesn't match — that alone makes a *different* account's first sync on this device
-correctly hit `cursor: null`, while the *same* account logging out and back in resumes
-incrementally instead of re-triggering the first-sync conflict prompt every time (a
-mis-tap there is unrecoverable, so avoiding spurious re-prompts matters).
+`SyncState`: `{accountId, cursor, lastSyncedAt}`), the opaque cursor plus which
+account it belongs to.
+
+**Logging out of a Google session clears this device's synced data, not just the
+session, and reseeds the same starting board a fresh install gets.** `SyncContext.tsx`
+watches for `eligible` (signed in with Google) going from true to false and, when it
+does: hard-deletes every synced table (`withDb((db) => wipeSyncedData(db))`, same
+primitive the `use_account` first-sync strategy uses — see `lib/db/reset.ts`), then
+re-seeds via `seedIfEmpty(db)` (Workspace 1, Todo/In Progress/Completed — the exact
+same call `initDb()` makes on a brand-new install) in the same transaction, and clears
+the cursor (`clearSyncState()`). The device reads as "like a new user" immediately
+after logout, not a blank board.
+
+This was a deliberate simplification over the alternative (detect that local data
+belongs to a different account than the one now signing in, and force the same
+keep-local/use-account choice the server's 409 gives on a genuine conflict). That
+alternative is more "correct" in the abstract — it never destroys data without asking
+— but the chosen behavior is simpler to reason about and matches what was actually
+asked for: no prompt on an ordinary account switch, ever. The real failure mode this
+fix closes: without it, signing into a different Google account than the one last used
+on this device didn't clear anything, so the previous account's notes just kept
+showing — and if the new account happened to have no cloud data of its own yet (no 409
+to catch it), the old account's local leftovers would silently become the new
+account's synced data with no prompt at all.
+
+**The reseeded board is itself local data, and that's exactly what creates a second
+problem the first fix alone doesn't solve.** The next Google sign-in always starts from
+`cursor: null` (cleared above) — and per the backend contract, *any* `cursor: null`
+request is treated as a conflict (409) the moment the signing-in account has cloud data
+of its own, regardless of whether the local push is meaningful or just this placeholder
+board. Without something more, reseeding would reintroduce the exact prompt the
+account-switch fix was meant to eliminate — on every ordinary logout→login cycle, even
+back into the same account. The fix: `markPendingFreshLogin()`, set alongside the wipe
+above. `syncEngine.ts#doSync` consumes it (reads and clears, one-shot) the one time it
+matters — an unprompted first-sync conflict (no `strategy` picked yet) — and silently
+retries with `strategy: 'use_account'` instead of surfacing `needs-strategy`, discarding
+the placeholder board in favor of whatever the account actually has. A conflict that
+happens for any *other* reason (a genuinely new device/install that was never through
+this logout path) never finds the marker set, so `SyncStrategyDialog` still shows
+exactly as before for that case — this only silences the prompt for the one scenario it
+was built to silence.
+
+Two tradeoffs worth knowing, both accepted as the cost of the simpler behavior:
+- Any local edit made in the last few seconds before logout that hadn't yet been pushed
+  (the 5s post-edit debounce, §Triggers above) is lost, not carried over — logout
+  doesn't wait for a final sync first.
+- Any guest editing done on the reseeded board *between* a logout and the next Google
+  sign-in is discarded too, the moment that sign-in's auto-resolved first sync replaces
+  it with the account's cloud data — it's never merged in.
+
+Revisit only if either turns out to bite someone in practice.
 
 ## Refreshing the UI after a pull
 

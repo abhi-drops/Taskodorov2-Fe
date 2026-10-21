@@ -9,6 +9,8 @@ import {
   loadAuthMethod,
   clearAuthMethod,
 } from '../storage/preferences'
+import { isNative } from '../platform/isNative'
+import { signOutNative } from '../google/googleAuthNative'
 import { AuthContext } from './authContext'
 import type { AuthState } from './authContext'
 
@@ -72,6 +74,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function logout() {
+    // Must happen before/alongside clearAuth(), not as an afterthought: the native
+    // Google SDK remembers the last-used account independently of our own session, so
+    // without this, signing back in silently re-authenticates with whichever account
+    // was last used instead of letting the user pick a different one (reported on
+    // Android — "signed out, tapped log in, it just logged back into the same
+    // account"). No-ops on web/unconfigured installs.
+    if (isNative()) await signOutNative()
     await clearAuth()
     await clearAuthMethod()
     setState({ user: null, token: null, status: 'unauthenticated', authMethod: null, error: null })

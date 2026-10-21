@@ -4,6 +4,53 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-22 — Logout reseeds a default workspace, with no sync prompt on next login
+
+- Logging out of a Google session now reseeds the same starting board a fresh install
+  gets (Workspace 1, Todo/In Progress/Completed) right after wiping this device's
+  synced data, so the device reads as "like a new user" rather than a blank one.
+- That reseeded board is still local data, though, and would otherwise reintroduce the
+  "keep local vs use account" prompt on the very next sign-in (the backend treats any
+  `cursor: null` request as a conflict once the account has cloud data, regardless of
+  how trivial the local push is) — exactly the prompt yesterday's fix was meant to
+  eliminate. New `markPendingFreshLogin()`/`consumePendingFreshLogin()`
+  (`preferences.ts`) close that gap: `syncEngine.ts#doSync` silently resolves that one
+  specific conflict as `use_account` instead of surfacing it, while any other conflict
+  (a genuine new device, never through this logout path) still shows the dialog as
+  before. See `feat-sync.md`'s "Cursor storage, and why logout wipes local data".
+
+## 2026-10-21 — Fix: switching Google accounts left the old account's data showing
+
+- Signing into a different Google account than the one last used for sync on this
+  device didn't clear the previous account's local data — it kept showing on the
+  board, and could silently get uploaded as the *new* account's synced data (the
+  server's own 409 conflict check only fires when the new account already has cloud
+  data elsewhere; a brand-new account had nothing to catch this). Fixed by having
+  `SyncContext.tsx` wipe this device's synced data and its sync cursor on every
+  logout from a Google session — the next Google sign-in, same account or not, always
+  does a full fresh pull instead of finding anything left over. See `feat-sync.md`'s
+  "Cursor storage, and why logout wipes local data".
+
+## 2026-10-21 — Fix: Google sign-in reused the previous account after logout (Android)
+
+- Signing out and signing back in with Google silently re-authenticated with whichever
+  account was used last, with no account picker — the native Google SDK caches the
+  last-used account independently of this app's own session, and `logout()` never told
+  it to forget. Fixed by calling `GoogleAuth.signOut()` (new `signOutNative()`,
+  `lib/google/googleAuthNative.ts`) from `AuthContext.tsx`'s `logout()` on native. See
+  `feat-auth.md`'s "Google Sign-In" section.
+
+## 2026-10-21 — Device-aware adaptive sync polling
+
+- Sync now runs a 10-second poll, but only while another of the account's devices has
+  synced in the last 90 seconds **and** this one is in the foreground — an idle or
+  single-device account costs nothing beyond the existing event-driven triggers. New
+  per-install `deviceId` (`getOrCreateDeviceId()`, `preferences.ts`) sent on every
+  `/sync` call; the backend's `devices` table and `deviceActivity` response field are
+  the counterpart. New `lib/platform/useIsAppForeground.ts` hook (live foreground
+  state, unlike the existing one-shot `useAppForeground`). See `feat-sync.md`'s "Device-
+  aware adaptive polling" and `docs/phase3-sync-plan-from-be.md` §9.
+
 ## 2026-10-21 — Sync with Google (Phase 3)
 
 - Optional cross-device sync against `Taskodoro-Be`'s `POST /sync`, gated specifically

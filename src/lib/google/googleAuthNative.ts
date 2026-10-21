@@ -25,3 +25,29 @@ export async function signIn(): Promise<string> {
   const result = await GoogleAuth.signIn({ scopes: ['profile', 'email'] })
   return result.authentication.idToken
 }
+
+/**
+ * Clears the native Google SDK's own cached account, independent of our app's own
+ * session. Without this, `GoogleAuth.signIn()` after logging out silently re-signs the
+ * user back into whichever Google account was last used — the SDK's own session
+ * outlives our `clearAuth()`, which only ever touched our Preferences keys, never told
+ * Google to forget anything. Call before `signIn()` whenever the user needs to pick a
+ * *different* account (logout, or an explicit "switch account" action), not just once
+ * at sign-in time, since by then it's too late — the picker is already being skipped.
+ *
+ * `ensureInit()` first because `GoogleAuth.signOut()` needs the native
+ * `GoogleSignInClient` to already exist (built during `initialize()`) — without it the
+ * call throws rather than no-opping, both natively and in this plugin's web fallback
+ * (`gapi.auth2.getAuthInstance()` requires `gapi.auth2` to be loaded first). Caught
+ * rather than rethrown: a failure here (e.g. no native session ever existed) shouldn't
+ * block the rest of logout.
+ */
+export async function signOutNative(): Promise<void> {
+  if (!isGoogleNativeConfigured()) return
+  try {
+    await ensureInit()
+    await GoogleAuth.signOut()
+  } catch (err) {
+    console.warn('GoogleAuth.signOut() failed (likely no native Google session to clear):', err)
+  }
+}

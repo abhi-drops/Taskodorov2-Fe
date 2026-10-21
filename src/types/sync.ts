@@ -53,12 +53,24 @@ export interface SyncRequest {
   cursor: number | null
   /** Only sent on a retry after a 409 (`docs/phase3-sync-plan-from-be.md` §4). */
   strategy?: SyncStrategy
+  /** Per-install id from `getOrCreateDeviceId()` — drives `deviceActivity` below. */
+  deviceId?: string
   changes: SyncChanges
+}
+
+/** Only present when the request carried `deviceId`. `otherDeviceActiveNow` is the
+ *  signal that actually matters client-side: it's what gates the 10s poll in
+ *  `SyncContext` — `otherDeviceCount` being non-zero just means a second device exists
+ *  somewhere, not that it's worth polling fast right now. */
+export interface SyncDeviceActivity {
+  otherDeviceCount: number
+  otherDeviceActiveNow: boolean
 }
 
 export interface SyncResponse {
   cursor: number
   changes: SyncChanges
+  deviceActivity?: SyncDeviceActivity | null
 }
 
 /** Defensive limit mirrored from the backend's own per-array row cap. */

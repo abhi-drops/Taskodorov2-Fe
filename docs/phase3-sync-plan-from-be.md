@@ -33,6 +33,7 @@ POST /sync
 {
   cursor: number | null,        // null the first time this device ever syncs this account
   strategy?: 'keep_local' | 'use_account',  // only send this on a retry after a 409 — see §4
+  deviceId?: string,            // this install's id from getOrCreateDeviceId() — see §11
   changes: {
     workspaces: WorkspaceRow[],
     groups: GroupRow[],
@@ -144,6 +145,10 @@ app rules live.
       deletes: string[],           // ids to remove locally — see §7
     },
   },
+  deviceActivity?: {              // only present if the request carried deviceId — see §11
+    otherDeviceCount: number,
+    otherDeviceActiveNow: boolean,
+  } | null,
 }
 ```
 
@@ -253,7 +258,38 @@ incidentally while wiring up sync calls.
 
 ---
 
-## 9. Auth response change
+## 9. Device-aware adaptive polling
+
+Pure event-driven sync (foreground/resume, after-edit, manual refresh — §11 below) means
+a second device's edit doesn't show up here until *this* device does one of those things.
+This adds a tight poll, but **only while there's a real chance of catching a live
+cross-device edit** — not a flat interval that runs forever on every multi-device account.
+
+- `lib/storage/preferences.ts#getOrCreateDeviceId()` — a per-**install** id (not per
+  account), generated once via `crypto.randomUUID()` and persisted. A reinstall gets a new
+  one; that's correct, it's a new device from the account's perspective. Sent as
+  `deviceId` on every `/sync` call (`syncEngine.ts#doSync`).
+- The backend upserts `(userId, deviceId) → lastSeenAt` on every call that carries one, and
+  returns two numbers derived from that table, excluding the calling device itself:
+  - `otherDeviceCount` — any other device seen in the last 30 days. Informational; not
+    currently surfaced in any UI (kept backend-only per product decision).
+  - `otherDeviceActiveNow` — any other device seen in the last **90 seconds**. This is the
+    only one the client acts on.
+- `SyncContext.tsx` stores the last response's `otherDeviceActiveNow` and runs a **10
+  second** `setInterval(() => trigger())` only while it's `true` **and** the app is
+  foregrounded (`lib/platform/useIsAppForeground.ts`, a new hook — `useAppForeground`
+  already in use elsewhere only fires a one-shot callback on resume, it doesn't track
+  live foreground state, which an interval-gating effect needs). The interval clears the
+  moment either condition goes false — an idle multi-device account (nobody else has
+  synced in 90s) costs nothing beyond the existing event-driven triggers, exactly like a
+  single-device account.
+- No new concurrency handling was needed for the interval itself: `runSync`'s existing
+  `inFlight` dedup (`syncEngine.ts`) already collapses an overlapping poll tick with any
+  other trigger firing close together.
+
+---
+
+## 10. Auth response change
 
 `/auth/signup`, `/auth/login`, `/auth/google`, and `/auth/me` now all return `name` on
 `user` (`{ id, email, name, ... }`) — previously always omitted even though signup accepted
@@ -263,32 +299,26 @@ Account UI now that the backend sends it.
 
 ---
 
-## 10. What's left on the frontend side
+## 11. Frontend implementation status
 
-None of this exists yet — the backend endpoint is implemented and typechecked but has not
-been exercised against a real client:
+All of this is now built — see `docs/feat-sync.md` for the current-state doc on exactly
+how. Kept here as a record of what had to land, not a live checklist:
 
-1. **A sync cursor pointer** — a new `lib/storage/preferences.ts` key (same
-   small-pointer-value pattern as `taskodoro.workspace.activeId`), storing the opaque
-   `cursor` number per account. `null`/absent means "never synced."
-2. **Dirty-row tracking** — the request only sends what changed since the last cursor, so
-   the client needs *some* way to know which local rows to include in the next push. Nothing
-   in the current SQLite schema tracks this today (`docs/phase3-sync-plan-from-fe.md` §1:
-   "No row anywhere currently carries a sync cursor... no per-row dirty flag"). This is
-   probably the single biggest piece of new client-side plumbing in this phase.
-3. **Push-then-pull call**, triggered pull-based per the decided trigger model: app
-   foreground/resume, after local edits (debounced), and a manual pull-to-refresh — no
-   realtime/websocket needed for v1.
-4. **First-sync strategy UI** (§4 above) — the "keep local vs use account" prompt, and
-   actually wiping local SQLite before applying a `use_account` response.
-5. **Apply-pulled-changes wiring** into `lib/db/{workspaces,groups,notes,templates}.ts`,
-   plus the Diary log's delete-by-id special case (§7).
-6. **Error/offline handling** — no network, expired JWT (current tokens are 7 days,
-   no refresh) — surface it, don't crash the board. Sync failing should never block the
-   fully-offline experience that already works today.
-7. Turning Power Tools' disabled "Sync with Google" label into something real (and probably
-   renaming it — that label currently reads as a Google Calendar/Tasks-style integration,
-   which this isn't; see `Taskodoro-Project-Reference.md` §15 Q7).
+1. **A sync cursor pointer** — `lib/storage/preferences.ts`'s `SyncState`/`SYNC_STATE_KEY`
+   (account-scoped, same small-pointer-value pattern as `taskodoro.workspace.activeId`).
+2. **Dirty-row tracking** — a `dirty` column on every synced table, set on every write and
+   cleared only once a push is acknowledged (`feat-sync.md`'s "Local dirty tracking").
+3. **Triggers**: app foreground/resume, after local edits (debounced 5s,
+   `EDIT_SYNC_DEBOUNCE_MS`), manual refresh, `online` event — plus the device-activity
+   10s poll from §9 above, the one addition on top of the original trigger set.
+4. **First-sync strategy UI** (§4 above) — `SyncStrategyDialog.tsx`.
+5. **Apply-pulled-changes wiring** — `lib/sync/applyChanges.ts`, including the Diary log's
+   delete-by-id special case (§7).
+6. **Error/offline handling** — `syncErrors.ts`'s `classifySyncError`, surfaced via
+   `SyncStatusBadge.tsx`; never blocks local reads/writes.
+7. Power Tools' "Sync With Google" label — kept as-is rather than renamed, since sync is
+   deliberately gated on Google sign-in specifically, not any authenticated session
+   (`feat-sync.md`'s "Why gated on Google specifically").
 
 ---
 

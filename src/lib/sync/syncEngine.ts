@@ -9,7 +9,12 @@ import { collectNextBatch, emptySyncChanges, markEverythingDirty } from './colle
 import { applyPulledChanges } from './applyChanges'
 import { classifySyncError } from './syncErrors'
 import { syncApi, SyncStrategyRequiredError } from '../api/sync'
-import { saveSyncState, loadSyncState } from '../storage/preferences'
+import {
+  saveSyncState,
+  loadSyncState,
+  getOrCreateDeviceId,
+  consumePendingFreshLogin,
+} from '../storage/preferences'
 import type { PushBatch } from './collectChanges'
 import type { SyncFailure } from './syncErrors'
 import type { SyncResponse, SyncStrategy } from '../../types/sync'
@@ -30,7 +35,7 @@ export interface SyncDeps {
 }
 
 export type SyncResult =
-  | { outcome: 'synced'; applied: boolean; cursor: number }
+  | { outcome: 'synced'; applied: boolean; cursor: number; otherDeviceActiveNow: boolean }
   | { outcome: 'needs-strategy' }
   | { outcome: 'failed'; failure: SyncFailure }
 
@@ -57,22 +62,40 @@ async function doSync(deps: SyncDeps): Promise<SyncResult> {
   let strategy = deps.strategy
   let applied = false
   let sentOnePull = false
+  let otherDeviceActiveNow = false
+  const deviceId = await getOrCreateDeviceId()
 
   while (true) {
     const batch = await withDb((db) => collectNextBatch(db))
     if (batch === null && sentOnePull) break
 
+    const changes = batch ? batch.changes : emptySyncChanges()
     let response: SyncResponse
     try {
-      response = await syncApi.sync(
-        { cursor, strategy, changes: batch ? batch.changes : emptySyncChanges() },
-        deps.token,
-      )
+      response = await syncApi.sync({ cursor, strategy, deviceId, changes }, deps.token)
     } catch (err) {
-      if (err instanceof SyncStrategyRequiredError) return { outcome: 'needs-strategy' }
-      return { outcome: 'failed', failure: classifySyncError(err) }
+      if (!(err instanceof SyncStrategyRequiredError)) return { outcome: 'failed', failure: classifySyncError(err) }
+
+      // A conflict on an *unprompted* first sync (no strategy picked yet) is expected,
+      // not exceptional, right after a logout-triggered wipe — that device's next
+      // sign-in is always a cursor:null request against whatever the account already
+      // has, which the server treats as a genuine conflict regardless of how empty the
+      // push is. `markPendingFreshLogin()` (`SyncContext.tsx`'s wipe-on-logout) is what
+      // sets this; consuming it here means that specific case never shows the
+      // keep-local/use-account dialog — it already knows the answer is "use the
+      // account's data." Any other conflict (the marker isn't set) still surfaces
+      // `needs-strategy` exactly as before.
+      if (strategy || !(await consumePendingFreshLogin())) return { outcome: 'needs-strategy' }
+
+      strategy = 'use_account'
+      try {
+        response = await syncApi.sync({ cursor, strategy, deviceId, changes }, deps.token)
+      } catch (retryErr) {
+        return { outcome: 'failed', failure: classifySyncError(retryErr) }
+      }
     }
     const pulled = response
+    otherDeviceActiveNow = pulled.deviceActivity?.otherDeviceActiveNow ?? false
 
     await withDb(async (db) => {
       // Only the request that actually carried `strategy: 'use_account'` triggers the
@@ -91,7 +114,7 @@ async function doSync(deps: SyncDeps): Promise<SyncResult> {
     if (batch === null) break
   }
 
-  return { outcome: 'synced', applied, cursor: cursor! }
+  return { outcome: 'synced', applied, cursor: cursor!, otherDeviceActiveNow }
 }
 
 // Concurrent calls (React StrictMode's double-invoked effects, two triggers firing

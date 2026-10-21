@@ -58,3 +58,29 @@ misconfiguration. Full setup/testing checklist: `GOOGLE_SIGNIN_TESTING.md`.
 `isGoogleWebConfigured()`/`isGoogleNativeConfigured()` both just check
 `Boolean(VITE_GOOGLE_CLIENT_ID_WEB)` — unset renders the button visibly present but
 disabled, never crashes.
+
+**Second gotcha, native only: the Google SDK remembers the last account independently
+of our own session.** `logout()` only ever cleared our own `taskodoro.auth.*`
+Preferences keys — it never told the native Google SDK to forget anything, so
+`GoogleAuth.signIn()` after a logout silently re-authenticated with whichever Google
+account was used last, with no account picker shown (reported on Android: sign out, tap
+log in, land back on the same account instead of being able to pick a different one).
+Fixed by `lib/google/googleAuthNative.ts`'s `signOutNative()` — `GoogleAuth.signOut()`,
+called from `AuthContext.tsx`'s `logout()` whenever `isNative()` — which clears the
+SDK's cached credential so the next `signIn()` shows the picker again. Requires
+`ensureInit()` first (the plugin's `signOut()` needs the native client to already
+exist, both on native and in this plugin's web fallback — not what web sign-in actually
+uses, but the function still no-ops safely if `isGoogleNativeConfigured()` is false).
+Wrapped in try/catch: a failure here (e.g. no native session ever existed this install)
+shouldn't block the rest of logout. If only one Google account exists on the device,
+Android still won't show a picker after this fix — that's expected OS behavior, not a
+bug, nothing left to switch to.
+
+This pairs with a second, separate fix for the same underlying complaint: even with
+the picker working, the *local data* from the account being signed out of was still
+sitting in SQLite and could leak into (or get silently overwritten by) whichever
+account signed in next. `AuthContext.tsx`'s own `logout()` stays a pure
+session/credentials concern with no `lib/db/*` dependency — the data-wiping half of
+that fix lives in `lib/sync/SyncContext.tsx` instead, which already watches auth state
+for sync purposes. See `feat-sync.md`'s "Cursor storage, and why logout wipes local
+data".
