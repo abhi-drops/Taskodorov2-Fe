@@ -96,13 +96,24 @@ Self-hosted fonts (never a Google Fonts CDN link — this is an offline-first ap
 
 `lib/auth/AuthContext.tsx` (`AuthProvider`) hydrates from Capacitor Preferences on mount (`status: 'hydrating' | 'authenticated' | 'unauthenticated'`), exposes `login`/`signup`/`loginWithGoogle`/`logout`. **Auth is optional** since the guest-first rework — reached only from Settings' Account section, not required to use the app (see "Guest-first & routing" above). All API calls go through `lib/api/auth.ts` (the only file to touch if the backend contract changes) → `lib/api/client.ts` (fetch wrapper, normalizes errors to `ApiError`). Session persistence is `lib/storage/preferences.ts`, wrapping `@capacitor/preferences` — transparently falls back to `localStorage` on web, so no platform branching is needed there. Full detail: `docs/feat-auth.md`.
 
-Note: the real backend's `/auth/signup` and `/auth/login` responses only include `{id, email}` on `user` — no `name`, even though signup accepts a `name` in the payload. `types/auth.ts`'s `User.name` is optional to reflect this.
+Note: `/auth/signup`, `/auth/login`, `/auth/google` and `/auth/me` all return `name` on `user` now (a Phase 3 backend change — it used to be omitted even though signup accepted it). `types/auth.ts`'s `User.name` stays optional regardless, for accounts created before that change.
 
 ### Google Sign-In
 
 Web uses `@react-oauth/google`. Native uses **`@southdevs/capacitor-google-auth`** — not `@capacitor-community/google-signin` (referenced in the original plan doc but doesn't exist on npm) and not `@codetrix-studio/capacitor-google-auth` (its usual fallback, stale, capped at Capacitor 6). The backend verifies the ID token's `aud` claim against its own `GOOGLE_CLIENT_ID` (the **Web** client), so both platforms must produce a token whose audience is the Web client ID.
 
 Critical gotcha with this specific native plugin version: its `signIn()` call **ignores** any `clientId`/`serverClientId` passed to it — it only ever uses whatever client was configured during `initialize()`. The Web client ID must be passed as `clientId` to `GoogleAuth.initialize()` (see `lib/google/googleAuthNative.ts`); if omitted, the plugin silently falls back to its own bundled placeholder Android string resource and fails with `DEVELOPER_ERROR (10)` — no account picker, no network request, easy to misdiagnose as a Google Cloud Console misconfiguration.
+
+### Sync (Phase 3)
+
+Optional, account-gated cross-device sync against `POST /sync` on the backend — **gated specifically on having signed in with Google**, not on any authenticated session (email/password login does not turn it on). This is why Settings' "Sync With Google" label was kept as-is rather than generalized, and why `AuthState` tracks an `authMethod: 'password' | 'google' | null` alongside the session (`lib/auth/authContext.ts`, persisted via `preferences.ts`).
+
+- **Local dirty tracking**: every table (`workspaces`/`groups`/`notes`/`templates`/`activity_events`) has a `dirty` column, set on every write, cleared only when a push is acknowledged. A column, not a reused `updated_at` watermark — the sync cursor is opaque and a pulled row carries another device's clock, so a clock-based watermark would either strand rows after a clock jump or re-push just-pulled rows forever. `activity_events` hard-deletes (never tombstones, to match its 3-minute edit-coalescing behavior) — deletions needing to sync are parked in a separate `sync_deleted_events` table until acknowledged.
+- **Engine**: `lib/sync/syncEngine.ts`'s `runSync()` collects dirty rows **by entity type** (`collectChanges.ts`, workspaces → groups → notes → templates → activity-event upserts → activity-event deletes), chunked under the server's 2000-row cap, pushes, applies the pull (`applyChanges.ts`), and repeats. Phasing by type (not mixing) satisfies the backend's ownership rule: a workspace must be accepted before anything referencing it ships in the same or a later request.
+- **Apply-from-server functions** (`upsert*FromServer` in each `lib/db/*.ts` file) write server rows directly by their own id — never through the existing `create*` functions, which mint their own id and recompute `position` via `SELECT COUNT(*)`. A pulled row's `position` is written verbatim.
+- **Triggers**: app foreground (`lib/platform/useAppForeground.ts`), 5s after a local edit (`lib/db/localChange.ts`'s pub/sub), the browser's `online` event, and a manual "Sync Now" in Settings. No realtime/websocket.
+- **First-sync conflict**: a 409 from the server (this device never synced, the account already has data) surfaces as `SyncStrategyDialog`, rendered from `App.tsx` — "keep this device's data" vs. "use my account's data", each requiring a second `ConfirmDialog` step since both are irreversible and whole-dataset.
+- Full contract: `docs/phase3-sync-plan-from-be.md`. Frontend data inventory and open design decisions: `docs/phase3-sync-plan-from-fe.md`.
 
 ### Android-specific runtime gotchas
 

@@ -5,7 +5,13 @@ import { usePlatform } from '../lib/platform/usePlatform'
 import { isGoogleWebConfigured } from '../lib/google/googleAuthWeb'
 import { isGoogleNativeConfigured, signIn as signInNative } from '../lib/google/googleAuthNative'
 
-export function useGoogleSignIn() {
+/**
+ * @param redirectTo Where to navigate after a successful sign-in. Defaults to `/`
+ *   (the Login/Signup pages' behavior). Pass `null` to stay put — used from Settings'
+ *   "Sync With Google" chip, where connecting Google shouldn't bounce the user off
+ *   the page they tapped it from.
+ */
+export function useGoogleSignIn(redirectTo: string | null = '/') {
   const { loginWithGoogle } = useAuth()
   const { isNative } = usePlatform()
   const navigate = useNavigate()
@@ -20,7 +26,7 @@ export function useGoogleSignIn() {
     try {
       const idToken = await signInNative()
       await loginWithGoogle(idToken)
-      navigate('/', { replace: true })
+      if (redirectTo !== null) navigate(redirectTo, { replace: true })
     } catch (e) {
       setError((e as Error).message)
     } finally {
@@ -33,7 +39,7 @@ export function useGoogleSignIn() {
     setError(null)
     try {
       await loginWithGoogle(idToken)
-      navigate('/', { replace: true })
+      if (redirectTo !== null) navigate(redirectTo, { replace: true })
     } catch (e) {
       setError((e as Error).message)
     } finally {

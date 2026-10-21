@@ -323,11 +323,11 @@ Current-state documentation: `feat-diary.md`.
 
 ---
 
-## Phase 3 (backend/sync) implications — not built now, noted for `phase3-sync-plan.md`
+## Phase 3 (backend/sync) implications — not built now, noted for `phase3-sync-plan-from-fe.md`
 
 - `notes.statuses` (new since that doc was written) needs a matching column in the
-  backend `notes` table — `phase3-sync-plan.md` §2's schema predates this feature.
-- `activity_events` (this doc) is the 4th table `phase3-sync-plan.md` already flagged as
+  backend `notes` table — `phase3-sync-plan-from-fe.md` §2's schema predates this feature.
+- `activity_events` (this doc) is the 4th table `phase3-sync-plan-from-fe.md` already flagged as
   "pick this up when Phase 3 starts" — still append-only, still trivial to sync (insert
   any id the server doesn't have, no LWW needed), just larger in volume now that title/
   color edits are tracked too, not only lifecycle events. Worth a row-count sanity check

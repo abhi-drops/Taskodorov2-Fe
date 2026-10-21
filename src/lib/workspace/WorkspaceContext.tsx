@@ -8,6 +8,7 @@ import {
   deleteWorkspace as dbDeleteWorkspace,
 } from '../db/workspaces'
 import { saveActiveWorkspaceId, loadActiveWorkspaceId, clearActiveWorkspaceId } from '../storage/preferences'
+import { useSync } from '../sync/useSync'
 import { WorkspaceContext } from './workspaceContext'
 import type { WorkspaceState } from './workspaceContext'
 
@@ -17,6 +18,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     activeWorkspaceId: null,
     status: 'loading',
   })
+  // Neither this provider nor `useBoard` has a refresh signal of its own — both load
+  // on mount only — so a sync pull that wrote something re-runs the same hydrate via
+  // this. The existing persistedId-valid?-else-workspaces[0] fallback below already
+  // handles the active workspace vanishing in a `use_account` replace.
+  const { appliedAt } = useSync()
 
   useEffect(() => {
     async function hydrate() {
@@ -26,7 +32,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       setState({ workspaces, activeWorkspaceId, status: 'ready' })
     }
     hydrate()
-  }, [])
+  }, [appliedAt])
 
   async function createWorkspace(name: string, templateId?: string) {
     // A template that was deleted in the meantime falls back to an empty workspace.

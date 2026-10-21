@@ -2,7 +2,8 @@ import { withDb } from './sqlite'
 import { listAllNotesForHistory } from './notes'
 import { listAllGroupsForHistory } from './groups'
 import { getCompletedGroupId } from './workspaces'
-import type { EventAction, EventEntity, EventField } from './eventLog'
+import { rowToEvent } from './eventLog'
+import type { ActivityEvent, EventAction, EventEntity, EventField } from './eventLog'
 import type { Note } from '../../types/note'
 import type { Group } from '../../types/group'
 
@@ -11,20 +12,12 @@ import type { Group } from '../../types/group'
  * replay frames and counts are pure functions in `lib/diary/replay.ts`. Local-day
  * bucketing is done in JS (date-fns), not SQL, because SQLite's `'localtime'` modifier
  * isn't reliable under sql.js/WASM on web. See `docs/feat-diary.md`.
+ *
+ * `ActivityEvent` and its row converter live in `eventLog.ts` (the write side), so the
+ * sync engine's apply path and this read path share one converter; re-exported here
+ * since every other file in this codebase already imports the type from this module.
  */
-
-export interface ActivityEvent {
-  id: string
-  workspaceId: string
-  entityType: EventEntity
-  entityId: string
-  action: EventAction
-  fromGroupId: string | null
-  toGroupId: string | null
-  field: EventField | null
-  newValue: string | null
-  createdAt: number
-}
+export type { ActivityEvent }
 
 interface ActivityEventRow {
   id: string
@@ -37,21 +30,6 @@ interface ActivityEventRow {
   field: EventField | null
   new_value: string | null
   created_at: number
-}
-
-function rowToEvent(row: ActivityEventRow): ActivityEvent {
-  return {
-    id: row.id,
-    workspaceId: row.workspace_id,
-    entityType: row.entity_type,
-    entityId: row.entity_id,
-    action: row.action,
-    fromGroupId: row.from_group_id,
-    toGroupId: row.to_group_id,
-    field: row.field,
-    newValue: row.new_value,
-    createdAt: row.created_at,
-  }
 }
 
 /** Events in `[from, to)`, oldest first. */

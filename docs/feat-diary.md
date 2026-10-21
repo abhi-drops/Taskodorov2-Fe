@@ -123,6 +123,17 @@ The live tables only store *current* state, so the Diary reads an append-only
   - This is different from counter bursts, which keep every tap and merge on display.
     Half-typed text has no value as history, so it isn't stored.
 
+- **Sync (Phase 3): `activity_events` round-trips, but as hard deletes, not
+  tombstones.** Every other table soft-deletes and syncs its `deleted_at` tombstone
+  like any other field; this table has no such row to carry a deletion, by design
+  (append-only). A coalescing revert (above) that removes a row now also records its id
+  in a new `sync_deleted_events` table (`eventLog.ts`'s `deleteActivityEvent`), which
+  the next sync push reports as `activityEvents.deletes` — and symmetrically, a pulled
+  `activityEvents.deletes` list removes those ids from local SQLite with no tombstone
+  of its own (`deleteActivityEventFromServer`). See `docs/phase3-sync-plan-from-be.md`
+  §7. Everything else in this table (upserts, including the in-place coalescing
+  update) syncs as ordinary insert-or-update-by-id rows.
+
 - **Vocabulary (deliberately narrow):**
   - `created` / `deleted` for notes and groups. A note's `created` has `new_value =
     'seed'` (`SEED_MARKER`) when it is a template's sample note. A note's `deleted` has `new_value =

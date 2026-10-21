@@ -121,6 +121,49 @@ export interface ActivityEventInput {
   createdAt: number
 }
 
+/** Read-side shape of a row (camelCase). Also the sync wire shape (`ActivityEventRow`
+ *  in `types/sync.ts` mirrors this field-for-field). */
+export interface ActivityEvent {
+  id: string
+  workspaceId: string
+  entityType: EventEntity
+  entityId: string
+  action: EventAction
+  fromGroupId: string | null
+  toGroupId: string | null
+  field: EventField | null
+  newValue: string | null
+  createdAt: number
+}
+
+interface ActivityEventRow {
+  id: string
+  workspace_id: string
+  entity_type: EventEntity
+  entity_id: string
+  action: EventAction
+  from_group_id: string | null
+  to_group_id: string | null
+  field: EventField | null
+  new_value: string | null
+  created_at: number
+}
+
+export function rowToEvent(row: ActivityEventRow): ActivityEvent {
+  return {
+    id: row.id,
+    workspaceId: row.workspace_id,
+    entityType: row.entity_type,
+    entityId: row.entity_id,
+    action: row.action,
+    fromGroupId: row.from_group_id,
+    toGroupId: row.to_group_id,
+    field: row.field,
+    newValue: row.new_value,
+    createdAt: row.created_at,
+  }
+}
+
 export const ACTIVITY_EVENTS_SQL = `
 CREATE TABLE IF NOT EXISTS activity_events (
   id TEXT PRIMARY KEY,
@@ -138,11 +181,25 @@ CREATE INDEX IF NOT EXISTS idx_activity_workspace_time ON activity_events (works
 CREATE INDEX IF NOT EXISTS idx_activity_entity_field_time ON activity_events (entity_id, field, created_at);
 `
 
+/**
+ * Ids of activity_events hard-deleted locally (see `deleteActivityEvent`) since the
+ * last successful sync push. The Diary log has no tombstone row to carry a deletion
+ * the way every other table does with `deleted_at`, so the id has to be parked here
+ * until the next push reports it and the server has acknowledged it
+ * (`clearPushedEventDeletions`). See `docs/phase3-sync-plan-from-be.md` §7.
+ */
+export const SYNC_DELETED_EVENTS_SQL = `
+CREATE TABLE IF NOT EXISTS sync_deleted_events (
+  id TEXT PRIMARY KEY,
+  deleted_at INTEGER NOT NULL
+);
+`
+
 export async function logEvent(db: SQLiteDBConnection, e: ActivityEventInput): Promise<void> {
   await db.run(
     `INSERT INTO activity_events
-      (id, workspace_id, entity_type, entity_id, action, from_group_id, to_group_id, field, new_value, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (id, workspace_id, entity_type, entity_id, action, from_group_id, to_group_id, field, new_value, created_at, dirty)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
     [
       crypto.randomUUID(),
       e.workspaceId,
@@ -156,6 +213,23 @@ export async function logEvent(db: SQLiteDBConnection, e: ActivityEventInput): P
       e.createdAt,
     ],
   )
+}
+
+/**
+ * Hard-deletes an activity event and records its id in `sync_deleted_events` so the
+ * next sync push can tell the server (this table has no tombstone row to carry a
+ * deletion). Used by the coalescing "reverted within the edit window" case below —
+ * never call `DELETE FROM activity_events` directly outside this file.
+ */
+export async function deleteActivityEvent(db: SQLiteDBConnection, id: string): Promise<void> {
+  await db.run('DELETE FROM activity_events WHERE id = ?', [id])
+  await db.run('INSERT OR REPLACE INTO sync_deleted_events (id, deleted_at) VALUES (?, ?)', [id, Date.now()])
+}
+
+/** Applies one of the *server's* `activityEvents.deletes` ids: removes the row without
+ *  recording a local tombstone (we didn't delete it, the server is telling us to). */
+export async function deleteActivityEventFromServer(db: SQLiteDBConnection, id: string): Promise<void> {
+  await db.run('DELETE FROM activity_events WHERE id = ?', [id])
 }
 
 /**
@@ -213,10 +287,14 @@ export async function logTitleEdit(db: SQLiteDBConnection, base: EditBase, title
   )
   const original = values?.[0] as { new_value: string | null } | undefined
   if (original && original.new_value === title) {
-    await db.run('DELETE FROM activity_events WHERE id = ?', [last.id])
+    await deleteActivityEvent(db, last.id)
     return
   }
-  await db.run('UPDATE activity_events SET new_value = ?, created_at = ? WHERE id = ?', [title, base.createdAt, last.id])
+  await db.run('UPDATE activity_events SET new_value = ?, created_at = ?, dirty = 1 WHERE id = ?', [
+    title,
+    base.createdAt,
+    last.id,
+  ])
 }
 
 /**
@@ -231,10 +309,10 @@ export async function logStatusEdit(db: SQLiteDBConnection, base: EditBase, chan
     return
   }
   if (previous.previousText === change.text) {
-    await db.run('DELETE FROM activity_events WHERE id = ?', [last.id])
+    await deleteActivityEvent(db, last.id)
     return
   }
-  await db.run('UPDATE activity_events SET new_value = ?, created_at = ? WHERE id = ?', [
+  await db.run('UPDATE activity_events SET new_value = ?, created_at = ?, dirty = 1 WHERE id = ?', [
     JSON.stringify({ ...previous, text: change.text }),
     base.createdAt,
     last.id,
@@ -388,5 +466,75 @@ export async function backfillTrackedStateIfMissing(db: SQLiteDBConnection): Pro
         createdAt: n.created_at,
       })
     }
+  }
+}
+
+// --- Sync (Phase 3): collect/apply for activity_events, the one table that hard-deletes
+// instead of tombstoning. See docs/phase3-sync-plan-from-be.md §7. ---
+
+/** Upserts (new rows and coalesced in-place edits) changed locally since the last push. */
+export async function collectDirtyActivityEvents(db: SQLiteDBConnection, limit: number): Promise<ActivityEvent[]> {
+  const result = await db.query(
+    'SELECT * FROM activity_events WHERE dirty = 1 ORDER BY created_at ASC, rowid ASC LIMIT ?',
+    [limit],
+  )
+  return ((result.values ?? []) as ActivityEventRow[]).map(rowToEvent)
+}
+
+/** Ids hard-deleted locally (via `deleteActivityEvent`) since the last push. */
+export async function collectDeletedActivityEventIds(db: SQLiteDBConnection, limit: number): Promise<string[]> {
+  const result = await db.query('SELECT id FROM sync_deleted_events ORDER BY deleted_at ASC LIMIT ?', [limit])
+  return ((result.values ?? []) as { id: string }[]).map((r) => r.id)
+}
+
+/** Mirror of `rowToEvent`: writes a server-origin row by its own id, never via `logEvent`
+ *  (which would mint a new id and mark it dirty again). */
+export async function upsertActivityEventFromServer(db: SQLiteDBConnection, row: ActivityEvent): Promise<void> {
+  await db.run(
+    `INSERT INTO activity_events
+      (id, workspace_id, entity_type, entity_id, action, from_group_id, to_group_id, field, new_value, created_at, dirty)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+     ON CONFLICT(id) DO UPDATE SET
+       workspace_id = excluded.workspace_id,
+       entity_type = excluded.entity_type,
+       entity_id = excluded.entity_id,
+       action = excluded.action,
+       from_group_id = excluded.from_group_id,
+       to_group_id = excluded.to_group_id,
+       field = excluded.field,
+       new_value = excluded.new_value,
+       created_at = excluded.created_at,
+       dirty = 0`,
+    [
+      row.id,
+      row.workspaceId,
+      row.entityType,
+      row.entityId,
+      row.action,
+      row.fromGroupId,
+      row.toGroupId,
+      row.field,
+      row.newValue,
+      row.createdAt,
+    ],
+  )
+}
+
+/** Clears `dirty` for rows pushed successfully, unless they changed again (same coalescing
+ *  row, new `created_at`) while the push was in flight — clock-free, by equality. */
+export async function clearActivityEventDirty(
+  db: SQLiteDBConnection,
+  pushed: { id: string; createdAt: number }[],
+): Promise<void> {
+  for (const { id, createdAt } of pushed) {
+    await db.run('UPDATE activity_events SET dirty = 0 WHERE id = ? AND created_at = ?', [id, createdAt])
+  }
+}
+
+/** Once the server has acknowledged a batch of locally-deleted ids, they no longer need
+ *  to be remembered for the next push. */
+export async function clearPushedEventDeletions(db: SQLiteDBConnection, ids: string[]): Promise<void> {
+  for (const id of ids) {
+    await db.run('DELETE FROM sync_deleted_events WHERE id = ?', [id])
   }
 }

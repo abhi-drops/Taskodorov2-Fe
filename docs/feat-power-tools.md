@@ -65,9 +65,18 @@ desktop wireframe — see `docs/style-guide.md`'s "Power Tools: row chips + desk
   authenticated, Log in/Sign up links otherwise (`useAuth()`, same auth system as
   `feat-auth.md`). Lives under the desktop sidebar's "Account & Sync" tab (mobile:
   still just the "Account" section, unchanged order).
-- **Sync with Google** — disabled placeholder chip. Distinct, unspecified feature from
-  Google Sign-In auth (unclear target product — Calendar/Tasks/Keep — and sync
-  direction), not the same thing as the working Google Sign-In in `feat-auth.md`.
+- **Sync With Google** (Phase 3) — a real feature now, `SyncChip` in `PowerToolsPage.tsx`.
+  Distinct from the Account row above it on purpose: sync is gated specifically on
+  having signed in via Google (`useAuth().authMethod === 'google'`), not on being
+  authenticated at all, so a user logged in with email/password still sees this chip
+  read "Off". Tapping it while not connected that way runs Google Sign-In right there
+  (`useGoogleSignIn(null)` — the `null` keeps the user on Settings instead of the
+  Login/Signup pages' usual redirect to `/`); tapping it once connected triggers a
+  manual sync. Status line covers not-synced/synced-`{time}`-ago/syncing/offline/
+  needs-a-strategy-choice/signed-out. See `CLAUDE.md`'s "Sync" section and
+  `docs/phase3-sync-plan-from-be.md` for the full design; `SyncStrategyDialog.tsx`
+  (rendered from `App.tsx`, not this page) is the first-sync "keep local vs. use
+  account" conflict prompt.
 - **Wipe All Notes** (Groups section, under Completed Group; 2026-10-05) — danger chip →
   `ConfirmDialog` → `wipeWorkspaceNotes` (`lib/db/notes.ts`). Soft-deletes every note in
   the **active workspace** in one write. The workspace, its groups and their settings

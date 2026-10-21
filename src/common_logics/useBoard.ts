@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useWorkspace } from '../lib/workspace/useWorkspace'
+import { useSync } from '../lib/sync/useSync'
 import { listGroups, reorderGroups as reorderGroupsInDb } from '../lib/db/groups'
 import { listNotesByWorkspace, reorderNotes } from '../lib/db/notes'
 import type { Group } from '../types/group'
@@ -32,6 +33,9 @@ let lastActiveGroupId: string | null = null
 
 export function useBoard() {
   const { activeWorkspaceId } = useWorkspace()
+  // A sync pull that wrote something re-runs the load effect below — `useBoard` has
+  // no refresh signal of its own otherwise (load-on-mount/workspace-change only).
+  const { appliedAt } = useSync()
   const [groups, setGroups] = useState<Group[]>([])
   const [notes, setNotes] = useState<Note[]>([])
   /** True once the first load has finished — gates page transitions into the board. */
@@ -74,7 +78,7 @@ export function useBoard() {
     return () => {
       cancelled = true
     }
-  }, [activeWorkspaceId])
+  }, [activeWorkspaceId, appliedAt])
 
   function notesForGroup(group: Group): Note[] {
     return sortNotes(

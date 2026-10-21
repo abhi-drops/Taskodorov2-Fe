@@ -3,6 +3,7 @@ import { DndContext, DragOverlay } from '@dnd-kit/core'
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
 import { AppShell } from '../components/AppShell'
 import { WorkspaceSwitcher } from '../components/WorkspaceSwitcher'
+import { SyncStatusBadge } from '../components/SyncStatusBadge'
 import { GroupColumn } from '../components/GroupColumn'
 import { BoardTabStrip } from '../components/BoardTabStrip'
 import { GroupDropTargets } from '../components/GroupDropTargets'
@@ -55,16 +56,22 @@ export default function HomePage() {
       <Icon src={searchIcon} alt="" size={20} className="transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110 group-active:scale-95 motion-reduce:transition-none" />
     </Link>
   )
+  const headerEnd = (
+    <div className="flex items-center gap-3">
+      <SyncStatusBadge />
+      {searchLink}
+    </div>
+  )
 
   return (
     <AppShell
       headerStart={!isMobile ? workspaceSwitcher : undefined}
-      headerEnd={!isMobile ? searchLink : undefined}
+      headerEnd={!isMobile ? headerEnd : undefined}
     >
       {isMobile && (
         <div className="flex items-center justify-between gap-4">
           {workspaceSwitcher}
-          {searchLink}
+          {headerEnd}
         </div>
       )}
 

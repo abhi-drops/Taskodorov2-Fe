@@ -4,6 +4,34 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-21 — Sync with Google (Phase 3)
+
+- Optional cross-device sync against `Taskodoro-Be`'s `POST /sync`, gated specifically
+  on having signed in **with Google** — logging in with email/password does not turn it
+  on. Settings' "Sync With Google" chip shows live status (not synced / synced X ago /
+  syncing / offline / needs a strategy choice / signed out) and doubles as the Google
+  Sign-In trigger when not yet connected. See `feat-sync.md` for the full design,
+  `docs/phase3-sync-plan-from-be.md` for the wire contract.
+- New local plumbing: a `dirty` column on every synced table (not a reused `updated_at`
+  — the sync cursor is opaque and a pulled row carries another device's clock), a
+  `sync_deleted_events` table for the Diary log's hard-deletes (it has no tombstone row
+  to carry a deletion), and `upsert*FromServer` writers alongside each table's existing
+  `rowTo*` converter.
+- First sync from a new device whose account already has data elsewhere prompts a
+  one-time "keep this device's data" vs. "use my account's data" choice
+  (`SyncStrategyDialog`), each requiring a second confirm step since both are
+  irreversible.
+- `AuthState` now tracks `authMethod` (`'password' | 'google'`), persisted alongside
+  the session — this is what the sync gate checks, and why email/password login still
+  leaves sync off (`feat-auth.md`).
+- `/auth/signup`/`/auth/login`/`/auth/google`/`/auth/me` now return `name` on `user`
+  (a backend change this frontend already handled, since `User.name` was already
+  optional) — no frontend change needed beyond fixing the now-stale doc claim that it
+  was never sent.
+- Not touched: the templates file format, `parseTemplateFile`, or anything a template
+  can hold — sync moves `templates` rows between devices but doesn't change the format
+  itself, so `src/lib/templates/aiGuide.md` needed no update.
+
 ## 2026-10-11 — Mobile UI on phone-sized web, with a notice every time
 
 - A web window under 640px wide now renders the mobile UI (bottom nav, tabbed board with

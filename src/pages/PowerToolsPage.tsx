@@ -1,13 +1,18 @@
 import { useEffect, useState } from 'react'
+import { formatDistanceToNow } from 'date-fns'
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google'
 import { Link, useSearchParams } from 'react-router'
 import { AppShell } from '../components/AppShell'
 import { PowerToolsDesktopLayout } from '../components/PowerToolsSidebar'
 import { CHIP, DANGER_CHIP } from '../components/SidebarPanelLayout'
 import { useAuth } from '../lib/auth/useAuth'
+import { useSync } from '../lib/sync/useSync'
+import { useGoogleSignIn } from '../common_logics/useGoogleSignIn'
 import { useWorkspace } from '../lib/workspace/useWorkspace'
 import { usePlatform } from '../lib/platform/usePlatform'
 import { AnimatedIcon } from '../components/ui/AnimatedIcon'
-import { CloseIcon, GroupIcon, SettingsIcon, TrashIcon } from '../components/ui/icons'
+import { CloseIcon, GroupIcon, SettingsIcon, SyncIcon, TrashIcon } from '../components/ui/icons'
+import { Spinner } from '../components/ui/Spinner'
 import { Button } from '../components/ui/Button'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { useGroupForm } from '../common_logics/useGroupForm'
@@ -19,6 +24,8 @@ import { wipeWorkspaceNotes } from '../lib/db/notes'
 import { getCompletedGroupId, setCompletedGroupId } from '../lib/db/workspaces'
 import { Select } from '../components/ui/Select'
 import { resetToDefault } from '../lib/db/reset'
+import { GOOGLE_CLIENT_ID_WEB } from '../lib/google/googleAuthWeb'
+import { FormError } from '../components/ui/FormError'
 import type { Group } from '../types/group'
 import type { AuthState } from '../lib/auth/authContext'
 
@@ -155,6 +162,108 @@ function GroupsSection({
   )
 }
 
+/**
+ * Sync is gated specifically on having signed in with Google — not on any
+ * authenticated session — which is why this chip is its own control, separate from
+ * the generic Account row above: a user logged in with email/password sees "Account"
+ * as authenticated but this chip still reads as off, and tapping it runs Google
+ * Sign-In right here rather than requiring a trip through the Account section.
+ */
+function SyncChip() {
+  const sync = useSync()
+  const { isReady, isSubmitting, error, handleNativeSignIn, handleWebCredential } = useGoogleSignIn(null)
+  const { isNative } = usePlatform()
+  const busy = sync.status === 'syncing' || isSubmitting
+
+  const connecting = sync.status === 'disabled'
+  const needsGoogleAuth = connecting || (sync.status === 'error' && sync.failure === 'unauthorized')
+
+  function detailFor(): string {
+    if (connecting) return isReady ? 'Sign in with Google to sync your board.' : 'Google Sign-In not configured yet.'
+    switch (sync.status) {
+      case 'syncing':
+        return 'Syncing…'
+      case 'needs-strategy':
+        return "This device hasn't synced yet. Pick what to keep."
+      case 'offline':
+        return 'Offline — your changes are saved here and will sync later.'
+      case 'error':
+        return sync.failure === 'unauthorized'
+          ? 'Your session expired. Sign in again to sync.'
+          : 'Last sync failed.'
+      case 'idle':
+        return sync.lastSyncedAt
+          ? `Synced ${formatDistanceToNow(sync.lastSyncedAt, { addSuffix: true })}.`
+          : 'Not synced yet.'
+      default:
+        return ''
+    }
+  }
+
+  function valueFor(): string {
+    if (connecting) return 'Off'
+    switch (sync.status) {
+      case 'needs-strategy':
+        return 'Choose'
+      case 'offline':
+        return 'Retry'
+      case 'error':
+        return sync.failure === 'unauthorized' ? 'Log In' : 'Retry'
+      default:
+        return 'Sync Now'
+    }
+  }
+
+  function handleClick() {
+    if (needsGoogleAuth) {
+      // Native: the chip itself drives the system account picker. Web: the real
+      // trigger is the GoogleLogin button rendered below — there's no programmatic
+      // equivalent of its One Tap/popup flow, so the chip is inert there and the
+      // button does the work.
+      if (isNative) handleNativeSignIn()
+      return
+    }
+    sync.syncNow()
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={busy || (needsGoogleAuth && (!isReady || !isNative))}
+        className={`${CHIP} w-full justify-between text-left disabled:cursor-not-allowed disabled:opacity-50`}
+      >
+        <span className="flex items-center gap-3">
+          <AnimatedIcon icon={SyncIcon} size={20} className="text-ink" />
+          <span className="flex flex-col">
+            <span className="font-medium text-ink">Sync With Google</span>
+            <span className="text-sm text-slate-600">{detailFor()}</span>
+          </span>
+        </span>
+        {busy ? (
+          <Spinner size={16} />
+        ) : (
+          <span className="shrink-0 font-display text-sm font-bold uppercase text-ink">{valueFor()}</span>
+        )}
+      </button>
+      {needsGoogleAuth && !isNative && isReady && (
+        // Google's hosted button renders its own UI — there's no programmatic
+        // equivalent of its One Tap/popup flow to trigger from our own chip, so this
+        // reveals the real button instead (same component `GoogleSignInButton` uses).
+        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID_WEB}>
+          <GoogleLogin
+            onSuccess={(credential) => {
+              if (credential.credential) handleWebCredential(credential.credential)
+            }}
+          />
+        </GoogleOAuthProvider>
+      )}
+      <FormError message={error} />
+    </div>
+  )
+}
+
 function AccountSection({
   auth,
   onResetRequest,
@@ -186,9 +295,7 @@ function AccountSection({
         </div>
       )}
 
-      <div className={`${CHIP} justify-center opacity-50`}>
-        <span className="font-medium text-ink">Sync With Google</span>
-      </div>
+      <SyncChip />
 
       <button type="button" onClick={onResetRequest} className={DANGER_CHIP}>
         Reset To Default

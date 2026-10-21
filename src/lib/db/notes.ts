@@ -9,6 +9,7 @@ import {
   type StatusEventValue,
   WIPE_MARKER,
 } from './eventLog'
+import { notifyLocalChange } from './localChange'
 import type { Note, NotePayload, NoteStatus, NoteType, Priority } from '../../types/note'
 
 /** The fields the Diary log tracks, read before a write so changes can be diffed. */
@@ -140,8 +141,8 @@ export function createNote(input: {
 
     await db.run(
       `INSERT INTO notes
-        (id, workspace_id, group_id, type, title, description, color, priority, position, completed, payload, statuses, created_at, updated_at, deleted_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, '[]', ?, ?, NULL)`,
+        (id, workspace_id, group_id, type, title, description, color, priority, position, completed, payload, statuses, created_at, updated_at, deleted_at, dirty)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, '[]', ?, ?, NULL, 1)`,
       [
         id,
         input.workspaceId,
@@ -168,6 +169,7 @@ export function createNote(input: {
       payload,
       createdAt: now,
     })
+    notifyLocalChange()
 
     return {
       id,
@@ -261,11 +263,12 @@ export function updateNote(
     const before = tracksChange ? await readTrackedFields(db, id) : null
 
     const now = Date.now()
-    setClauses.push('updated_at = ?')
+    setClauses.push('updated_at = ?', 'dirty = 1')
     params.push(now)
     params.push(id)
 
     await db.run(`UPDATE notes SET ${setClauses.join(', ')} WHERE id = ?`, params)
+    notifyLocalChange()
 
     if (before) {
       const base = { workspaceId: before.workspace_id, entityType: 'note' as const, entityId: id, createdAt: now }
@@ -315,7 +318,7 @@ export function deleteNote(id: string): Promise<void> {
   return withDb(async (db) => {
     const now = Date.now()
     const before = await readTrackedFields(db, id)
-    await db.run('UPDATE notes SET deleted_at = ?, updated_at = ? WHERE id = ?', [now, now, id])
+    await db.run('UPDATE notes SET deleted_at = ?, updated_at = ?, dirty = 1 WHERE id = ?', [now, now, id])
     if (before) {
       await logEvent(db, {
         workspaceId: before.workspace_id,
@@ -325,6 +328,7 @@ export function deleteNote(id: string): Promise<void> {
         createdAt: now,
       })
     }
+    notifyLocalChange()
   })
 }
 
@@ -345,7 +349,7 @@ export function wipeWorkspaceNotes(workspaceId: string): Promise<number> {
     if (ids.length === 0) return 0
 
     await db.run(
-      'UPDATE notes SET deleted_at = ?, updated_at = ? WHERE workspace_id = ? AND deleted_at IS NULL',
+      'UPDATE notes SET deleted_at = ?, updated_at = ?, dirty = 1 WHERE workspace_id = ? AND deleted_at IS NULL',
       [now, now, workspaceId],
     )
     for (const id of ids) {
@@ -358,6 +362,7 @@ export function wipeWorkspaceNotes(workspaceId: string): Promise<number> {
         createdAt: now,
       })
     }
+    notifyLocalChange()
     return ids.length
   })
 }
@@ -374,7 +379,7 @@ export function reorderNotes(updates: { id: string; groupId: string; position: n
       // Drag-and-drop between columns comes through here, not `updateNote`, so this is
       // where a dragged move gets logged for the Diary. Same-column reorders aren't logged.
       const before = await readTrackedFields(db, update.id)
-      await db.run('UPDATE notes SET group_id = ?, position = ?, updated_at = ? WHERE id = ?', [
+      await db.run('UPDATE notes SET group_id = ?, position = ?, updated_at = ?, dirty = 1 WHERE id = ?', [
         update.groupId,
         update.position,
         now,
@@ -392,5 +397,69 @@ export function reorderNotes(updates: { id: string; groupId: string; position: n
         })
       }
     }
+    notifyLocalChange()
   })
+}
+
+// --- Sync (Phase 3) ---
+
+export async function collectDirtyNotes(db: SQLiteDBConnection, limit: number): Promise<Note[]> {
+  const result = await db.query('SELECT * FROM notes WHERE dirty = 1 ORDER BY updated_at ASC LIMIT ?', [limit])
+  return ((result.values ?? []) as NoteRow[]).map(rowToNote)
+}
+
+/**
+ * Mirror of `rowToNote`: writes a server-origin row by its own id. `position` is taken
+ * verbatim from the server (never recomputed), and this must never call into
+ * `eventLog.ts` — the server already sent the real activity events for this change;
+ * synthesizing local ones would duplicate the Diary and push fabricated history back.
+ */
+export async function upsertNoteFromServer(db: SQLiteDBConnection, row: Note): Promise<void> {
+  await db.run(
+    `INSERT INTO notes
+      (id, workspace_id, group_id, type, title, description, color, priority, position, completed, payload, statuses, created_at, updated_at, deleted_at, dirty)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+     ON CONFLICT(id) DO UPDATE SET
+       workspace_id = excluded.workspace_id,
+       group_id = excluded.group_id,
+       type = excluded.type,
+       title = excluded.title,
+       description = excluded.description,
+       color = excluded.color,
+       priority = excluded.priority,
+       position = excluded.position,
+       completed = excluded.completed,
+       payload = excluded.payload,
+       statuses = excluded.statuses,
+       created_at = excluded.created_at,
+       updated_at = excluded.updated_at,
+       deleted_at = excluded.deleted_at,
+       dirty = 0`,
+    [
+      row.id,
+      row.workspaceId,
+      row.groupId,
+      row.type,
+      row.title,
+      row.description,
+      row.color,
+      row.priority,
+      row.position,
+      row.completed ? 1 : 0,
+      JSON.stringify(row.payload),
+      JSON.stringify(row.statuses),
+      row.createdAt,
+      row.updatedAt,
+      row.deletedAt,
+    ],
+  )
+}
+
+export async function clearNoteDirty(
+  db: SQLiteDBConnection,
+  pushed: { id: string; updatedAt: number }[],
+): Promise<void> {
+  for (const { id, updatedAt } of pushed) {
+    await db.run('UPDATE notes SET dirty = 0 WHERE id = ? AND updated_at = ?', [id, updatedAt])
+  }
 }

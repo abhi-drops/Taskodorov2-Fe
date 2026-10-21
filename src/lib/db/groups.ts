@@ -1,5 +1,7 @@
 import { withDb } from './sqlite'
 import { logEvent, logGroupCreated } from './eventLog'
+import { notifyLocalChange } from './localChange'
+import type { SQLiteDBConnection } from '@capacitor-community/sqlite'
 import type { Group, NoteColorMode, SortedBy } from '../../types/group'
 
 interface GroupRow {
@@ -79,11 +81,12 @@ export function createGroup(input: { workspaceId: string; name: string }): Promi
 
     await db.run(
       `INSERT INTO groups
-        (id, workspace_id, name, position, sorted_by, note_color_mode, on_check_move_to_group_id, created_at, updated_at, deleted_at)
-       VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, NULL)`,
+        (id, workspace_id, name, position, sorted_by, note_color_mode, on_check_move_to_group_id, created_at, updated_at, deleted_at, dirty)
+       VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, NULL, 1)`,
       [id, input.workspaceId, input.name, position, sortedBy, noteColorMode, now, now],
     )
     await logGroupCreated(db, { id, workspaceId: input.workspaceId, createdAt: now })
+    notifyLocalChange()
 
     return {
       id,
@@ -130,11 +133,12 @@ export function updateGroup(
     }
     if (setClauses.length === 0) return
 
-    setClauses.push('updated_at = ?')
+    setClauses.push('updated_at = ?', 'dirty = 1')
     params.push(Date.now())
     params.push(id)
 
     await db.run(`UPDATE groups SET ${setClauses.join(', ')} WHERE id = ?`, params)
+    notifyLocalChange()
   })
 }
 
@@ -143,8 +147,13 @@ export function reorderGroups(updates: { id: string; position: number }[]): Prom
   return withDb(async (db) => {
     const now = Date.now()
     for (const update of updates) {
-      await db.run('UPDATE groups SET position = ?, updated_at = ? WHERE id = ?', [update.position, now, update.id])
+      await db.run('UPDATE groups SET position = ?, updated_at = ?, dirty = 1 WHERE id = ?', [
+        update.position,
+        now,
+        update.id,
+      ])
     }
+    notifyLocalChange()
   })
 }
 
@@ -160,9 +169,9 @@ export function deleteGroup(id: string): Promise<void> {
     const liveNotes = ((await db.query('SELECT id FROM notes WHERE group_id = ? AND deleted_at IS NULL', [id]))
       .values ?? []) as { id: string }[]
 
-    await db.run('UPDATE groups SET deleted_at = ?, updated_at = ? WHERE id = ?', [now, now, id])
+    await db.run('UPDATE groups SET deleted_at = ?, updated_at = ?, dirty = 1 WHERE id = ?', [now, now, id])
     await db.run(
-      'UPDATE notes SET deleted_at = ?, updated_at = ? WHERE group_id = ? AND deleted_at IS NULL',
+      'UPDATE notes SET deleted_at = ?, updated_at = ?, dirty = 1 WHERE group_id = ? AND deleted_at IS NULL',
       [now, now, id],
     )
 
@@ -173,5 +182,56 @@ export function deleteGroup(id: string): Promise<void> {
       }
       await logEvent(db, { workspaceId, entityType: 'group', entityId: id, action: 'deleted', createdAt: now })
     }
+    notifyLocalChange()
   })
+}
+
+// --- Sync (Phase 3) ---
+
+export async function collectDirtyGroups(db: SQLiteDBConnection, limit: number): Promise<Group[]> {
+  const result = await db.query('SELECT * FROM groups WHERE dirty = 1 ORDER BY updated_at ASC LIMIT ?', [limit])
+  return ((result.values ?? []) as GroupRow[]).map(rowToGroup)
+}
+
+/** Mirror of `rowToGroup`: writes a server-origin row by its own id, `position` verbatim. */
+export async function upsertGroupFromServer(db: SQLiteDBConnection, row: Group): Promise<void> {
+  await db.run(
+    `INSERT INTO groups
+      (id, workspace_id, name, position, sorted_by, note_color_mode, on_check_move_to_group_id, reset_on_move, created_at, updated_at, deleted_at, dirty)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+     ON CONFLICT(id) DO UPDATE SET
+       workspace_id = excluded.workspace_id,
+       name = excluded.name,
+       position = excluded.position,
+       sorted_by = excluded.sorted_by,
+       note_color_mode = excluded.note_color_mode,
+       on_check_move_to_group_id = excluded.on_check_move_to_group_id,
+       reset_on_move = excluded.reset_on_move,
+       created_at = excluded.created_at,
+       updated_at = excluded.updated_at,
+       deleted_at = excluded.deleted_at,
+       dirty = 0`,
+    [
+      row.id,
+      row.workspaceId,
+      row.name,
+      row.position,
+      row.sortedBy,
+      row.noteColorMode,
+      row.onCheckMoveToGroupId,
+      row.resetOnMove ? 1 : 0,
+      row.createdAt,
+      row.updatedAt,
+      row.deletedAt,
+    ],
+  )
+}
+
+export async function clearGroupDirty(
+  db: SQLiteDBConnection,
+  pushed: { id: string; updatedAt: number }[],
+): Promise<void> {
+  for (const { id, updatedAt } of pushed) {
+    await db.run('UPDATE groups SET dirty = 0 WHERE id = ? AND updated_at = ?', [id, updatedAt])
+  }
 }

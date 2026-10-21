@@ -8,6 +8,7 @@ import { CapacitorSQLite, SQLiteConnection } from '@capacitor-community/sqlite'
 import type { SQLiteDBConnection } from '@capacitor-community/sqlite'
 import {
   ACTIVITY_EVENTS_SQL,
+  SYNC_DELETED_EVENTS_SQL,
   backfillEventsIfEmpty,
   backfillTrackedStateIfMissing,
 } from './eventLog'
@@ -143,12 +144,21 @@ async function migrateSchema(db: SQLiteDBConnection): Promise<void> {
     'completed_group_id',
     'ALTER TABLE workspaces ADD COLUMN completed_group_id TEXT',
   )
+  // Sync (Phase 3): rows changed locally since the last successful push. A column
+  // rather than reusing updated_at, because the sync cursor is opaque (no local clock
+  // to compare against) and a pulled row carries another device's clock — an
+  // updated_at-based watermark would strand rows after a clock jump or re-push
+  // just-pulled rows forever. Cleared (set to 0) only by a successful push/apply.
+  for (const table of ['workspaces', 'groups', 'notes', 'templates', 'activity_events']) {
+    await ensureColumn(db, table, 'dirty', `ALTER TABLE ${table} ADD COLUMN dirty INTEGER NOT NULL DEFAULT 0`)
+  }
 }
 
 async function initDb(): Promise<SQLiteDBConnection> {
   const db = await openConnection()
   await db.execute(SCHEMA_SQL)
   await db.execute(ACTIVITY_EVENTS_SQL)
+  await db.execute(SYNC_DELETED_EVENTS_SQL)
   await db.execute(TEMPLATES_SQL)
   await migrateSchema(db)
   await seedBuiltinTemplates(db)

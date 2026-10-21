@@ -1,8 +1,10 @@
 # Feature: Offline Data Layer (SQLite)
 
 The local, on-device persistence layer for Workspace/Group/Note — the foundation
-everything else in Phase 2 sits on. No network, no backend involvement; this is a
-guest-first app where all data lives only on the device until Phase 3 adds sync.
+everything else in Phase 2 sits on. No network, no backend involvement for any of the
+CRUD in this file; this stays a guest-first app where all data lives only on the device
+regardless of whether sync (Phase 3, optional, account-gated — see `CLAUDE.md`'s "Sync"
+section) is ever turned on.
 
 ## Storage engine
 
@@ -108,10 +110,32 @@ plain `SELECT *`.
   - Settings' "Reset to Default" empties this table and re-seeds the built-ins.
   - See `feat-templates.md`.
 
-`lastSyncedAt` — deliberately **not implemented**, despite an early planning doc
-listing it as a "scaffold to add." It's specified as a single app-level timestamp (not
-a per-row column) for Phase 3 sync diffing; there's nothing to build yet, and adding an
-unused storage slot now would be dead code with no reader.
+- **`dirty`** (Phase 3, on all 5 tables above): `INTEGER NOT NULL DEFAULT 0`, set on
+  every write, cleared only once a push has been acknowledged by the server. A column,
+  not a reused `updated_at` watermark — the sync cursor is opaque (never compared to a
+  local clock) and a pulled row carries *another* device's clock, so a clock-based
+  watermark would either strand rows after a clock jump or re-push just-pulled rows
+  forever. Added via the same `ensureColumn`/`migrateSchema()` idempotent pattern as
+  `reset_on_move`/`completed_group_id` above.
+- **`sync_deleted_events`** (Phase 3, new table): `{id, deleted_at}`. `activity_events`
+  hard-deletes (see below) rather than tombstoning, so a locally-deleted event's id has
+  nowhere to live until the next push reports it — parked here, removed once the server
+  acknowledges it (`lib/db/eventLog.ts`'s `deleteActivityEvent`/`clearPushedEventDeletions`).
+
+`lastSyncedAt`-equivalent: implemented as an opaque server-issued **cursor** (not a
+timestamp — never compared to a local clock or recomputed), one per account, stored in
+Preferences (`taskodoro.sync.state`, `lib/storage/preferences.ts`'s `SyncState`) rather
+than in SQLite — it's a device-level sync pointer, not domain data. See `CLAUDE.md`'s
+"Sync" section and `docs/phase3-sync-plan-from-be.md`.
+
+**Writing a server-pushed row (Phase 3)**: each table's `lib/db/*.ts` file has an
+`upsert*FromServer(db, row)` next to its `rowTo*` converter — a mirror-image writer, not
+a reuse of `create*`. Two things it must get right that `create*` doesn't need to:
+`position` is written **verbatim** from the server, never recomputed via `create*`'s
+`SELECT COUNT(*)` scheme (which would renumber every pulled row), and the row's own id
+is used directly rather than minting a fresh `crypto.randomUUID()`. These functions
+take a raw `SQLiteDBConnection` and must be called from inside one outer `withDb`
+(never nested), the same rule `instantiateTemplate` already follows below.
 
 ## CRUD surface (`src/lib/db/{workspaces,groups,notes}.ts`)
 
@@ -123,6 +147,12 @@ soft-deletes the workspace, then its groups, then all notes in those groups;
 soft deletes: it really deletes every row of every table (including `activity_events`
 and `templates`), clears Preferences and browser storage, then re-runs the seeds. See
 `feat-power-tools.md`.
+
+Its hard-delete half is split out as `wipeSyncedData(db)` (Phase 3): same tables,
+minus built-in templates, and it leaves Preferences/the auth session alone. Takes the
+raw connection so a caller can run it in the same `withDb` as whatever replaces the
+data next — used by sync's `use_account` first-sync strategy, which must *not* go
+through the full `resetToDefault()` (that would also clear the session mid-sync).
 
 ## Verified on a real Android device (not just browser/emulator)
 

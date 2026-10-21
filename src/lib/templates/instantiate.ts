@@ -39,7 +39,7 @@ export async function instantiateTemplate(
   const position = (values?.[0] as { count: number } | undefined)?.count ?? 0
 
   await db.run(
-    'INSERT INTO workspaces (id, name, position, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, NULL)',
+    'INSERT INTO workspaces (id, name, position, created_at, updated_at, deleted_at, dirty) VALUES (?, ?, ?, ?, ?, NULL, 1)',
     [workspaceId, workspaceName, position, now, now],
   )
 
@@ -52,8 +52,8 @@ export async function instantiateTemplate(
     const moveTo = group.onCheckMoveToKey ? (groupIds.get(group.onCheckMoveToKey) ?? null) : null
     await db.run(
       `INSERT INTO groups
-        (id, workspace_id, name, position, sorted_by, note_color_mode, on_check_move_to_group_id, reset_on_move, created_at, updated_at, deleted_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)`,
+        (id, workspace_id, name, position, sorted_by, note_color_mode, on_check_move_to_group_id, reset_on_move, created_at, updated_at, deleted_at, dirty)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, 1)`,
       [groupId, workspaceId, group.name, i, group.sortedBy, group.noteColorMode, moveTo, group.resetOnMove ? 1 : 0, now, now],
     )
     await logGroupCreated(db, { id: groupId, workspaceId, createdAt: now })
@@ -62,7 +62,7 @@ export async function instantiateTemplate(
   // `migrateSchema()` has already added the column by the time any template is used.
   const completedGroupId = content.completedGroupKey ? (groupIds.get(content.completedGroupKey) ?? null) : null
   if (completedGroupId) {
-    await db.run('UPDATE workspaces SET completed_group_id = ? WHERE id = ?', [completedGroupId, workspaceId])
+    await db.run('UPDATE workspaces SET completed_group_id = ?, dirty = 1 WHERE id = ?', [completedGroupId, workspaceId])
   }
 
   for (const group of content.groups) {
@@ -73,8 +73,8 @@ export async function instantiateTemplate(
       const payload = templateNotePayload(note)
       await db.run(
         `INSERT INTO notes
-          (id, workspace_id, group_id, type, title, description, color, priority, position, completed, payload, created_at, updated_at, deleted_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, NULL)`,
+          (id, workspace_id, group_id, type, title, description, color, priority, position, completed, payload, created_at, updated_at, deleted_at, dirty)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, NULL, 1)`,
         [
           noteId,
           workspaceId,

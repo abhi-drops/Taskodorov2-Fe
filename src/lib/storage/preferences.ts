@@ -21,6 +21,28 @@ export async function clearAuth(): Promise<void> {
   await Preferences.remove({ key: USER_KEY })
 }
 
+const AUTH_METHOD_KEY = 'taskodoro.auth.method'
+
+/**
+ * How the current session signed in. Sync (Phase 3) is gated specifically on
+ * `'google'` — logging in with email/password does not turn sync on — so this has to
+ * be remembered across app restarts the same way the token/user are.
+ */
+export type AuthMethod = 'password' | 'google'
+
+export async function saveAuthMethod(method: AuthMethod): Promise<void> {
+  await Preferences.set({ key: AUTH_METHOD_KEY, value: method })
+}
+
+export async function loadAuthMethod(): Promise<AuthMethod | null> {
+  const { value } = await Preferences.get({ key: AUTH_METHOD_KEY })
+  return value === 'password' || value === 'google' ? value : null
+}
+
+export async function clearAuthMethod(): Promise<void> {
+  await Preferences.remove({ key: AUTH_METHOD_KEY })
+}
+
 const ACTIVE_WORKSPACE_ID_KEY = 'taskodoro.workspace.activeId'
 
 export async function saveActiveWorkspaceId(id: string): Promise<void> {
@@ -68,4 +90,37 @@ export async function loadAddButtonPosition(): Promise<AddButtonPosition> {
 
 export async function saveAddButtonPosition(position: AddButtonPosition): Promise<void> {
   await Preferences.set({ key: ADD_BUTTON_POSITION_KEY, value: position })
+}
+
+const SYNC_STATE_KEY = 'taskodoro.sync.state'
+
+/**
+ * The opaque cursor from the last successful sync, which account it belongs to, and
+ * when it happened. Account-scoped (not cleared on logout): `loadSyncState` returns
+ * `null` when the stored `accountId` doesn't match the one asked for, which is what
+ * makes a *different* account's first sync on this device correctly hit `cursor:
+ * null`, while the *same* account logging out and back in resumes incrementally
+ * instead of re-triggering the first-sync "keep local vs use account" prompt every
+ * time (docs/phase3-sync-plan-from-be.md §4) — a mis-tap on that prompt is
+ * unrecoverable, so avoiding spurious re-prompts matters.
+ */
+export interface SyncState {
+  accountId: string
+  cursor: number
+  lastSyncedAt: number
+}
+
+export async function saveSyncState(state: SyncState): Promise<void> {
+  await Preferences.set({ key: SYNC_STATE_KEY, value: JSON.stringify(state) })
+}
+
+export async function loadSyncState(accountId: string): Promise<SyncState | null> {
+  const { value } = await Preferences.get({ key: SYNC_STATE_KEY })
+  if (!value) return null
+  const state = JSON.parse(value) as SyncState
+  return state.accountId === accountId ? state : null
+}
+
+export async function clearSyncState(): Promise<void> {
+  await Preferences.remove({ key: SYNC_STATE_KEY })
 }

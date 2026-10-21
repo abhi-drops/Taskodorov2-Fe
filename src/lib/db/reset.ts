@@ -1,6 +1,25 @@
 import { Preferences } from '@capacitor/preferences'
 import { withDb, seedIfEmpty } from './sqlite'
 import { seedBuiltinTemplates } from '../templates/seedBuiltins'
+import type { SQLiteDBConnection } from '@capacitor-community/sqlite'
+
+/**
+ * Hard-deletes every table sync can touch, leaving Preferences, the auth session and
+ * the built-in templates untouched. Takes the raw connection so a caller can run it in
+ * the same `withDb` call as whatever replaces the data next — there is never a moment
+ * on disk where the database is empty. Used by `resetToDefault` below, and by the
+ * `use_account` first-sync strategy (`docs/phase3-sync-plan-from-be.md` §4), which must
+ * NOT use the full reset: that would also clear the session mid-sync.
+ */
+export async function wipeSyncedData(db: SQLiteDBConnection): Promise<void> {
+  for (const table of ['notes', 'groups', 'workspaces', 'activity_events', 'sync_deleted_events']) {
+    await db.run(`DELETE FROM ${table}`)
+  }
+  // Built-ins never sync, so the server will never send them back — deleting them here
+  // would leave the Templates app empty until the next launch re-seeds them under new
+  // ids. Only the user's own templates are in scope for a sync-driven wipe.
+  await db.run('DELETE FROM templates WHERE builtin_id IS NULL')
+}
 
 /**
  * Settings' "Reset To Default": puts the app back to how a fresh install looks. It
@@ -16,9 +35,8 @@ import { seedBuiltinTemplates } from '../templates/seedBuiltins'
  */
 export async function resetToDefault(): Promise<void> {
   await withDb(async (db) => {
-    for (const table of ['notes', 'groups', 'workspaces', 'activity_events', 'templates']) {
-      await db.run(`DELETE FROM ${table}`)
-    }
+    await wipeSyncedData(db)
+    await db.run('DELETE FROM templates')
     await seedBuiltinTemplates(db)
     await seedIfEmpty(db)
   })

@@ -1,6 +1,7 @@
 import type { SQLiteDBConnection } from '@capacitor-community/sqlite'
 import { withDb } from './sqlite'
 import { BUILTIN_TEMPLATES } from '../templates/builtins'
+import { notifyLocalChange } from './localChange'
 import type { Template, TemplateContent } from '../../types/template'
 
 interface TemplateRow {
@@ -63,9 +64,10 @@ async function insertTemplate(db: SQLiteDBConnection, name: string, content: Tem
   const now = Date.now()
   const finalName = await uniqueName(db, name)
   await db.run(
-    'INSERT INTO templates (id, name, builtin_id, position, content, created_at, updated_at, deleted_at) VALUES (?, ?, NULL, ?, ?, ?, ?, NULL)',
+    'INSERT INTO templates (id, name, builtin_id, position, content, created_at, updated_at, deleted_at, dirty) VALUES (?, ?, NULL, ?, ?, ?, ?, NULL, 1)',
     [id, finalName, position, JSON.stringify(content), now, now],
   )
+  notifyLocalChange()
   return { id, name: finalName, builtinId: null, position, content, createdAt: now, updatedAt: now, deletedAt: null }
 }
 
@@ -96,9 +98,10 @@ export function updateTemplate(id: string, patch: { name?: string; content?: Tem
       params.push(JSON.stringify(patch.content))
     }
     if (sets.length === 0) return
-    sets.push('updated_at = ?')
+    sets.push('updated_at = ?', 'dirty = 1')
     params.push(Date.now(), id)
     await db.run(`UPDATE templates SET ${sets.join(', ')} WHERE id = ?`, params)
+    notifyLocalChange()
   })
 }
 
@@ -106,11 +109,11 @@ export function updateTemplate(id: string, patch: { name?: string; content?: Tem
 export function deleteTemplate(id: string): Promise<void> {
   return withDb(async (db) => {
     const now = Date.now()
-    await db.run('UPDATE templates SET deleted_at = ?, updated_at = ? WHERE id = ? AND builtin_id IS NULL', [
-      now,
-      now,
-      id,
-    ])
+    await db.run(
+      'UPDATE templates SET deleted_at = ?, updated_at = ?, dirty = 1 WHERE id = ? AND builtin_id IS NULL',
+      [now, now, id],
+    )
+    notifyLocalChange()
   })
 }
 
@@ -131,4 +134,48 @@ export function resetBuiltinTemplate(id: string): Promise<Template | null> {
     ])
     return rowToTemplate({ ...row, name: builtin.name, content, updated_at: now })
   })
+}
+
+// --- Sync (Phase 3): built-ins never sync, so every query/write here is scoped to
+// `builtin_id IS NULL` at the SQL level, not with a later .filter() a call site could
+// forget. ---
+
+export async function collectDirtyTemplates(db: SQLiteDBConnection, limit: number): Promise<Template[]> {
+  const result = await db.query(
+    'SELECT * FROM templates WHERE dirty = 1 AND builtin_id IS NULL ORDER BY updated_at ASC LIMIT ?',
+    [limit],
+  )
+  return ((result.values ?? []) as TemplateRow[]).map(rowToTemplate)
+}
+
+/**
+ * Mirror of `rowToTemplate`: writes a server-origin row by its own id, always as a user
+ * template (`builtin_id = NULL`, defence-in-depth — the server never sends built-ins).
+ * Deliberately never calls `uniqueName()`: a pulled template can collide in name with a
+ * local one, and renaming it locally would mark it dirty and push a divergent name back,
+ * ping-ponging forever. A duplicate name is an accepted, harmless outcome.
+ */
+export async function upsertTemplateFromServer(db: SQLiteDBConnection, row: Template): Promise<void> {
+  await db.run(
+    `INSERT INTO templates (id, name, builtin_id, position, content, created_at, updated_at, deleted_at, dirty)
+     VALUES (?, ?, NULL, ?, ?, ?, ?, ?, 0)
+     ON CONFLICT(id) DO UPDATE SET
+       name = excluded.name,
+       position = excluded.position,
+       content = excluded.content,
+       created_at = excluded.created_at,
+       updated_at = excluded.updated_at,
+       deleted_at = excluded.deleted_at,
+       dirty = 0`,
+    [row.id, row.name, row.position, JSON.stringify(row.content), row.createdAt, row.updatedAt, row.deletedAt],
+  )
+}
+
+export async function clearTemplateDirty(
+  db: SQLiteDBConnection,
+  pushed: { id: string; updatedAt: number }[],
+): Promise<void> {
+  for (const { id, updatedAt } of pushed) {
+    await db.run('UPDATE templates SET dirty = 0 WHERE id = ? AND updated_at = ?', [id, updatedAt])
+  }
 }

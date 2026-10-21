@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { authApi } from '../api/auth'
-import { saveAuth, loadAuth, clearAuth } from '../storage/preferences'
+import {
+  saveAuth,
+  loadAuth,
+  clearAuth,
+  saveAuthMethod,
+  loadAuthMethod,
+  clearAuthMethod,
+} from '../storage/preferences'
 import { AuthContext } from './authContext'
 import type { AuthState } from './authContext'
 
@@ -10,14 +17,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user: null,
     token: null,
     status: 'hydrating',
+    authMethod: null,
     error: null,
   })
 
   useEffect(() => {
-    loadAuth().then((persisted) => {
+    Promise.all([loadAuth(), loadAuthMethod()]).then(([persisted, authMethod]) => {
       setState((s) => ({
         ...s,
         ...(persisted ?? {}),
+        authMethod: persisted ? authMethod : null,
         status: persisted ? 'authenticated' : 'unauthenticated',
       }))
     })
@@ -28,7 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { token, user } = await authApi.login({ email, password })
       await saveAuth(token, user)
-      setState({ token, user, status: 'authenticated', error: null })
+      await saveAuthMethod('password')
+      setState({ token, user, status: 'authenticated', authMethod: 'password', error: null })
     } catch (e) {
       setState((s) => ({ ...s, error: (e as Error).message }))
       throw e
@@ -40,7 +50,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { token, user } = await authApi.signup({ email, password, name })
       await saveAuth(token, user)
-      setState({ token, user, status: 'authenticated', error: null })
+      await saveAuthMethod('password')
+      setState({ token, user, status: 'authenticated', authMethod: 'password', error: null })
     } catch (e) {
       setState((s) => ({ ...s, error: (e as Error).message }))
       throw e
@@ -52,7 +63,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { token, user } = await authApi.google({ idToken })
       await saveAuth(token, user)
-      setState({ token, user, status: 'authenticated', error: null })
+      await saveAuthMethod('google')
+      setState({ token, user, status: 'authenticated', authMethod: 'google', error: null })
     } catch (e) {
       setState((s) => ({ ...s, error: (e as Error).message }))
       throw e
@@ -61,7 +73,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function logout() {
     await clearAuth()
-    setState({ user: null, token: null, status: 'unauthenticated', error: null })
+    await clearAuthMethod()
+    setState({ user: null, token: null, status: 'unauthenticated', authMethod: null, error: null })
   }
 
   return (

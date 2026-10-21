@@ -22,6 +22,7 @@ async function request<T>(
     const err = new ApiError(body.message ?? `Request failed (${res.status})`)
     err.status = res.status
     err.code = body.code
+    err.body = body
     throw err
   }
 

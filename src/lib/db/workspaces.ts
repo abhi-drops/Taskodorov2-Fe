@@ -1,5 +1,7 @@
 import { withDb } from './sqlite'
 import { instantiateTemplate } from '../templates/instantiate'
+import { notifyLocalChange } from './localChange'
+import type { SQLiteDBConnection } from '@capacitor-community/sqlite'
 import type { Workspace } from '../../types/workspace'
 import type { TemplateContent } from '../../types/template'
 
@@ -7,6 +9,7 @@ interface WorkspaceRow {
   id: string
   name: string
   position: number
+  completed_group_id: string | null
   created_at: number
   updated_at: number
   deleted_at: number | null
@@ -17,6 +20,7 @@ function rowToWorkspace(row: WorkspaceRow): Workspace {
     id: row.id,
     name: row.name,
     position: row.position,
+    completedGroupId: row.completed_group_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     deletedAt: row.deleted_at,
@@ -42,11 +46,12 @@ export function createWorkspace(input: { name: string }): Promise<Workspace> {
     const id = crypto.randomUUID()
     const now = Date.now()
     await db.run(
-      'INSERT INTO workspaces (id, name, position, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, NULL)',
+      'INSERT INTO workspaces (id, name, position, created_at, updated_at, deleted_at, dirty) VALUES (?, ?, ?, ?, ?, NULL, 1)',
       [id, input.name, position, now, now],
     )
+    notifyLocalChange()
 
-    return { id, name: input.name, position, createdAt: now, updatedAt: now, deletedAt: null }
+    return { id, name: input.name, position, completedGroupId: null, createdAt: now, updatedAt: now, deletedAt: null }
   })
 }
 
@@ -61,7 +66,9 @@ export function createWorkspaceFromTemplate(input: { name: string; templateId: s
     ])
     const row = values?.[0] as { content: string } | undefined
     if (!row) return null
-    return instantiateTemplate(db, JSON.parse(row.content) as TemplateContent, input.name)
+    const workspaceId = await instantiateTemplate(db, JSON.parse(row.content) as TemplateContent, input.name)
+    notifyLocalChange()
+    return workspaceId
   })
 }
 
@@ -80,17 +87,19 @@ export function getCompletedGroupId(workspaceId: string): Promise<string | null>
 
 export function setCompletedGroupId(workspaceId: string, groupId: string | null): Promise<void> {
   return withDb(async (db) => {
-    await db.run('UPDATE workspaces SET completed_group_id = ?, updated_at = ? WHERE id = ?', [
+    await db.run('UPDATE workspaces SET completed_group_id = ?, updated_at = ?, dirty = 1 WHERE id = ?', [
       groupId,
       Date.now(),
       workspaceId,
     ])
+    notifyLocalChange()
   })
 }
 
 export function renameWorkspace(id: string, name: string): Promise<void> {
   return withDb(async (db) => {
-    await db.run('UPDATE workspaces SET name = ?, updated_at = ? WHERE id = ?', [name, Date.now(), id])
+    await db.run('UPDATE workspaces SET name = ?, updated_at = ?, dirty = 1 WHERE id = ?', [name, Date.now(), id])
+    notifyLocalChange()
   })
 }
 
@@ -98,7 +107,7 @@ export function deleteWorkspace(id: string): Promise<void> {
   return withDb(async (db) => {
     const now = Date.now()
 
-    await db.run('UPDATE workspaces SET deleted_at = ?, updated_at = ? WHERE id = ?', [now, now, id])
+    await db.run('UPDATE workspaces SET deleted_at = ?, updated_at = ?, dirty = 1 WHERE id = ?', [now, now, id])
 
     const { values } = await db.query(
       'SELECT id FROM groups WHERE workspace_id = ? AND deleted_at IS NULL',
@@ -107,15 +116,56 @@ export function deleteWorkspace(id: string): Promise<void> {
     const groupIds = ((values ?? []) as { id: string }[]).map((row) => row.id)
 
     await db.run(
-      'UPDATE groups SET deleted_at = ?, updated_at = ? WHERE workspace_id = ? AND deleted_at IS NULL',
+      'UPDATE groups SET deleted_at = ?, updated_at = ?, dirty = 1 WHERE workspace_id = ? AND deleted_at IS NULL',
       [now, now, id],
     )
 
     for (const groupId of groupIds) {
       await db.run(
-        'UPDATE notes SET deleted_at = ?, updated_at = ? WHERE group_id = ? AND deleted_at IS NULL',
+        'UPDATE notes SET deleted_at = ?, updated_at = ?, dirty = 1 WHERE group_id = ? AND deleted_at IS NULL',
         [now, now, groupId],
       )
     }
+    notifyLocalChange()
   })
+}
+
+// --- Sync (Phase 3) ---
+
+/** Rows changed locally since the last successful push. */
+export async function collectDirtyWorkspaces(db: SQLiteDBConnection, limit: number): Promise<Workspace[]> {
+  const result = await db.query('SELECT * FROM workspaces WHERE dirty = 1 ORDER BY updated_at ASC LIMIT ?', [limit])
+  return ((result.values ?? []) as WorkspaceRow[]).map(rowToWorkspace)
+}
+
+/**
+ * Mirror of `rowToWorkspace`: writes a server-origin row by its own id. `position` is
+ * taken verbatim from the server — never recomputed via the `SELECT COUNT(*)` scheme
+ * `createWorkspace` uses, which would renumber every pulled row.
+ */
+export async function upsertWorkspaceFromServer(db: SQLiteDBConnection, row: Workspace): Promise<void> {
+  await db.run(
+    `INSERT INTO workspaces (id, name, position, completed_group_id, created_at, updated_at, deleted_at, dirty)
+     VALUES (?, ?, ?, ?, ?, ?, ?, 0)
+     ON CONFLICT(id) DO UPDATE SET
+       name = excluded.name,
+       position = excluded.position,
+       completed_group_id = excluded.completed_group_id,
+       created_at = excluded.created_at,
+       updated_at = excluded.updated_at,
+       deleted_at = excluded.deleted_at,
+       dirty = 0`,
+    [row.id, row.name, row.position, row.completedGroupId, row.createdAt, row.updatedAt, row.deletedAt],
+  )
+}
+
+/** Clears `dirty` for rows pushed successfully, unless edited again meanwhile (same row,
+ *  new `updated_at`) — clock-free, by equality rather than comparison. */
+export async function clearWorkspaceDirty(
+  db: SQLiteDBConnection,
+  pushed: { id: string; updatedAt: number }[],
+): Promise<void> {
+  for (const { id, updatedAt } of pushed) {
+    await db.run('UPDATE workspaces SET dirty = 0 WHERE id = ? AND updated_at = ?', [id, updatedAt])
+  }
 }
