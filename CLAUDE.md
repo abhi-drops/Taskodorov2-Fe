@@ -10,22 +10,47 @@ Taskodoro frontend: a React 19 + Vite + TypeScript app wrapped with Capacitor to
 
 ```bash
 npm run dev              # Vite dev server (web)
-npm run build             # tsc -b && vite build — type-check then bundle
+npm run build             # tsc -b && vite build — type-check then bundle, PRODUCTION backend
+npm run build:local       # tsc -b && vite build --mode development — same bundle, LOCAL backend
 npm run lint               # eslint .
-npm run preview            # serve the production build locally
-npm run android            # build + cap sync + adb reverse tcp:8787 + install & launch on connected device/emulator
+npm run preview            # serve the last build's dist/ locally, whichever backend it was built against
+npm run android            # build:local + cap sync + adb reverse tcp:8787 + install & launch — points at YOUR LOCAL backend
+npm run android:prod       # build + cap sync + install & launch (no adb reverse) — points at the DEPLOYED backend
 ```
 
 There is no test runner configured in this repo.
 
-Android builds require `java` (JDK 21+ — the Capacitor Android core library needs Java source release 21, not 17) and `adb`/Android SDK tools on `PATH`, plus `ANDROID_HOME`/`ANDROID_SDK_ROOT` set. `npm run android` assumes these are already available in the shell.
+Android builds require `java` (JDK 21+ — the Capacitor Android core library needs Java source release 21, not 17) and `adb`/Android SDK tools on `PATH`, plus `ANDROID_HOME`/`ANDROID_SDK_ROOT` set. Both `npm run android` and `npm run android:prod` assume these are already available in the shell.
 
 ## Environment
 
 Copy `.env.example` to `.env.local` (gitignored) and fill in:
-- `VITE_API_BASE_URL` — backend base URL (defaults to `http://localhost:8787` in code if unset)
+- `VITE_API_BASE_URL` — backend base URL (defaults to `http://localhost:8787` in code if unset). Read by `npm run dev` and `npm run build:local`/`npm run android` (both force Vite's `development` mode specifically so `.env.production` is skipped) — see **Production backend** below for the other build path.
 - `VITE_GOOGLE_CLIENT_ID_WEB` — Google OAuth **Web** client ID. Leave blank to keep Google Sign-In visibly present but disabled (no crash) on both platforms — see `isGoogleWebConfigured`/`isGoogleNativeConfigured`.
 - `VITE_GOOGLE_CLIENT_ID_ANDROID` — documentation only, not read by any code path. The Android OAuth client only needs to exist in Google Cloud Console (matched by package name `com.taskodoro.app` + debug signing SHA-1, get via `cd android && ./gradlew signingReport`); its ID value is never used at runtime. See `GOOGLE_SIGNIN_TESTING.md` for full Google Cloud Console setup and the debug-SHA-1 registration flow.
+
+### Production backend
+
+**Two separate build paths, picked by which Vite mode runs** — not by anything the app
+reads at runtime (nothing in `src/` touches `import.meta.env.DEV`/`PROD`/`MODE`; only
+which `.env.*` file loads differs, and both paths produce the same fully-minified
+bundle, just against different env values):
+- `npm run build` / `npm run android:prod` → Vite's default `production` mode →
+  loads `.env.production` (committed, not gitignored like `.env.local` — neither value
+  in it is a secret: the API URL is visible in every request it makes, and a Web OAuth
+  Client ID is meant to be public). Currently points at the deployed Cloudflare Workers
+  backend, `https://taskodoro-be.abhinand4work.workers.dev`, with its own
+  `VITE_GOOGLE_CLIENT_ID_WEB` set too — a clean checkout (CI, a teammate) needs both to
+  produce a working production build without first copying someone's `.env.local`.
+- `npm run build:local` / `npm run android` → explicit `vite build --mode development`
+  → `.env.production` is skipped entirely (mode-specific), so `VITE_API_BASE_URL`
+  resolves from `.env.local` as usual (`http://localhost:8787` by default) — this is
+  what makes `adb reverse tcp:8787 tcp:8787` meaningful for `npm run android` again;
+  it would be a no-op against the deployed backend.
+
+To point a production-mode build at some other backend temporarily, use
+`.env.production.local` (gitignored, `*.local` — same precedence rule as `.env.local`,
+just scoped to the `production` mode) rather than editing the committed file.
 
 ## Documentation
 
@@ -126,4 +151,4 @@ Optional, account-gated cross-device sync against `POST /sync` on the backend �
 
 ### Local Android device testing
 
-`adb reverse tcp:8787 tcp:8787` forwards the phone's `localhost:8787` to the dev machine over USB — this is what `npm run android` sets up automatically, and it's why `.env.local`'s `VITE_API_BASE_URL=http://localhost:8787` works unchanged on-device (no LAN IP juggling needed). This is only relevant for the optional backend-dependent features (sign-in); the app's core offline functionality needs no network at all. See `Taskodoro-Frontend-Plan.md` §4 for the alternative Wi-Fi/tunnel options.
+`adb reverse tcp:8787 tcp:8787` forwards the phone's `localhost:8787` to the dev machine over USB — this is what `npm run android` sets up automatically, and it's why `.env.local`'s `VITE_API_BASE_URL=http://localhost:8787` works unchanged on-device (no LAN IP juggling needed). This is only relevant for the optional backend-dependent features (sign-in); the app's core offline functionality needs no network at all. See `Taskodoro-Frontend-Plan.md` §4 for the alternative Wi-Fi/tunnel options. To test against the deployed backend instead (no local server, no USB tunnel needed), use `npm run android:prod` — see "Production backend" above.

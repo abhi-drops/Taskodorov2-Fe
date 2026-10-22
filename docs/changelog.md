@@ -4,6 +4,20 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-22 — Separate local vs. production Android/web build variants
+
+- New `.env.production` (committed — neither value in it is a secret) sets
+  `VITE_API_BASE_URL` to the deployed Cloudflare Workers backend,
+  `https://taskodoro-be.abhinand4work.workers.dev`, plus its own
+  `VITE_GOOGLE_CLIENT_ID_WEB` so a clean checkout can produce a working production
+  build without first copying anyone's `.env.local`.
+- `npm run build`/`npm run android:prod` use that (Vite's default `production` mode).
+  `npm run build:local`/`npm run android` explicitly build in `development` mode
+  instead, so `.env.production` is skipped and `VITE_API_BASE_URL` resolves from
+  `.env.local` as before (`localhost:8787`, with `adb reverse` still meaningful for
+  on-device testing). `npm run dev` is unaffected either way. See `CLAUDE.md`'s
+  "Production backend".
+
 ## 2026-10-22 — Logout reseeds a default workspace, with no sync prompt on next login
 
 - Logging out of a Google session now reseeds the same starting board a fresh install

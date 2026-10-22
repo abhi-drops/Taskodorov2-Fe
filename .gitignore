@@ -23,6 +23,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.env.production
+
 
 # Claude Code: keep project skills, ignore machine-local files
 .claude/*
