@@ -1,7 +1,6 @@
-import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google'
+import { GoogleLogin } from '@react-oauth/google'
 import { useGoogleSignIn } from '../../common_logics/useGoogleSignIn'
 import { usePlatform } from '../../lib/platform/usePlatform'
-import { GOOGLE_CLIENT_ID_WEB } from '../../lib/google/googleAuthWeb'
 import { Button } from './Button'
 import { FormError } from './FormError'
 
@@ -30,13 +29,11 @@ export function GoogleSignInButton() {
 
   return (
     <div className="flex flex-col gap-2">
-      <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID_WEB}>
-        <GoogleLogin
-          onSuccess={(credential) => {
-            if (credential.credential) handleWebCredential(credential.credential)
-          }}
-        />
-      </GoogleOAuthProvider>
+      <GoogleLogin
+        onSuccess={(credential) => {
+          if (credential.credential) handleWebCredential(credential.credential)
+        }}
+      />
       <FormError message={error} />
     </div>
   )

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
-import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google'
+import { GoogleLogin } from '@react-oauth/google'
 import { Link, useSearchParams } from 'react-router'
 import { AppShell } from '../components/AppShell'
 import { PowerToolsDesktopLayout } from '../components/PowerToolsSidebar'
@@ -24,7 +24,6 @@ import { wipeWorkspaceNotes } from '../lib/db/notes'
 import { getCompletedGroupId, setCompletedGroupId } from '../lib/db/workspaces'
 import { Select } from '../components/ui/Select'
 import { resetToDefault } from '../lib/db/reset'
-import { GOOGLE_CLIENT_ID_WEB } from '../lib/google/googleAuthWeb'
 import { FormError } from '../components/ui/FormError'
 import type { Group } from '../types/group'
 import type { AuthState } from '../lib/auth/authContext'
@@ -251,13 +250,13 @@ function SyncChip() {
         // Google's hosted button renders its own UI — there's no programmatic
         // equivalent of its One Tap/popup flow to trigger from our own chip, so this
         // reveals the real button instead (same component `GoogleSignInButton` uses).
-        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID_WEB}>
-          <GoogleLogin
-            onSuccess={(credential) => {
-              if (credential.credential) handleWebCredential(credential.credential)
-            }}
-          />
-        </GoogleOAuthProvider>
+        // No local <GoogleOAuthProvider> here — one already wraps the whole app
+        // (`App.tsx`), so this just needs the <GoogleLogin> button itself.
+        <GoogleLogin
+          onSuccess={(credential) => {
+            if (credential.credential) handleWebCredential(credential.credential)
+          }}
+        />
       )}
       <FormError message={error} />
     </div>

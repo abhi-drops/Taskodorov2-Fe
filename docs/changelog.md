@@ -4,6 +4,17 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-23 — Fix: deployed site 404s on reload of nested routes
+
+- No `vercel.json` existed, so Vercel's static file server had no rewrite rule for
+  client-side routes — a direct load or reload of e.g. `/settings?tab=account` 404'd
+  instead of serving `index.html` and letting React Router handle it. New
+  `vercel.json` with a catch-all rewrite (`/(.*) → /index.html`) fixes this for any
+  route. (Separately: if the live site is also falling back to `localhost:8787` for
+  API calls on a device that isn't the original dev machine, that's not a code issue
+  — it means the deployment predates the "Separate local vs. production" entry below
+  and needs a fresh build/redeploy to pick up `.env.production`.)
+
 ## 2026-10-22 — Separate local vs. production Android/web build variants
 
 - New `.env.production` (committed — neither value in it is a secret) sets
