@@ -1,3 +1,4 @@
+import { Analytics } from '@vercel/analytics/react'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import { RouterProvider } from 'react-router'
 import { router } from './router/routes'
@@ -24,6 +25,9 @@ function App() {
             <MobileWebNotice />
             <SyncStrategyDialog />
             <AppUpdateBanner />
+            {/* Web only — native bundles its JS locally, so there's no Vercel-hosted
+                /_vercel/insights endpoint for the Android WebView to report to. */}
+            {!isNative() && <Analytics />}
           </WorkspaceProvider>
         </SyncProvider>
       </AuthProvider>

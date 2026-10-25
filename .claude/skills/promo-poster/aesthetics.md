@@ -106,6 +106,19 @@ font "Noto Color Emoji"), never added by Claude and never in a Geomini headline.
 ## Content rules
 
 - One idea per slide. A headline over four lines is too long: shorten it or split it.
+- Don't let a slide's visual be a small object sunk to the bottom with a dead gap above
+  it. `.vis` has `margin-top: auto; margin-bottom: auto;` so it centers in the leftover
+  space below the headline/subtitle — but centering a small visual in a big gap still
+  looks empty, so size the visual (bigger padding, font, control sizes) to actually fill
+  a good share of the remaining height, not just reposition it.
+- When enlarging anything that sits in a flex row (especially something that must stay
+  square/circular, like colour swatches, or a card sharing a row with siblings): check
+  the arithmetic against the available width before bumping the number. A row-flex child
+  defaults to shrinking only on the main axis (width), so an oversized square can get
+  squeezed into an oval, and a flex child defaults to `min-width: auto` so it won't
+  shrink below its own content width, which can push a sibling off-canvas. Fix with
+  `flex: none` on fixed-size items or `min-width: 0` on equal-share items. Always check
+  the full-size render (not just the contact-sheet thumbnail) for clipping or ovals.
 - Show the app's real pieces. No stock imagery, icons from other sets, or abstract shapes.
 - Sample note text should be ordinary life tasks ("Call the dentist"), short enough for
   one line, and never real personal data.
