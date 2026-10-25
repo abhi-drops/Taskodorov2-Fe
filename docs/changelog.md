@@ -4,6 +4,25 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-25 — Modal titles are bold again
+
+- `Modal.tsx`'s title (`font-display text-lg text-nav-dark`) was missing `font-bold`,
+  so it rendered at Geomini's default weight — noticeably lighter than every other
+  heading in the app (which all pair `font-display` with `font-bold`). Added it back.
+  Shared component, so this fixes every dialog's title at once (the mobile
+  "Workspaces" switcher, `ConfirmDialog`, `SyncStrategyDialog`, the New workspace
+  dialog, etc.), not just one.
+
+## 2026-10-25 — Fix: workspace name overlapped the mobile switcher's title
+
+- `WorkspaceSwitcher`'s trigger button ("Workspace Name ⌄") was boosted to `z-[60]`
+  whenever the switcher was open, so it stays crisp above the desktop dropdown's own
+  overlay (`z-40`) and panel (`z-50`). That boost wasn't scoped to desktop, though, so
+  on mobile — where opening the switcher instead shows a full-page `Modal` (its own
+  title "Workspaces", also `z-50`) — the trigger's higher z-index let it poke through
+  on top of the modal, visually overlapping the two pieces of text. Scoped the boost
+  to `!isMobile`.
+
 ## 2026-10-25 — Settings' Account section drops the Log in/Sign up links
 
 - Removed the "Log in"/"Sign up" links that used to sit above the Sync With Google
