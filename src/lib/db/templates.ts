@@ -1,6 +1,7 @@
 import type { SQLiteDBConnection } from '@capacitor-community/sqlite'
 import { withDb } from './sqlite'
 import { BUILTIN_TEMPLATES } from '../templates/builtins'
+import { factoryFingerprint } from '../templates/builtinFingerprint'
 import { notifyLocalChange } from './localChange'
 import type { Template, TemplateContent } from '../../types/template'
 
@@ -117,7 +118,11 @@ export function deleteTemplate(id: string): Promise<void> {
   })
 }
 
-/** Puts a built-in template's name and content back to what the app ships with. */
+/**
+ * Puts a built-in template's name and content back to what the app ships with. Also
+ * re-records the factory baseline (`builtinFingerprint.ts`), so a built-in the user had
+ * edited starts tracking later releases' versions again from here on.
+ */
 export function resetBuiltinTemplate(id: string): Promise<Template | null> {
   return withDb(async (db) => {
     const result = await db.query('SELECT * FROM templates WHERE id = ? AND deleted_at IS NULL', [id])
@@ -126,9 +131,10 @@ export function resetBuiltinTemplate(id: string): Promise<Template | null> {
     if (!row || !builtin) return null
     const now = Date.now()
     const content = JSON.stringify(builtin.content)
-    await db.run('UPDATE templates SET name = ?, content = ?, updated_at = ? WHERE id = ?', [
+    await db.run('UPDATE templates SET name = ?, content = ?, builtin_fingerprint = ?, updated_at = ? WHERE id = ?', [
       builtin.name,
       content,
+      factoryFingerprint(builtin),
       now,
       id,
     ])

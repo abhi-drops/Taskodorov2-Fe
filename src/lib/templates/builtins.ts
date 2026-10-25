@@ -79,12 +79,14 @@ export const DEFAULT_TEMPLATE_CONTENT: TemplateContent = {
           'Plz check me to go "in progress", then check again to go to "complete" or you can also try drag and drop',
           'coral',
         ),
-        basic('n3', 'Try "POWER TOOLS" for advanced behaviour edits', 'green'),
+        basic('n3', 'Try "Settings" for advanced behaviour edits', 'green'),
       ],
       { moveTo: 'in-progress' },
     ),
     group('in-progress', 'In Progress', [], { moveTo: 'completed', resetOnMove: false }),
-    group('completed', 'Completed'),
+    group('completed', 'Completed', [
+      basic('n4', 'See Apps → Diary for the full list of changes you\'ve made', 'blue'),
+    ]),
   ],
   completedGroupKey: 'completed',
 }

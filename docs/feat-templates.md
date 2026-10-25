@@ -33,6 +33,8 @@ Two rules shape this:
 
 Storage is the `templates` table (`feat-offline-data-layer.md`): one row per template,
 with `content` as a JSON column, since a template is only ever read and written whole.
+Built-in rows carry one extra column, `builtin_fingerprint` — see "Keeping built-ins in
+step with the app" below.
 
 ## Built-in templates
 
@@ -40,11 +42,15 @@ with `content` as a JSON column, since a template is only ever read and written 
 (`BUILTIN_TEMPLATES`): Default, Shopping list, Brainstorm, Weekly planner (a group per
 day plus Done), Project kanban, Study plan.
 
-- `seedBuiltinTemplates` (`seedBuiltins.ts`) runs on every launch and inserts any
-  built-in whose `builtin_id` is missing. A built-in added in a later release therefore
-  reaches existing installs, and an edited one is never overwritten.
+- `seedBuiltinTemplates` (`seedBuiltins.ts`) runs on every launch and puts the built-in
+  rows in step with the constants: it inserts any built-in whose `builtin_id` is
+  missing, **replaces one the user hasn't edited when its factory version has changed**,
+  and leaves an edited one alone. See "Keeping built-ins in step with the app" below —
+  each row is the user's own data, so this is the only way a change to the constants
+  reaches an install that already seeded.
 - Built-ins are **editable in place** and **cannot be deleted**. The editor's "Reset to
-  Default" danger chip writes the constant back over the row (`resetBuiltinTemplate`).
+  Default" danger chip writes the constant back over the row (`resetBuiltinTemplate`),
+  which also re-enrols it in those factory updates.
 - They hold negative `position`s so they always list before the user's own templates.
   Their order in the constant is their order in the app; the first three are the ones
   the "New workspace" dialog shows before "More templates".
@@ -53,6 +59,50 @@ day plus Done), Project kanban, Study plan.
   user's edited copy, so a factory reset really is factory. That reset also empties
   the `templates` table and re-seeds the built-ins: the user's own templates are deleted
   and edited built-ins go back to factory (`feat-power-tools.md`).
+
+### Keeping built-ins in step with the app
+
+A built-in is a row in the user's own `templates` table, seeded once. Editing the
+constants in a later release therefore changed nothing for anyone who had already
+launched the app — their copy was whatever their first launch wrote. The fix has to tell
+"the user edited this" apart from "the app shipped a new version", and the two look
+identical from the row alone.
+
+`templates.builtin_fingerprint` is that baseline: the fingerprint
+(`lib/templates/builtinFingerprint.ts`, a hash over the canonicalized `name` +
+`content`) of the factory version the row reflects. It is written **only** where the row
+is deliberately put in step with the factory — the seed insert, the factory refresh
+itself, and "Reset to Default" — and never on an edit. So, per built-in, each launch:
+
+| row state | what happens |
+| --- | --- |
+| missing | inserted, baseline = this build's factory version |
+| baseline == this build's factory version | nothing to do |
+| row still fingerprints to its baseline (unedited) | name + content replaced with the factory version, baseline moved up |
+| row fingerprints differently (edited) | left alone, now and in every later release |
+
+Two consequences worth knowing:
+
+- An edit is sticky. Once the user changes a built-in, no release overwrites it again;
+  "Reset to Default" is what hands it back to the app's control.
+- `position` is refreshed for **every** built-in row, edited or not: the order of
+  `BUILTIN_TEMPLATES` is the app's to decide and nothing in the UI reorders templates,
+  so reordering the constants or inserting a new built-in re-sorts the list.
+
+**Installs from before the column existed** get a one-shot backfill, run by
+`migrateSchema` on the single launch where `ensureColumn` actually adds
+`builtin_fingerprint` (after that, a NULL baseline no longer means "unknown"). Those
+rows have no record of being edited, so the only signal left is `updated_at`: the seed
+wrote it equal to `created_at`, and every edit and reset moves it. A row still showing
+its seed timestamp is untouched and gets a baseline of its current content — which
+enrols it in the refresh above and replaces it with this build's version. Every other
+row keeps a NULL baseline and is preserved for good, so the migration cannot destroy an
+edit it can't see.
+
+Fingerprinting over a canonical (key-sorted) serialization is deliberate: content goes
+through `JSON.parse`/`JSON.stringify` round trips, and incidental key order must not
+read as an edit. A future migration that rewrites stored template content *would* read
+as one, and such a migration should re-record the baseline for the rows it touches.
 
 ## Making a workspace from a template
 

@@ -14,7 +14,7 @@ import {
 } from './eventLog'
 import { DEFAULT_TEMPLATE_CONTENT } from '../templates/builtins'
 import { instantiateTemplate } from '../templates/instantiate'
-import { TEMPLATES_SQL, seedBuiltinTemplates } from '../templates/seedBuiltins'
+import { TEMPLATES_SQL, backfillBuiltinFingerprints, seedBuiltinTemplates } from '../templates/seedBuiltins'
 
 const DB_NAME = 'taskodoro'
 
@@ -112,10 +112,14 @@ async function ensureColumn(
   table: string,
   column: string,
   addColumnSql: string,
-): Promise<void> {
+): Promise<boolean> {
   const result = await db.query(`PRAGMA table_info(${table})`)
   const hasColumn = ((result.values ?? []) as { name: string }[]).some((c) => c.name === column)
-  if (!hasColumn) await db.execute(addColumnSql)
+  if (hasColumn) return false
+  await db.execute(addColumnSql)
+  // Returned so a caller can run a one-shot backfill in the same launch the column
+  // appears, which is the only launch that can still tell old rows apart.
+  return true
 }
 
 async function migrateSchema(db: SQLiteDBConnection): Promise<void> {
@@ -152,6 +156,17 @@ async function migrateSchema(db: SQLiteDBConnection): Promise<void> {
   for (const table of ['workspaces', 'groups', 'notes', 'templates', 'activity_events']) {
     await ensureColumn(db, table, 'dirty', `ALTER TABLE ${table} ADD COLUMN dirty INTEGER NOT NULL DEFAULT 0`)
   }
+  // Built-in templates: which factory version each built-in row reflects, so a change
+  // to the shipped constants can reach rows the user hasn't edited
+  // (`templates/builtinFingerprint.ts`). The backfill must run on the launch that adds
+  // the column — after that, a NULL baseline no longer means "unknown".
+  const addedBuiltinFingerprint = await ensureColumn(
+    db,
+    'templates',
+    'builtin_fingerprint',
+    'ALTER TABLE templates ADD COLUMN builtin_fingerprint TEXT',
+  )
+  if (addedBuiltinFingerprint) await backfillBuiltinFingerprints(db)
 }
 
 async function initDb(): Promise<SQLiteDBConnection> {

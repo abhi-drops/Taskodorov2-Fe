@@ -4,6 +4,50 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-25 — Default template's sample notes updated for current naming
+
+- The "Default" built-in template's walkthrough notes still said `"POWER TOOLS"` —
+  that section was renamed to Settings a while back (see `CLAUDE.md`'s note on
+  `PowerToolsPage`). Updated the Todo-group note to say `"Settings"` instead
+  (`lib/templates/builtins.ts`).
+- Added a note to the Completed group pointing new users at Apps → Diary to see
+  the full history of changes they've made to their board.
+- This factory content change reaches existing installs automatically via the
+  built-in-fingerprint refresh mechanism added just below — no migration needed.
+- Details: `docs/feat-templates.md`.
+
+## 2026-10-25 — Built-in templates now pick up changes shipped in a later release
+
+- **The bug.** Built-in templates (Default, Shopping list, Brainstorm, ...) are seeded
+  as rows in the user's own `templates` table on first launch. `seedBuiltinTemplates`
+  only ever inserted the ones a `builtin_id` was missing for, so editing the factory
+  constants in `lib/templates/builtins.ts` reached *new* installs only: everyone who had
+  already launched the app kept whatever their first launch wrote, forever. Fixing a
+  typo or improving a shipped board was effectively a no-op for existing users.
+- **The fix.** A new `templates.builtin_fingerprint` column records the factory version
+  each built-in row reflects (`lib/templates/builtinFingerprint.ts`: a hash over the
+  canonicalized `name` + `content`), written only where a row is deliberately put in
+  step with the factory — the seed insert, the refresh itself, and "Reset to Default" —
+  and never on an edit. Every launch, a built-in whose current state still fingerprints
+  to its baseline counts as unedited and is **replaced with the shipped version when
+  that has changed**; one that doesn't is the user's own and is left alone, now and in
+  every later release ("Reset to Default" is what hands it back to the app). `position`
+  is refreshed for every built-in row regardless, so reordering the constants or
+  inserting a new built-in also re-sorts the list.
+- **Existing installs** get a one-shot backfill on the single launch that adds the
+  column (`ensureColumn` now reports whether it did): a built-in still showing its seed
+  timestamp (`updated_at == created_at`) is untouched and gets enrolled, so this
+  release's constants reach it; anything else is treated as possibly-edited and
+  preserved for good. `ensureColumn`'s new return value is the mechanism — a NULL
+  baseline stops meaning "unknown" after that launch.
+- Verified against sql.js (the web engine) across fresh install, a later release
+  changing a built-in, an edited built-in across two releases, the legacy-install
+  migration in both directions, and a newly inserted built-in.
+- The template **file format is untouched**, so `lib/templates/aiGuide.md` needed no
+  change: nothing here affects what a template can hold, how it parses, or the
+  import/replace/export buttons.
+- Details: `docs/feat-templates.md` ("Keeping built-ins in step with the app").
+
 ## 2026-10-25 — `nav-dark` retired; `ink` is the app's one dark color now
 
 - `nav-dark` (`#1e1e2a`, near-black) had drifted well beyond its original
