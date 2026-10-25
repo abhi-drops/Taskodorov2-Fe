@@ -4,6 +4,19 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-25 — Vercel Web Analytics added (web only)
+
+- **What.** Added `@vercel/analytics` and mounted `<Analytics />` (from
+  `@vercel/analytics/react` — this is a Vite app, not Next.js, so the `/next` entry
+  point doesn't apply) in `App.tsx`, alongside the other app-level singletons
+  (`MobileWebNotice`, `SyncStrategyDialog`, `AppUpdateBanner`).
+- **Gated to web only** (`!isNative()`), matching the existing `GoogleOAuthProvider`
+  precedent in the same file. Native Android serves its JS bundle from local files,
+  not from a Vercel deployment, so there's no `/_vercel/insights` endpoint for the
+  WebView to report to — mounting it there would be a silent no-op at best.
+- Verified via `tsc -b` (clean) and in the Browser pane: app loads with no console
+  errors.
+
 ## 2026-10-25 — App update check wired up (Android only)
 
 - **What.** `docs/feat-app-update-check-from-be.md` documented a backend endpoint
