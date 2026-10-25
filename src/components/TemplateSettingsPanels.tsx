@@ -144,7 +144,7 @@ export function TemplateGroupSettings({ content, group, onPatch, onMove, onAddNo
             if (e.key === 'Enter') e.currentTarget.blur()
           }}
           aria-label="Group name"
-          className="w-full bg-transparent font-display text-2xl font-bold text-nav-dark outline-none"
+          className="w-full bg-transparent font-display text-2xl font-bold text-ink outline-none"
         />
         <p className="text-slate-600">Group settings</p>
       </div>
@@ -208,7 +208,7 @@ export function TemplateNoteSettings({ note, group, onPatch, onDelete }: Templat
   const displayColor = byPriority ? PRIORITY_COLOR_MAP[note.priority] : (note.color ?? 'yellow')
   const colorClass = SWATCH_CLASSES[displayColor]
   const numberInput =
-    'w-full min-w-0 rounded-card border-2 border-ink bg-white px-3.5 py-2.5 text-nav-dark outline-none focus:ring-2 focus:ring-accent-purple'
+    'w-full min-w-0 rounded-card border-2 border-ink bg-white px-3.5 py-2.5 text-ink outline-none focus:ring-2 focus:ring-accent-purple'
 
   function addItem() {
     const text = newItem.trim()
@@ -231,14 +231,14 @@ export function TemplateNoteSettings({ note, group, onPatch, onDelete }: Templat
           }}
           placeholder="Note Title"
           rows={1}
-          className="resize-none overflow-hidden break-words bg-transparent text-lg font-bold text-nav-dark outline-none placeholder:text-nav-dark/50"
+          className="resize-none overflow-hidden break-words bg-transparent text-lg font-bold text-ink outline-none placeholder:text-ink/50"
         />
         <textarea
           value={note.description ?? ''}
           onChange={(e) => onPatch({ description: e.target.value === '' ? null : e.target.value })}
           placeholder="sample description ..."
           rows={3}
-          className="max-h-[210px] resize-none overflow-y-auto break-words bg-transparent text-sm text-nav-dark/80 outline-none placeholder:text-nav-dark/50"
+          className="max-h-[210px] resize-none overflow-y-auto break-words bg-transparent text-sm text-ink/80 outline-none placeholder:text-ink/50"
         />
       </div>
 
@@ -257,7 +257,7 @@ export function TemplateNoteSettings({ note, group, onPatch, onDelete }: Templat
                   }}
                   aria-label={`Item ${i + 1}`}
                   rows={1}
-                  className="flex-1 resize-none overflow-hidden break-words bg-transparent pl-3 text-sm text-nav-dark outline-none"
+                  className="flex-1 resize-none overflow-hidden break-words bg-transparent pl-3 text-sm text-ink outline-none"
                 />
                 <button
                   type="button"
@@ -281,7 +281,7 @@ export function TemplateNoteSettings({ note, group, onPatch, onDelete }: Templat
                 }}
                 placeholder="New item"
                 rows={1}
-                className="flex-1 resize-none overflow-hidden break-words bg-transparent pl-3 text-sm text-nav-dark outline-none placeholder:text-nav-dark/50"
+                className="flex-1 resize-none overflow-hidden break-words bg-transparent pl-3 text-sm text-ink outline-none placeholder:text-ink/50"
               />
               <button
                 type="button"
@@ -298,7 +298,7 @@ export function TemplateNoteSettings({ note, group, onPatch, onDelete }: Templat
 
       {note.type === 'counter' && (
         <div className={`flex gap-4 rounded-card p-4 shadow-card transition-colors duration-300 ${colorClass}`}>
-          <label className="flex min-w-0 flex-1 flex-col gap-1.5 text-sm font-medium text-nav-dark">
+          <label className="flex min-w-0 flex-1 flex-col gap-1.5 text-sm font-medium text-ink">
             Step
             <input
               type="number"
@@ -308,7 +308,7 @@ export function TemplateNoteSettings({ note, group, onPatch, onDelete }: Templat
               className={numberInput}
             />
           </label>
-          <label className="flex min-w-0 flex-1 flex-col gap-1.5 text-sm font-medium text-nav-dark">
+          <label className="flex min-w-0 flex-1 flex-col gap-1.5 text-sm font-medium text-ink">
             Target (optional)
             <input
               type="number"
@@ -336,7 +336,7 @@ export function TemplateNoteSettings({ note, group, onPatch, onDelete }: Templat
         <SwatchPicker value={displayColor} onChange={(color) => onPatch({ color })} disabled={byPriority} />
         {byPriority && (
           <p
-            className={`mt-2.5 rounded-card border-2 border-ink px-3.5 py-2.5 text-sm text-nav-dark ${SWATCH_TINT_CLASSES[displayColor]}`}
+            className={`mt-2.5 rounded-card border-2 border-ink px-3.5 py-2.5 text-sm text-ink ${SWATCH_TINT_CLASSES[displayColor]}`}
           >
             Color is set by priority for this group.
           </p>
@@ -370,7 +370,7 @@ export function TemplateNoteSettings({ note, group, onPatch, onDelete }: Templat
 export function SettingsPanelHeader({ children, onClose }: { children: ReactNode; onClose?: () => void }) {
   return (
     <div className="flex items-center justify-between gap-2">
-      <h2 className="min-w-0 truncate font-display text-sm font-bold text-nav-dark">{children}</h2>
+      <h2 className="min-w-0 truncate font-display text-sm font-bold text-ink">{children}</h2>
       {onClose && (
         <button
           type="button"

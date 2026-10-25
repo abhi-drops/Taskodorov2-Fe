@@ -94,7 +94,7 @@ export default function TemplatesPage() {
   return (
     <TemplatesShell>
       <TemplatesToolbar>
-        <div className="flex shrink-0 items-center gap-2 text-nav-dark">
+        <div className="flex shrink-0 items-center gap-2 text-ink">
           <AnimatedIcon icon={TemplatesIcon} size={20} />
           <h1 className="font-display text-lg font-bold">Templates</h1>
         </div>

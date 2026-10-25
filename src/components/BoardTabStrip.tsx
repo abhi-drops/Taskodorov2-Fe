@@ -20,7 +20,7 @@ interface BoardTabStripProps {
 export function BoardTabStrip({ groups, activeGroupId, onSelect }: BoardTabStripProps) {
   return (
     <SortableContext items={groups.map((g) => groupChipDragId(g.id))} strategy={horizontalListSortingStrategy}>
-      <div className="flex flex-wrap gap-2" role="tablist">
+      <div className="flex gap-2 overflow-x-auto" role="tablist">
         {groups.map((group) => (
           <BoardTab key={group.id} group={group} isActive={group.id === activeGroupId} onSelect={onSelect} />
         ))}
@@ -52,14 +52,21 @@ function BoardTab({
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
-        touchAction: 'none',
+        // Not `none`: the strip now scrolls horizontally when it overflows (see
+        // BoardTabStrip above), and `none` would block that native swipe-to-scroll
+        // on touch entirely — same reasoning GroupColumn.tsx's note cards already
+        // follow (useBoardDnd.ts's TouchSensor is delay-based, so a quick scroll
+        // swipe is already told apart from a held long-press without needing `none`).
+        touchAction: 'manipulation',
       }}
       {...attributes}
       {...listeners}
       role="tab"
       aria-selected={isActive}
-      className={`rounded-card px-3.5 py-1.5 text-sm font-medium transition ${
-        isActive ? 'bg-nav-dark text-white' : 'border border-slate-200 bg-white text-slate-700'
+      className={`shrink-0 rounded-card px-3.5 py-1.5 text-sm font-medium transition ${
+        // `ink`, the one dark token the whole app uses now (style-guide.md) —
+        // `nav-dark` was retired 2026-10-25, it read as near-black everywhere it hid.
+        isActive ? 'bg-ink text-white' : 'border border-slate-200 bg-white text-slate-700'
       }`}
     >
       {group.name}

@@ -418,7 +418,7 @@ export default function PowerToolsPage() {
       {isMobile ? (
         <div className="mx-auto flex w-full max-w-sm flex-1 flex-col gap-8">
           <div className="text-center">
-            <h1 className="font-display text-2xl font-bold text-nav-dark">Settings</h1>
+            <h1 className="font-display text-2xl font-bold text-ink">Settings</h1>
             <p className="text-slate-600">Groups, account & sync.</p>
           </div>
           {groupsSection}
@@ -429,7 +429,7 @@ export default function PowerToolsPage() {
         <PowerToolsDesktopLayout activeTab={activeTab}>
           <div className="flex flex-col gap-6">
             <div>
-              <h1 className="font-display text-2xl font-bold text-nav-dark">Settings</h1>
+              <h1 className="font-display text-2xl font-bold text-ink">Settings</h1>
               <p className="text-slate-600">Groups, account & sync.</p>
             </div>
             {activeTab === 'account' && accountSection}

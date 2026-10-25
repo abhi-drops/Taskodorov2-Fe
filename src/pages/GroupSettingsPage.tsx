@@ -91,7 +91,7 @@ export default function GroupSettingsPage() {
       aria-label="Group name"
       // An <input> doesn't inherit `text-align` from the mobile header's `text-center`
       // wrapper, so it needs its own.
-      className={`w-full bg-transparent font-display text-2xl font-bold text-nav-dark outline-none ${
+      className={`w-full bg-transparent font-display text-2xl font-bold text-ink outline-none ${
         isMobile ? 'text-center' : ''
       }`}
     />

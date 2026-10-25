@@ -23,8 +23,10 @@ const PRIORITY_OPTIONS: { label: string; value: PriorityFilter }[] = [
 ]
 
 function chipClass(active: boolean) {
+  // `ink`, the one dark token the whole app uses now (style-guide.md) —
+  // `nav-dark` was retired 2026-10-25, it read as near-black everywhere it hid.
   return `rounded-card px-3.5 py-1.5 text-sm font-medium transition ${
-    active ? 'bg-nav-dark text-white' : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+    active ? 'bg-ink text-white' : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
   }`
 }
 
@@ -126,7 +128,7 @@ export default function SearchPage() {
                       aria-label={color}
                       onClick={() => toggleColor(color)}
                       className={`h-8 w-8 rounded-full transition ${SWATCH_CLASSES[color]} ${
-                        colorFilter.has(color) ? 'ring-2 ring-nav-dark ring-offset-2' : ''
+                        colorFilter.has(color) ? 'ring-2 ring-ink ring-offset-2' : ''
                       }`}
                     />
                   ))}

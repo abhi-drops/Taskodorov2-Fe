@@ -276,7 +276,7 @@ export default function TemplateEditorPage() {
             if (e.key === 'Enter') e.currentTarget.blur()
           }}
           aria-label="Template name"
-          className="min-w-0 flex-1 basis-40 bg-transparent font-display text-lg font-bold text-nav-dark outline-none"
+          className="min-w-0 flex-1 basis-40 bg-transparent font-display text-lg font-bold text-ink outline-none"
         />
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <button type="button" onClick={handleExport} className={`${TOOLBAR_BUTTON} bg-white hover:bg-slate-50`}>

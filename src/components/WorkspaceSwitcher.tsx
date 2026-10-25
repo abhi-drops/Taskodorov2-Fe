@@ -148,7 +148,7 @@ export function WorkspaceSwitcher() {
       <button
         type="button"
         onClick={() => (isOpen ? closeAll() : open())}
-        className={`relative flex items-center gap-1.5 font-display text-2xl font-bold text-nav-dark ${
+        className={`relative flex items-center gap-1.5 font-display text-2xl font-bold text-ink ${
           // Only needed on desktop, to stay crisp above the dropdown's own overlay
           // (z-40) and panel (z-50) — on mobile the switcher is a full-page Modal
           // (also z-50, via a portal) meant to cover this trigger entirely. Boosting

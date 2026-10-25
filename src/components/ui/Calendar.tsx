@@ -65,7 +65,7 @@ export function Calendar({ month, onMonthChange, onDayClick, renderDay, classNam
   return (
     <div className={`flex flex-col gap-3 ${className}`}>
       <div className="flex items-center justify-between gap-3">
-        <h2 className="font-display text-lg font-bold text-nav-dark">{format(month, 'MMMM yyyy')}</h2>
+        <h2 className="font-display text-lg font-bold text-ink">{format(month, 'MMMM yyyy')}</h2>
         <div className="flex items-center gap-2">
           <NavButton label="Previous month" onClick={() => onMonthChange(addMonths(month, -1))}>
             <AnimatedIcon icon={ChevronLeftIcon} size={16} />

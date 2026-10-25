@@ -21,7 +21,7 @@ export function BottomNav() {
         end
         viewTransition
         aria-label="Home"
-        className="flex flex-1 items-center justify-center bg-sticky-yellow py-3 text-nav-dark"
+        className="flex flex-1 items-center justify-center bg-sticky-yellow py-3 text-ink"
       >
         <AnimatedIcon icon={HomeIcon} size={22} />
       </NavLink>
@@ -29,7 +29,7 @@ export function BottomNav() {
         to="/apps"
         viewTransition
         aria-label="Apps"
-        className="flex flex-1 items-center justify-center bg-sticky-blue py-3 text-nav-dark"
+        className="flex flex-1 items-center justify-center bg-sticky-blue py-3 text-ink"
       >
         <AnimatedIcon icon={AppsIcon} size={22} />
       </NavLink>
@@ -37,7 +37,7 @@ export function BottomNav() {
         to="/settings"
         viewTransition
         aria-label="Settings"
-        className="flex flex-1 items-center justify-center bg-nav-dark py-3 text-sticky-yellow"
+        className="flex flex-1 items-center justify-center bg-ink py-3 text-sticky-yellow"
       >
         <AnimatedIcon icon={SettingsIcon} size={22} />
       </NavLink>

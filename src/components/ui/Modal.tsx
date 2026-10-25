@@ -98,7 +98,7 @@ export function Modal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-4">
-          {title && <h2 className="font-display text-lg font-bold text-nav-dark">{title}</h2>}
+          {title && <h2 className="font-display text-lg font-bold text-ink">{title}</h2>}
           <button
             type="button"
             onClick={onClose}

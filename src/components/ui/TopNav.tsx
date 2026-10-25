@@ -22,7 +22,7 @@ export function TopNav({ className = '' }: TopNavProps) {
           to="/"
           end
           viewTransition
-          className="flex items-center gap-2 bg-sticky-yellow px-5 py-2 text-sm font-medium text-nav-dark"
+          className="flex items-center gap-2 bg-sticky-yellow px-5 py-2 text-sm font-medium text-ink"
         >
           <AnimatedIcon icon={HomeIcon} size={18} />
           Home
@@ -30,7 +30,7 @@ export function TopNav({ className = '' }: TopNavProps) {
         <NavLink
           to="/settings"
           viewTransition
-          className="flex items-center gap-2 bg-nav-dark px-5 py-2 text-sm font-medium text-sticky-yellow"
+          className="flex items-center gap-2 bg-ink px-5 py-2 text-sm font-medium text-sticky-yellow"
         >
           <AnimatedIcon icon={SettingsIcon} size={18} />
           Settings
@@ -38,7 +38,7 @@ export function TopNav({ className = '' }: TopNavProps) {
         <NavLink
           to="/apps"
           viewTransition
-          className="flex items-center gap-2 bg-sticky-blue px-5 py-2 text-sm font-medium text-nav-dark"
+          className="flex items-center gap-2 bg-sticky-blue px-5 py-2 text-sm font-medium text-ink"
         >
           <AnimatedIcon icon={AppsIcon} size={18} />
           Apps

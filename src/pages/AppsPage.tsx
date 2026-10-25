@@ -22,7 +22,7 @@ export default function AppsPage() {
     <AppShell>
       <div className="mx-auto flex w-full max-w-sm flex-1 flex-col gap-8">
         <div className="text-center">
-          <h1 className="font-display text-2xl font-bold text-nav-dark">Apps</h1>
+          <h1 className="font-display text-2xl font-bold text-ink">Apps</h1>
           <p className="text-slate-600">Extra tools on top of your board.</p>
         </div>
         <div className="flex flex-col gap-3">

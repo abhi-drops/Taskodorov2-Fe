@@ -30,7 +30,7 @@ function DayStepper({ day }: { day: Date }) {
         type="button"
         onClick={() => navigate('/apps/diary', { viewTransition: true })}
         aria-label="Back to the month calendar"
-        className="min-w-16 font-display text-sm font-bold uppercase text-nav-dark hover:underline"
+        className="min-w-16 font-display text-sm font-bold uppercase text-ink hover:underline"
       >
         {isToday(day) ? 'Today' : format(day, 'MMM d')}
       </button>
@@ -88,7 +88,7 @@ export default function DiaryDayPage() {
             {/* Same light backdrop card as the board's group columns and the desktop day
                 sidebar, so the list reads as one panel instead of floating on the grid. */}
             <section className="flex flex-col gap-3 border border-neutral-300 bg-surface p-4 shadow-card">
-              <h2 className="font-display text-sm font-bold text-nav-dark">Changes</h2>
+              <h2 className="font-display text-sm font-bold text-ink">Changes</h2>
               <DiaryFeedList
                 feed={replay.feed}
                 onSelect={(entry) => {
@@ -167,7 +167,7 @@ export default function DiaryDayPage() {
           {replay && diary.selectedNoteId ? (
             <>
               <div className="flex items-start justify-between gap-2">
-                <h2 className="min-w-0 break-words font-display text-sm font-bold text-nav-dark">{selectedTitle}</h2>
+                <h2 className="min-w-0 break-words font-display text-sm font-bold text-ink">{selectedTitle}</h2>
                 <button
                   type="button"
                   aria-label="Close note details"
@@ -199,7 +199,7 @@ export default function DiaryDayPage() {
           ) : (
             replay && (
               <>
-                <h2 className="font-display text-sm font-bold text-nav-dark">This day</h2>
+                <h2 className="font-display text-sm font-bold text-ink">This day</h2>
                 <DiaryCounts counts={replay.counts} />
                 <DiaryFeedList feed={replay.feed} frame={diary.frame} onSelect={(entry) => diary.scrubTo(entry.frame)} />
               </>

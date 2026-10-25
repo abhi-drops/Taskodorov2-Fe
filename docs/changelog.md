@@ -4,7 +4,36 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
-## 2026-10-25 — Modal titles are bold again
+## 2026-10-25 — `nav-dark` retired; `ink` is the app's one dark color now
+
+- `nav-dark` (`#1e1e2a`, near-black) had drifted well beyond its original
+  TopNav/BottomNav-chrome-only scope into general use as the app's heading/label
+  color and even the active-tab-chip background — every page `h1`, `Modal` title, the
+  workspace switcher, form labels, Calendar/Diary headings, and the BottomNav/TopNav
+  Settings segment itself, ~40+ places across nearly every page and `ExitToast`. Since
+  essentially nothing was left for a chrome-only token to do, retired it outright
+  rather than re-drawing a narrower boundary: every `nav-dark` usage (`text-`, `ring-`,
+  and `bg-`) is now `ink` (`#3c3c3c`), and `--color-nav-dark` is removed from
+  `index.css`. `ink` is now the one dark color used throughout — chips, buttons,
+  borders, headings, labels and nav chrome alike. Left note-card title text alone
+  (`text-black`) — that one's a deliberate, separate exception per `style-guide.md`,
+  matching the Penpot reference pixel-for-pixel. See `style-guide.md`'s updated
+  "Design tokens" note.
+
+## 2026-10-25 — Mobile board tabs scroll in one row instead of wrapping
+
+- `BoardTabStrip` (the mobile group tabs) used `flex flex-wrap`, so a workspace with
+  more groups than fit on one line wrapped to a second row, pushing the board down.
+  Changed to a single scrollable row (`overflow-x-auto`, tabs `shrink-0` so they don't
+  get squeezed instead of overflowing).
+- Fixed a `touch-action` mismatch this exposed: each tab had `touch-action: none` (to
+  support its own long-press-drag reordering), which also blocks the browser's native
+  touch-scroll on that element — fine while the strip never overflowed, but it would
+  have silently made the new horizontal scroll unusable by touch. Changed to
+  `manipulation`, matching `GroupColumn.tsx`'s note cards, which already establish
+  (with their own explanatory comment in `useBoardDnd.ts`) that the drag sensor's
+  delay-based activation already tells a quick scroll swipe apart from a held
+  long-press, so blocking all touch behavior outright was never actually necessary.
 
 - `Modal.tsx`'s title (`font-display text-lg text-nav-dark`) was missing `font-bold`,
   so it rendered at Geomini's default weight — noticeably lighter than every other

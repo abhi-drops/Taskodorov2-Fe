@@ -72,11 +72,18 @@ were also repointed to the exact hex values from that export (yellow `#fbe05d`, 
 if these ever look like they've drifted. Two more tokens drive the rest of the board's look,
 both in `src/index.css`'s `@theme` block:
 
-- `--color-ink: #3c3c3c` — the dark border/label color for the neo-brutalist chrome (chips,
-  the add-note button, checkbox rings, the counter control). **Not** the same token as
-  `--color-nav-dark` (`#1e1e2a`) — `nav-dark` is reserved for `TopNav`/`BottomNav` chrome and
-  is deliberately not matched 1:1 to the mockups (see Platform detection section below);
-  `ink` is the new, separate token for the board's border/shadow system.
+- `--color-ink: #3c3c3c` — the one dark color the whole app uses: borders, buttons,
+  chip/nav backgrounds, headings and labels (chips, the add-note button, checkbox
+  rings, the counter control, `TopNav`/`BottomNav`'s active segment, every page `h1`
+  and `Modal` title). There used to be a second, near-black token — `--color-nav-dark`
+  (`#1e1e2a`), originally reserved for `TopNav`/`BottomNav` chrome specifically — but
+  it had drifted into general use as the app's heading/label color (every page title,
+  the workspace switcher, form labels, Calendar/Diary headings, active tab-chip
+  backgrounds) well beyond that original scope, reading as near-black everywhere it
+  showed up. Retired entirely 2026-10-25 (~40 call sites moved to `ink`, the CSS
+  variable removed) rather than kept around for a narrower chrome-only role nothing
+  actually needed. If a reason to bring back a distinct nav color ever comes up, treat
+  it as a fresh design decision, not a revert.
 - `--shadow-card: 1px 3px 0px 0px rgba(0,0,0,0.2)` — a crisp, hard-edged offset shadow (no
   blur), replacing `shadow-lg` on note cards, the group chip, the add-note button, the
   TopNav/group backdrop cards, and (since the Power Tools redesign, see below)
@@ -98,8 +105,9 @@ Two border colors, two purposes — don't mix them up:
   deliberately: the reference's `#c1c2c2` border is true neutral gray with no blue tint,
   which `neutral-300` matches and `slate-300` doesn't.
 
-Note-card text is `text-black` (pure black, matches the reference exactly), **not**
-`text-nav-dark` — that's reserved for chip/button labels (`text-ink`) and nav chrome.
+Note-card text is `text-black` (pure black, matches the reference exactly) — the one
+deliberate exception to `ink` being the app's single dark color, kept because it
+matches the Penpot reference pixel-for-pixel.
 
 ### Group column: backdrop card + overlapping chip
 
@@ -249,7 +257,7 @@ system" above).
 | `SidebarToggle.tsx` | The menu (hamburger, `MenuIcon`) button that shows or hides a `SidePanel` by `storageKey`, placed in a toolbar: in the Diary, the far left of the header for the Apps list and the far right for day details. It is the same square `border-2 border-ink` `shadow-card` shape as the toolbar's other controls, white when its panel is hidden and ink-filled while it's open. Toolbar placement (not floating in the gap) keeps it aligned and in the same spot in both states. |
 | `ProgressBar.tsx` | Simple track + fill, optional `%` label. No longer used on the board (removed from `GroupColumn` in 2.7 — the reference design never shows it on the default view); still a generic primitive, may be reused elsewhere. |
 | `BasicNoteCard.tsx`, `CounterNoteCard.tsx`, `ListNoteCard.tsx` | The three note-type cards rendered by `GroupColumn`. Share the `shadow-card`/`text-black`/`SWATCH_CLASSES[color]` treatment (see above); `CounterNoteCard`'s `+`/`−` row order matters — `+` left, `−` right, matching the reference (easy to get backwards). `ListNoteCard` has its own two-piece shape, see above. All three (plus `SearchPage`'s reuse of them) render `NoteStatusStrip` as their last child — see `docs/feat-notes.md`'s "Statuses" section for the full behavior; the one style-system point worth repeating here is that its dark `bg-ink` background is a deliberate departure from every other note-card-adjacent chrome, which uses the note's own swatch color, not a fixed dark token. Since the Diary (2.8), all three take `readOnly` + `onSelect` for the history replay: interactive parts become `inert` (so a replay can never write to the DB), a click selects instead of opening the editor, and no morph name is taken. Their colour fills also have `transition-colors duration-300`, so a recolour cross-fades. |
-| `TopNav.tsx` (web) / `BottomNav.tsx` (mobile) | Home (`sticky-yellow`) / Settings (`nav-dark`, yellow gear and label) / Apps (`sticky-blue`, grid) on web, labelled; Home / Apps / Settings on mobile, icon-only with `aria-label`s — order follows each platform's wireframe. `TopNav` has the backdrop card treatment described above; `BottomNav` doesn't. |
+| `TopNav.tsx` (web) / `BottomNav.tsx` (mobile) | Home (`sticky-yellow`) / Settings (`ink`, yellow gear and label) / Apps (`sticky-blue`, grid) on web, labelled; Home / Apps / Settings on mobile, icon-only with `aria-label`s — order follows each platform's wireframe. `TopNav` has the backdrop card treatment described above; `BottomNav` doesn't. |
 | `FloatingAddButton.tsx` | Mobile quick-add: a 34×100px bell-curve bump fixed flush to the right screen edge, drawn as an inline SVG using the exact path from the mobile Penpot export (`newdesktoplayloutMobile.html`), translated to the origin. The export closes the shape outside the viewBox, which is why there is no outline along the screen edge. `accent-purple` fill (the export uses a lighter `#d47cff`, but the app's existing purple was kept deliberately); the export's inner stroke is reproduced as a 10-wide `stroke-ink` clipped to the shape, so 5px is visible. It has a white `PlusIcon` (white rather than the export's dark glyph, for contrast on the darker purple) and `shadow-card` done as a CSS `drop-shadow`, so it follows the curve. Generic (`to`, `position` and `dynamic` props; vertical position is set with `top`, never a transform); `HomePage` decides the target and visibility. See `feat-navigation.md`. |
 | `AnimatedIcon.tsx` + `icons.ts` | The app's icons: see "Icons" above. |
 | `Icon.tsx` | Thin `<img>` wrapper, used by `CheckCircle` and the search icon. |

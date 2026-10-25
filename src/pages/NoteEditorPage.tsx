@@ -122,7 +122,7 @@ export default function NoteEditorPage() {
                 onBlur={form.handleTitleBlur}
                 placeholder="Note Title"
                 rows={1}
-                className="flex-1 resize-none overflow-hidden break-words bg-transparent text-lg font-bold text-nav-dark outline-none placeholder:text-nav-dark/50"
+                className="flex-1 resize-none overflow-hidden break-words bg-transparent text-lg font-bold text-ink outline-none placeholder:text-ink/50"
               />
               {form.type !== 'list' && (
                 <CheckCircle checked={form.completed} onChange={form.toggleCompleted} size={22} />
@@ -135,7 +135,7 @@ export default function NoteEditorPage() {
               onBlur={form.handleDescriptionBlur}
               placeholder="sample description ..."
               rows={3}
-              className="max-h-[210px] resize-none overflow-y-auto break-words bg-transparent text-sm text-nav-dark/80 outline-none placeholder:text-nav-dark/50"
+              className="max-h-[210px] resize-none overflow-y-auto break-words bg-transparent text-sm text-ink/80 outline-none placeholder:text-ink/50"
             />
           </div>
 
@@ -188,7 +188,7 @@ export default function NoteEditorPage() {
                     }}
                     placeholder="New item"
                     rows={1}
-                    className="flex-1 resize-none overflow-hidden break-words bg-transparent pl-3 text-sm text-nav-dark outline-none placeholder:text-nav-dark/50"
+                    className="flex-1 resize-none overflow-hidden break-words bg-transparent pl-3 text-sm text-ink outline-none placeholder:text-ink/50"
                   />
                   <button
                     type="button"
@@ -209,25 +209,25 @@ export default function NoteEditorPage() {
           {form.type === 'counter' && (
             <div className={`flex gap-4 rounded-card p-4 shadow-card ${colorClass}`}>
               <div className="min-w-0 flex-1">
-                <label className="flex flex-col gap-1.5 text-sm font-medium text-nav-dark">
+                <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
                   Step
                   <input
                     type="number"
                     min={1}
                     defaultValue={(form.payload as CounterPayload).step}
                     onBlur={(e) => form.handleStepBlur(e.target.value)}
-                    className="w-full min-w-0 rounded-card border-2 border-ink bg-white px-3.5 py-2.5 text-nav-dark outline-none focus:ring-2 focus:ring-accent-purple"
+                    className="w-full min-w-0 rounded-card border-2 border-ink bg-white px-3.5 py-2.5 text-ink outline-none focus:ring-2 focus:ring-accent-purple"
                   />
                 </label>
               </div>
               <div className="min-w-0 flex-1">
-                <label className="flex flex-col gap-1.5 text-sm font-medium text-nav-dark">
+                <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
                   Target (optional)
                   <input
                     type="number"
                     defaultValue={(form.payload as CounterPayload).target ?? ''}
                     onBlur={(e) => form.handleTargetBlur(e.target.value)}
-                    className="w-full min-w-0 rounded-card border-2 border-ink bg-white px-3.5 py-2.5 text-nav-dark outline-none focus:ring-2 focus:ring-accent-purple"
+                    className="w-full min-w-0 rounded-card border-2 border-ink bg-white px-3.5 py-2.5 text-ink outline-none focus:ring-2 focus:ring-accent-purple"
                   />
                 </label>
               </div>
@@ -322,7 +322,7 @@ export default function NoteEditorPage() {
               <SwatchPicker value={displayColor} onChange={form.handleColorChange} disabled={colorPickerDisabled} />
               {form.group?.noteColorMode === 'priority' && (
                 <p
-                  className={`mt-2.5 rounded-card border-2 border-ink px-3.5 py-2.5 text-sm text-nav-dark ${SWATCH_TINT_CLASSES[displayColor]}`}
+                  className={`mt-2.5 rounded-card border-2 border-ink px-3.5 py-2.5 text-sm text-ink ${SWATCH_TINT_CLASSES[displayColor]}`}
                 >
                   Color is set by priority for this group.
                 </p>
