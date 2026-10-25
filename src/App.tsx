@@ -11,6 +11,7 @@ import { GOOGLE_CLIENT_ID_WEB, isGoogleWebConfigured } from './lib/google/google
 import { MobileWebNotice } from './components/MobileWebNotice'
 import { SyncStrategyDialog } from './components/SyncStrategyDialog'
 import { AppUpdateBanner } from './components/AppUpdateBanner'
+import { Analytics } from '@vercel/analytics/react'
 
 function App() {
   useTapHaptics()
@@ -24,6 +25,7 @@ function App() {
             <MobileWebNotice />
             <SyncStrategyDialog />
             <AppUpdateBanner />
+            <Analytics />
           </WorkspaceProvider>
         </SyncProvider>
       </AuthProvider>
