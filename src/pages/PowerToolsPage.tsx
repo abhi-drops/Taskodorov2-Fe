@@ -161,6 +161,14 @@ function GroupsSection({
   )
 }
 
+// A full independent class string rather than `${CHIP} flex-col ...` — CHIP's own
+// `flex items-center gap-3` would conflict on `align-items`/`gap` with anything
+// appended after it (two same-specificity Tailwind utilities for the same property
+// have no guaranteed winner by JSX class-string order; see `Modal.tsx`'s
+// `overlayClassName`/`panelClassName` doc for the same rule). Still the board's chip
+// anatomy (`rounded-card border-[3px] border-ink shadow-card`), just a column layout.
+const GOOGLE_CONNECT_CARD = 'flex flex-col gap-3 rounded-card border-[3px] border-ink bg-white p-4 shadow-card'
+
 /**
  * Sync is gated specifically on having signed in with Google — not on any
  * authenticated session — which is why this chip is its own control, separate from
@@ -177,8 +185,48 @@ function SyncChip() {
   const connecting = sync.status === 'disabled'
   const needsGoogleAuth = connecting || (sync.status === 'error' && sync.failure === 'unauthorized')
 
+  // Web has no programmatic trigger for Google's popup/One Tap flow — the real
+  // "Sign in with Google" button has to be the thing the user taps. Rendering our own
+  // chip as a second, look-alike button right above it (as this used to do) reads as
+  // two separate, competing "sign in with Google" prompts stacked together. One
+  // merged card instead: a label/description, then the one real button underneath —
+  // nothing else here pretends to be clickable. Native has no such problem (the chip
+  // itself genuinely drives the system account picker there), so it keeps using the
+  // single clickable-chip shape below, same as the already-connected status chip.
+  if (needsGoogleAuth && !isNative) {
+    return (
+      <div className={GOOGLE_CONNECT_CARD}>
+        <div className="flex items-center gap-3">
+          <AnimatedIcon icon={SyncIcon} size={20} className="text-ink" still />
+          <div className="flex flex-col">
+            <span className="font-medium text-ink">Sync With Google</span>
+            <span className="text-sm text-slate-600">
+              {!isReady
+                ? 'Google Sign-In not configured yet.'
+                : sync.status === 'error'
+                  ? 'Your session expired. Sign in again to sync.'
+                  : 'Sign in with Google to sync your board.'}
+            </span>
+          </div>
+        </div>
+        {isReady &&
+          (isSubmitting ? (
+            <Spinner size={20} />
+          ) : (
+            // No local <GoogleOAuthProvider> here — one already wraps the whole app
+            // (`App.tsx`), so this just needs the <GoogleLogin> button itself.
+            <GoogleLogin
+              onSuccess={(credential) => {
+                if (credential.credential) handleWebCredential(credential.credential)
+              }}
+            />
+          ))}
+        <FormError message={error} />
+      </div>
+    )
+  }
+
   function detailFor(): string {
-    if (connecting) return isReady ? 'Sign in with Google to sync your board.' : 'Google Sign-In not configured yet.'
     switch (sync.status) {
       case 'syncing':
         return 'Syncing…'
@@ -187,8 +235,9 @@ function SyncChip() {
       case 'offline':
         return 'Offline — your changes are saved here and will sync later.'
       case 'error':
+        // 'unauthorized' on native only here — the web case already returned above.
         return sync.failure === 'unauthorized'
-          ? 'Your session expired. Sign in again to sync.'
+          ? 'Your session expired. Tap to sign in again.'
           : 'Last sync failed.'
       case 'idle':
         return sync.lastSyncedAt
@@ -200,7 +249,6 @@ function SyncChip() {
   }
 
   function valueFor(): string {
-    if (connecting) return 'Off'
     switch (sync.status) {
       case 'needs-strategy':
         return 'Choose'
@@ -214,12 +262,9 @@ function SyncChip() {
   }
 
   function handleClick() {
+    // Only reachable here when native (needsGoogleAuth + web already returned above).
     if (needsGoogleAuth) {
-      // Native: the chip itself drives the system account picker. Web: the real
-      // trigger is the GoogleLogin button rendered below — there's no programmatic
-      // equivalent of its One Tap/popup flow, so the chip is inert there and the
-      // button does the work.
-      if (isNative) handleNativeSignIn()
+      handleNativeSignIn()
       return
     }
     sync.syncNow()
@@ -230,7 +275,7 @@ function SyncChip() {
       <button
         type="button"
         onClick={handleClick}
-        disabled={busy || (needsGoogleAuth && (!isReady || !isNative))}
+        disabled={busy}
         className={`${CHIP} w-full justify-between text-left disabled:cursor-not-allowed disabled:opacity-50`}
       >
         <span className="flex items-center gap-3">
@@ -246,19 +291,9 @@ function SyncChip() {
           <span className="shrink-0 font-display text-sm font-bold uppercase text-ink">{valueFor()}</span>
         )}
       </button>
-      {needsGoogleAuth && !isNative && isReady && (
-        // Google's hosted button renders its own UI — there's no programmatic
-        // equivalent of its One Tap/popup flow to trigger from our own chip, so this
-        // reveals the real button instead (same component `GoogleSignInButton` uses).
-        // No local <GoogleOAuthProvider> here — one already wraps the whole app
-        // (`App.tsx`), so this just needs the <GoogleLogin> button itself.
-        <GoogleLogin
-          onSuccess={(credential) => {
-            if (credential.credential) handleWebCredential(credential.credential)
-          }}
-        />
-      )}
-      <FormError message={error} />
+      {/* Only ever relevant on native here — a web sign-in failure is shown inside
+          the merged card above instead, where the GoogleLogin button actually is. */}
+      {isNative && needsGoogleAuth && <FormError message={error} />}
     </div>
   )
 }
@@ -274,7 +309,7 @@ function AccountSection({
     <div className="flex flex-col gap-3">
       <SectionHeading>Account</SectionHeading>
 
-      {auth.status === 'authenticated' ? (
+      {auth.status === 'authenticated' && (
         <div className={`${CHIP} justify-between`}>
           <span className="truncate font-medium text-ink">
             {auth.user?.name ? `${auth.user.name} (${auth.user.email})` : auth.user?.email}
@@ -283,17 +318,11 @@ function AccountSection({
             Log out
           </Button>
         </div>
-      ) : (
-        <div className="flex gap-4 px-1">
-          <Link to="/login" className="font-medium text-accent-purple">
-            Log in
-          </Link>
-          <Link to="/signup" className="font-medium text-accent-purple">
-            Sign up
-          </Link>
-        </div>
       )}
 
+      {/* No separate Log in/Sign up links here — the Sync With Google card below is
+          the one sign-in entry point in Settings, since sync needs Google either way;
+          email/password login still works, just isn't offered from this page. */}
       <SyncChip />
 
       <button type="button" onClick={onResetRequest} className={DANGER_CHIP}>

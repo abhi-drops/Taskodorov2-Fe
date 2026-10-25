@@ -23,9 +23,19 @@ you're logged in."
 
 `SyncChip` (`src/pages/PowerToolsPage.tsx`) is a separate control from the Account row
 above it for exactly this reason: a password-authenticated user's Account row reads
-"authenticated," but the sync chip still reads "Off," and tapping it runs Google
+"authenticated," but the sync chip still reads "Off," and connecting runs Google
 Sign-In right there (`useGoogleSignIn(null)` — the `null` `redirectTo` keeps the user
 on Settings instead of the Login/Signup pages' usual redirect to `/`).
+
+**Not-yet-connected renders differently by platform, on purpose.** Native: the chip
+itself is the control — tapping it calls `handleNativeSignIn()` directly, which drives
+the system account picker, so it's the same single clickable-chip shape the
+already-connected status view uses. Web has no programmatic trigger for Google's
+popup/One Tap flow — the real `<GoogleLogin>` button has to be the thing the user
+taps — so instead of layering our own look-alike chip on top of it (which read as two
+separate "sign in with Google" prompts stacked together, fixed 2026-10-25), that case
+renders one merged card: a label/description, then the real button underneath,
+nothing else pretending to be clickable.
 
 ## Local dirty tracking
 

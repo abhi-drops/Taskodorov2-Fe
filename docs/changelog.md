@@ -4,6 +4,25 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-25 — Settings' Account section drops the Log in/Sign up links
+
+- Removed the "Log in"/"Sign up" links that used to sit above the Sync With Google
+  card when signed out — the card's own Google button is now the one sign-in entry
+  point offered from Settings. Email/password login still works via `/login`/`/signup`
+  directly, just isn't surfaced from this page anymore. See `feat-sync.md`.
+
+## 2026-10-25 — Fix: redundant "sign in with Google" controls in Settings
+
+- Settings' Sync chip, when not yet connected, used to render two things that both
+  read as "sign in with Google" stacked on top of each other: its own look-alike chip
+  (not actually clickable on web — there's no programmatic trigger for Google's
+  popup/One Tap flow) and, directly below it, the real Google-hosted button. Merged
+  into one card: a label/description, then the one real button underneath, nothing
+  else pretending to be clickable. Native is unaffected — the chip itself genuinely
+  drives the system account picker there, so it keeps the single clickable-chip shape
+  (same one the already-connected status view uses). See `feat-sync.md` — no
+  behavioral change to sync itself, UI-only.
+
 ## 2026-10-23 — Fix: deployed site 404s on reload of nested routes
 
 - No `vercel.json` existed, so Vercel's static file server had no rewrite rule for
