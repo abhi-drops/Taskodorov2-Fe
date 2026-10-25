@@ -4,6 +4,36 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-25 — App update check wired up (Android only)
+
+- **What.** `docs/feat-app-update-check-from-be.md` documented a backend endpoint
+  (`GET /app/update-check`) that was never called from the client. Wired it up:
+  `AppUpdateProvider` (`lib/appUpdate/`) checks it once per app launch, native only
+  (`@capacitor/app`'s `App.getInfo()` supplies the installed `versionCode`/version —
+  there's no native build to report on web, and this is an Android-distribution
+  concern only). An update surfaces anywhere in the app via `AppUpdateBanner.tsx`
+  (rendered from `App.tsx`, same precedent as `SyncStrategyDialog`): a dismissible
+  pill normally, a non-dismissible dialog when the backend marks the release
+  `forceUpdate`. Settings gained an "App Updates" chip next to Sync With Google for a
+  manual re-check, also native-only.
+- **No "don't show again."** Dismissing the banner doesn't persist — a fresh check
+  (next launch, or the Settings "Check" button) that still finds the same update
+  shows it again. Deliberate, not an oversight: kept simple on purpose rather than
+  adding a dismissed-version preference key for a nudge the backend doc itself calls
+  "nice-to-have."
+- **`components/ui/Modal.tsx` gained a `dismissible` prop** (default `true`, so every
+  existing caller — `ConfirmDialog`, `SyncStrategyDialog`, etc. — is unaffected) to
+  make the `forceUpdate` dialog actually non-dismissible: no close button, no
+  Escape, no backdrop click; the Android back button is still consumed (so it
+  doesn't fall through to exiting the app) but doesn't close it either.
+- Verified in the Browser pane that the feature is correctly inert on web (no chip,
+  no banner, no console errors) and that the `Modal` change doesn't regress an
+  existing dialog (Settings' Reset to Default, close/Cancel/backdrop all still
+  work). The native check-and-banner path itself needs a real device/emulator to
+  verify — browser-based testing can't exercise `isNative()`-gated code (see
+  `CLAUDE.md`'s platform-detection note).
+- Details: `docs/feat-app-update-check-from-be.md` (§6), `docs/feat-power-tools.md`.
+
 ## 2026-10-25 — New notes no longer lost when the editor is left without blurring
 
 - **The bug.** A brand-new note's title/description were documented as auto-saving

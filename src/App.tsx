@@ -4,25 +4,30 @@ import { router } from './router/routes'
 import { AuthProvider } from './lib/auth/AuthContext'
 import { SyncProvider } from './lib/sync/SyncContext'
 import { WorkspaceProvider } from './lib/workspace/WorkspaceContext'
+import { AppUpdateProvider } from './lib/appUpdate/AppUpdateProvider'
 import { useTapHaptics } from './lib/platform/useTapHaptics'
 import { isNative } from './lib/platform/isNative'
 import { GOOGLE_CLIENT_ID_WEB, isGoogleWebConfigured } from './lib/google/googleAuthWeb'
 import { MobileWebNotice } from './components/MobileWebNotice'
 import { SyncStrategyDialog } from './components/SyncStrategyDialog'
+import { AppUpdateBanner } from './components/AppUpdateBanner'
 
 function App() {
   useTapHaptics()
 
   const tree = (
-    <AuthProvider>
-      <SyncProvider>
-        <WorkspaceProvider>
-          <RouterProvider router={router} />
-          <MobileWebNotice />
-          <SyncStrategyDialog />
-        </WorkspaceProvider>
-      </SyncProvider>
-    </AuthProvider>
+    <AppUpdateProvider>
+      <AuthProvider>
+        <SyncProvider>
+          <WorkspaceProvider>
+            <RouterProvider router={router} />
+            <MobileWebNotice />
+            <SyncStrategyDialog />
+            <AppUpdateBanner />
+          </WorkspaceProvider>
+        </SyncProvider>
+      </AuthProvider>
+    </AppUpdateProvider>
   )
 
   // One app-level provider instead of one per call site (Login/Signup's

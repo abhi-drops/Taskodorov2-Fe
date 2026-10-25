@@ -77,6 +77,12 @@ desktop wireframe — see `docs/style-guide.md`'s "Power Tools: row chips + desk
   `docs/phase3-sync-plan-from-be.md` for the full design; `SyncStrategyDialog.tsx`
   (rendered from `App.tsx`, not this page) is the first-sync "keep local vs. use
   account" conflict prompt.
+- **App Updates** (`UpdateChip`, next to Sync With Google; native/Android only — hidden
+  entirely on web, not shown-but-disabled like the Board section above) — shows the
+  installed version and the result of the once-per-launch update check, with a manual
+  "Check" trigger (`useAppUpdate()`, `lib/appUpdate/`). An update found anywhere in the
+  app (not just here) also surfaces through `AppUpdateBanner.tsx`, rendered from
+  `App.tsx` next to `SyncStrategyDialog`. See `docs/feat-app-update-check-from-be.md`.
 - **Wipe All Notes** (Groups section, under Completed Group; 2026-10-05) — danger chip →
   `ConfirmDialog` → `wipeWorkspaceNotes` (`lib/db/notes.ts`). Soft-deletes every note in
   the **active workspace** in one write. The workspace, its groups and their settings

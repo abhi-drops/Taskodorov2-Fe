@@ -24,6 +24,7 @@ export {
   Delete02Icon as TrashIcon,
   DeliveryBox01Icon as GroupIcon,
   DownloadIcon as ExportIcon,
+  DownloadIcon as UpdateIcon,
   GoogleGeminiIcon as GeminiIcon,
   GridViewIcon as AppsIcon,
   Home01Icon as HomeIcon,

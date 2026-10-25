@@ -26,6 +26,12 @@ interface ModalProps {
    * and 90% of its height, for dialogs with a lot to choose from. The content area then
    * fills the panel, so a child can pin a footer with `h-full` + flex. */
   size?: 'default' | 'large'
+  /** `false`: no close (X) button, no Escape, no backdrop click — only an action inside
+   * `children` can get out of it. For a mandatory flow (e.g. a forced app update) where
+   * the caller doesn't want any affordance to close without acting. The Android back
+   * button is still consumed (so it doesn't fall through to exiting the app or
+   * navigating the page underneath); it just doesn't call `onClose`. Default `true`. */
+  dismissible?: boolean
 }
 
 export function Modal({
@@ -37,9 +43,10 @@ export function Modal({
   overlayClassName,
   panelClassName,
   size = 'default',
+  dismissible = true,
 }: ModalProps) {
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen || !dismissible) return
 
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()
@@ -47,7 +54,7 @@ export function Modal({
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onClose])
+  }, [isOpen, onClose, dismissible])
 
   // Android: the back button closes the modal instead of navigating the page under it.
   // Registered once per opening (the latest `onClose` is read through a ref), so a
@@ -58,8 +65,12 @@ export function Modal({
   }, [onClose])
   useEffect(() => {
     if (!isOpen) return
-    return pushBackHandler(() => onCloseRef.current())
-  }, [isOpen])
+    // Still registered when `!dismissible`, just a no-op: this consumes the back press
+    // (so it doesn't exit the app or navigate the page underneath) without closing.
+    return pushBackHandler(() => {
+      if (dismissible) onCloseRef.current()
+    })
+  }, [isOpen, dismissible])
 
   if (!isOpen) return null
 
@@ -81,7 +92,7 @@ export function Modal({
       className={`fixed inset-0 z-50 flex ${
         isFullPage ? '' : `items-center justify-center p-6 ${overlayClassName ?? 'bg-black/40'}`
       }`}
-      onClick={onClose}
+      onClick={dismissible ? onClose : undefined}
     >
       <div
         className={`flex flex-col gap-4 bg-white p-6 ${panelShapeClasses}`}
@@ -97,17 +108,21 @@ export function Modal({
         }
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between gap-4">
-          {title && <h2 className="font-display text-lg font-bold text-ink">{title}</h2>}
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="ml-auto flex h-8 w-8 items-center justify-center rounded-full hover:bg-slate-100"
-          >
-            <AnimatedIcon icon={CloseIcon} size={18} className="text-ink" />
-          </button>
-        </div>
+        {(title || dismissible) && (
+          <div className="flex items-center justify-between gap-4">
+            {title && <h2 className="font-display text-lg font-bold text-ink">{title}</h2>}
+            {dismissible && (
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close"
+                className="ml-auto flex h-8 w-8 items-center justify-center rounded-full hover:bg-slate-100"
+              >
+                <AnimatedIcon icon={CloseIcon} size={18} className="text-ink" />
+              </button>
+            )}
+          </div>
+        )}
         <div className={isLarge || isFullPage ? 'min-h-0 flex-1 overflow-y-auto' : 'overflow-y-auto'}>{children}</div>
       </div>
     </div>,

@@ -7,11 +7,12 @@ import { PowerToolsDesktopLayout } from '../components/PowerToolsSidebar'
 import { CHIP, DANGER_CHIP } from '../components/SidebarPanelLayout'
 import { useAuth } from '../lib/auth/useAuth'
 import { useSync } from '../lib/sync/useSync'
+import { useAppUpdate } from '../lib/appUpdate/useAppUpdate'
 import { useGoogleSignIn } from '../common_logics/useGoogleSignIn'
 import { useWorkspace } from '../lib/workspace/useWorkspace'
 import { usePlatform } from '../lib/platform/usePlatform'
 import { AnimatedIcon } from '../components/ui/AnimatedIcon'
-import { CloseIcon, GroupIcon, SettingsIcon, SyncIcon, TrashIcon } from '../components/ui/icons'
+import { CloseIcon, GroupIcon, SettingsIcon, SyncIcon, TrashIcon, UpdateIcon } from '../components/ui/icons'
 import { Spinner } from '../components/ui/Spinner'
 import { Button } from '../components/ui/Button'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
@@ -298,6 +299,49 @@ function SyncChip() {
   )
 }
 
+/** Native only — an Android-distribution concern, see
+ * `docs/feat-app-update-check-from-be.md`. Mirrors `SyncChip`'s shape: a status line
+ * plus a manual trigger, here `checkNow()` from `AppUpdateProvider` (which also runs
+ * this once automatically on app launch — this chip just lets the user re-run it and
+ * see the result without waiting for the dismissible banner). */
+function UpdateChip() {
+  const { isNative } = usePlatform()
+  const { status, result, currentVersionName, checkNow } = useAppUpdate()
+  const busy = status === 'checking'
+
+  if (!isNative) return null
+
+  function detailFor(): string {
+    if (busy) return 'Checking…'
+    if (status === 'error') return "Couldn't check for updates."
+    if (result?.updateAvailable) return `Version ${result.latestVersion} is available.`
+    if (currentVersionName) return `You're on the latest version (v${currentVersionName}).`
+    return 'Tap to check for updates.'
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={checkNow}
+      disabled={busy}
+      className={`${CHIP} w-full justify-between text-left disabled:cursor-not-allowed disabled:opacity-50`}
+    >
+      <span className="flex items-center gap-3">
+        <AnimatedIcon icon={UpdateIcon} size={20} className="text-ink" />
+        <span className="flex flex-col">
+          <span className="font-medium text-ink">App Updates</span>
+          <span className="text-sm text-slate-600">{detailFor()}</span>
+        </span>
+      </span>
+      {busy ? (
+        <Spinner size={16} />
+      ) : (
+        <span className="shrink-0 font-display text-sm font-bold uppercase text-ink">Check</span>
+      )}
+    </button>
+  )
+}
+
 function AccountSection({
   auth,
   onResetRequest,
@@ -324,6 +368,7 @@ function AccountSection({
           the one sign-in entry point in Settings, since sync needs Google either way;
           email/password login still works, just isn't offered from this page. */}
       <SyncChip />
+      <UpdateChip />
 
       <button type="button" onClick={onResetRequest} className={DANGER_CHIP}>
         Reset To Default
