@@ -4,6 +4,42 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-25 — New notes no longer lost when the editor is left without blurring
+
+- **The bug.** A brand-new note's title/description were documented as auto-saving
+  "while typing (debounced) and on blur," but creation itself was blur-only: the
+  debounce path and the unmount-flush effect (meant to cover e.g. the Android back
+  button, which fires no blur) were both no-ops for a note with no id yet, since
+  nothing was ever scheduled for it. Typing a title and leaving the editor any way
+  other than clicking/tapping away — closing the mobile sheet, back button, any
+  other navigation — silently dropped the note. Same bug on web and mobile, since
+  they share one hook (`common_logics/useNoteForm.ts`) and page.
+- **The fix.** Creation now goes through a single idempotent `ensureNoteCreated()`
+  that both the 600 ms debounce (title or description) and blur can call — guarded
+  (`idRef` + `creationLockRef`) so it only ever runs once per note regardless of
+  which trigger gets there first, reading the fields to save from a ref snapshot
+  refreshed every render rather than a possibly-stale triggering closure. A pending
+  creation is now flushed by the same unmount effect that already flushed pending
+  updates. Found and fixed one real bug while verifying this in the browser: an
+  `isMountedRef` gating the post-creation `navigate()` was stuck permanently `false`
+  after React Strict Mode's dev-only mount→unmount→remount cycle — a textbook
+  "isMounted ref" pitfall — so `navigate()` silently never fired even though the
+  editor was genuinely still open; fixed by resetting the ref to `true` in the
+  effect's setup, not just once via `useRef(true)`.
+- **Diary stays exactly as before.** `createNote` logs one `created` + genesis title
+  event; the creation guard above exists specifically so one typing session can
+  never produce two notes or two genesis events. Everything after creation still
+  flows through the existing `updateNote`/`logTitleEdit` path and its 3-minute
+  coalescing, unchanged — verified in the browser: exactly one `CREATED` and one
+  coalesced `RENAMED` entry per note, across debounce, blur and unmount-flush
+  triggers.
+- Verified manually in the Browser pane: creation via pure debounce (no blur at
+  all, focus never lost), via the unmount-flush path (typed then hard-navigated
+  away), resumed typing immediately after a debounce-triggered creation (no
+  characters dropped by the post-creation reload), and the existing blur/edit/
+  delete paths for both new and existing notes.
+- Details: `docs/feat-notes.md` ("Create/edit").
+
 ## 2026-10-25 — Default template's sample notes updated for current naming
 
 - The "Default" built-in template's walkthrough notes still said `"POWER TOOLS"` —

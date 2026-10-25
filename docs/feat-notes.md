@@ -208,17 +208,47 @@ blur.
   add/remove status, delete note) calls `cancelSave` first: otherwise the older pending
   save would land afterwards and overwrite it, e.g. bring back a removed status.
 - An emptied title or status is not saved by the debounce; it waits for blur.
-- A **new** note is still created only on the first non-empty title blur (below).
 - **Diary:** title and status edits are Diary-tracked, so each of these saves would log
   an entry. The log coalesces them on write: edits within 3 minutes are one "old → final"
   entry (`feat-diary.md`, "Data: the activity log"). Descriptions aren't tracked.
 
-**A new note is not written to the database until its title is non-empty.** Type,
-color, priority, and payload edits made before that just update local component state;
-the first non-empty title blur fires the actual `createNote(...)` call with whatever
-state has accumulated by then, then the page navigates to `/notes/:id/edit` (replacing
-history, so a refresh doesn't re-enter create mode). This means there's no
-orphaned-draft cleanup to worry about — nothing exists in the DB to clean up.
+**A new note is not written to the database until its title is non-empty** — but,
+unlike the title/description/status debounce above, creation is *not* blur-only: typing
+a title (or description, once a title exists) that then pauses for 600 ms creates the
+note exactly the same as blurring does, through a single `ensureNoteCreated()` that both
+paths call. This closes what used to be a real data-loss bug — a brand-new note typed
+without ever losing focus (closing the sheet, the Android back button, any navigation
+away that fires no blur) used to vanish, because the debounce path and the "flush
+pending saves on unmount" effect were both no-ops while nothing had ever been scheduled
+for a note with no id yet. Now a pending creation is schedulable exactly like any other
+debounced field (key `'create'`), so it benefits from the same unmount-flush.
+
+`ensureNoteCreated()` is guarded so it only ever creates once no matter which trigger
+gets there first (title debounce, description debounce, blur, or the unmount flush):
+`idRef`/`creationLockRef` dedupe a creation that's already finished or still in flight,
+and reads the title/description/type/color/priority/payload to save from a ref snapshot
+refreshed every render (`latestRef`), not from the triggering closure's possibly-stale
+state. This matters for the Diary: `createNote` logs exactly one `created` + genesis
+title event, so the dedup guarantees one typing session never produces two notes or two
+genesis entries — everything after creation still flows through the normal
+`updateNote`/`logTitleEdit` path and its existing 3-minute coalescing, unchanged.
+
+Creating fires `setId(...)` and `navigate('/notes/:id/edit', {replace:true})` same as
+before, but only if the editor is still mounted (`isMountedRef`) — a creation flushed by
+the unmount effect (the user has already left) still writes to the DB but doesn't yank
+them back into an editor they closed. And because that `navigate` re-runs the `load`
+effect (its `noteId` dependency changes), a `justCreatedRef` flag skips the resulting
+re-fetch-from-DB once — otherwise a debounce-triggered creation followed by the user
+immediately resuming typing could have a split-second reload overwrite their next few
+keystrokes with what was just saved.
+
+Type, color, priority, and payload edits made before the note has a title just update
+local component state (no debounce, no persist — `persist()` itself is a no-op until an
+id exists); whichever creation trigger fires first captures whatever of those has
+accumulated by then. This still means there's no orphaned-draft cleanup to worry about
+— nothing exists in the DB until creation actually runs, and `remove()` cancels any
+pending `'create'` save before its `if (!id) return` guard so a still-unsaved draft
+can't be resurrected by a stale timer after the user discards it.
 
 Switching Note Type resets `payload` to that type's default shape
 (`lib/db/notes.ts`'s `defaultPayload`). Delete is present in the editor (a `danger`

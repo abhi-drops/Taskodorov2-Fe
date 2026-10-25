@@ -11,7 +11,7 @@ import type { SwatchColor } from '../components/ui/swatchColors'
 /** How long typing in the title, description or a status must pause before it is saved. */
 const SAVE_DEBOUNCE_MS = 600
 
-type DebouncedField = 'title' | 'description' | 'statuses'
+type DebouncedField = 'title' | 'description' | 'statuses' | 'create'
 
 const SWATCH_COLORS: SwatchColor[] = ['yellow', 'coral', 'blue', 'green']
 
@@ -33,6 +33,15 @@ export function useNoteForm({ groupId, noteId }: UseNoteFormArgs) {
   const [resolvedGroupId, setResolvedGroupId] = useState<string | null>(groupId ?? null)
   const [group, setGroup] = useState<Group | null>(null)
 
+  // Mirrors `id`, but updated synchronously the instant creation resolves — closes the
+  // race where a second trigger (e.g. blur right after a debounce timer already
+  // resolved) checks `id` before React has re-rendered with the new value.
+  const idRef = useRef(noteId ?? null)
+  // Set right before the mounted-only `setId`/`navigate` below, consumed once by the
+  // `load` effect's next run (triggered by that same navigate) so it doesn't re-fetch
+  // from the DB and clobber any keystrokes typed in the meantime (see `ensureNoteCreated`).
+  const justCreatedRef = useRef(false)
+
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [type, setType] = useState<NoteType>('basic')
@@ -47,12 +56,21 @@ export function useNoteForm({ groupId, noteId }: UseNoteFormArgs) {
 
     async function load() {
       if (noteId) {
+        if (justCreatedRef.current) {
+          // This note was just created by this same hook instance (debounce, blur, or
+          // unmount-flush) — state already reflects what was written, so a re-fetch here
+          // would just overwrite any keystrokes typed since.
+          justCreatedRef.current = false
+          setStatus('ready')
+          return
+        }
         const note = await getNoteById(noteId)
         if (cancelled || !note) {
           setStatus('ready')
           return
         }
         setId(note.id)
+        idRef.current = note.id
         setWorkspaceId(note.workspaceId)
         setResolvedGroupId(note.groupId)
         setTitle(note.title)
@@ -112,10 +130,20 @@ export function useNoteForm({ groupId, noteId }: UseNoteFormArgs) {
     pendingSaves.current.set(field, { timer, run })
   }
 
-  // Leaving the editor mid-pause (e.g. back button, which fires no blur): save what's pending.
+  const isMountedRef = useRef(true)
+
+  // Leaving the editor mid-pause (e.g. back button, which fires no blur): save what's
+  // pending. `isMountedRef` flips first so a creation flushed here (see
+  // `ensureNoteCreated`) still writes to the DB but doesn't navigate the user back into
+  // an editor they've already left. Reset to `true` on setup too, not just initialized
+  // once via `useRef(true)` — Strict Mode's dev-only mount→unmount→remount dance runs
+  // this cleanup once before the "real" mount, which would otherwise leave it stuck
+  // `false` for a component that's actually still on screen.
   useEffect(() => {
+    isMountedRef.current = true
     const pending = pendingSaves.current
     return () => {
+      isMountedRef.current = false
       for (const { timer, run } of pending.values()) {
         window.clearTimeout(timer)
         run()
@@ -123,6 +151,62 @@ export function useNoteForm({ groupId, noteId }: UseNoteFormArgs) {
       pending.clear()
     }
   }, [])
+
+  // Snapshot of everything `ensureNoteCreated` needs, refreshed every render. A debounce
+  // timer's callback is captured when typing paused; without this, it would read
+  // whatever title/description/color/etc. were current at that moment even if the user
+  // changed one of them again before the timer actually fired 600ms later.
+  const latestRef = useRef({ title, description, type, color, priority, payload, workspaceId, resolvedGroupId })
+  latestRef.current = { title, description, type, color, priority, payload, workspaceId, resolvedGroupId }
+
+  // Guards the async gap *during* an in-flight `createNote` call: a second trigger
+  // (debounce timer, blur, unmount-flush) that fires before the first one's `await`
+  // resolves just awaits this same promise instead of starting a second `createNote` —
+  // which would double the note and its Diary genesis event.
+  const creationLockRef = useRef<Promise<string | null> | null>(null)
+
+  /**
+   * The only place a brand-new note is ever written to the DB. Safe to call from
+   * multiple triggers (debounced title/description typing, blur, unmount-flush) — it
+   * creates at most once per note, no matter which one gets there first.
+   */
+  async function ensureNoteCreated(titleOverride?: string): Promise<string | null> {
+    if (idRef.current) return idRef.current
+    if (creationLockRef.current) return creationLockRef.current
+
+    const snapshot = latestRef.current
+    const trimmedTitle = (titleOverride ?? snapshot.title).trim()
+    const snapshotWorkspaceId = snapshot.workspaceId
+    const snapshotGroupId = snapshot.resolvedGroupId
+    if (!trimmedTitle || !snapshotWorkspaceId || !snapshotGroupId) return null
+
+    const promise = (async () => {
+      try {
+        const created = await createNote({
+          workspaceId: snapshotWorkspaceId,
+          groupId: snapshotGroupId,
+          type: snapshot.type,
+          title: trimmedTitle,
+          description: snapshot.description || null,
+          color: snapshot.color,
+          priority: snapshot.priority,
+          payload: snapshot.payload,
+        })
+        idRef.current = created.id
+        cancelSave('create')
+        if (isMountedRef.current) {
+          justCreatedRef.current = true
+          setId(created.id)
+          navigate(`/notes/${created.id}/edit`, { replace: true })
+        }
+        return created.id
+      } finally {
+        creationLockRef.current = null
+      }
+    })()
+    creationLockRef.current = promise
+    return promise
+  }
 
   /**
    * After a same-session "On Check Move To" relocation: refresh `group`/
@@ -149,11 +233,17 @@ export function useNoteForm({ groupId, noteId }: UseNoteFormArgs) {
 
   function handleTitleChange(value: string) {
     setTitle(value)
-    // A new note is still only created on blur (see `handleTitleBlur`), and an emptied
-    // title waits for blur too, so a half-retyped title isn't saved as blank.
+    // An emptied title waits for blur, so a half-retyped title isn't saved as blank.
     const trimmed = value.trim()
-    if (id && trimmed) scheduleSave('title', () => persist({ title: trimmed }))
-    else cancelSave('title')
+    if (id) {
+      if (trimmed) scheduleSave('title', () => persist({ title: trimmed }))
+      else cancelSave('title')
+      return
+    }
+    // The note doesn't exist yet: a pause here is what actually creates it (see
+    // `ensureNoteCreated`), same as typing in the description below.
+    if (trimmed) scheduleSave('create', () => void ensureNoteCreated())
+    else cancelSave('create')
   }
 
   async function handleTitleBlur() {
@@ -165,29 +255,28 @@ export function useNoteForm({ groupId, noteId }: UseNoteFormArgs) {
       await persist({ title: trimmed })
       return
     }
-    if (!trimmed || !workspaceId || !resolvedGroupId) return
-
-    const created = await createNote({
-      workspaceId,
-      groupId: resolvedGroupId,
-      type,
-      title: trimmed,
-      description: description || null,
-      color,
-      priority,
-      payload,
-    })
-    setId(created.id)
-    navigate(`/notes/${created.id}/edit`, { replace: true })
+    cancelSave('create')
+    await ensureNoteCreated(trimmed)
   }
 
   function handleDescriptionChange(value: string) {
     setDescription(value)
-    if (id) scheduleSave('description', () => persist({ description: value || null }))
+    if (id) {
+      scheduleSave('description', () => persist({ description: value || null }))
+      return
+    }
+    // Typing here also counts toward the "stopped typing" pause that creates the note,
+    // in case the user filled in the title first and moved on before it fired.
+    scheduleSave('create', () => void ensureNoteCreated())
   }
 
   function handleDescriptionBlur() {
     cancelSave('description')
+    if (!id) {
+      cancelSave('create')
+      void ensureNoteCreated()
+      return
+    }
     persist({ description: description || null })
   }
 
@@ -327,8 +416,11 @@ export function useNoteForm({ groupId, noteId }: UseNoteFormArgs) {
   }
 
   async function remove() {
-    if (!id) return
+    // Cancel before the `!id` guard: a brand-new, unsaved note can have a pending
+    // `'create'` save (see `ensureNoteCreated`) that would otherwise resurrect it moments
+    // after this call.
     for (const field of [...pendingSaves.current.keys()]) cancelSave(field)
+    if (!id) return
     await deleteNote(id)
     // The card it would morph back into no longer exists, so exit like any other
     // editor close (sheet on mobile, fade on web) instead of a morph.
