@@ -6,6 +6,37 @@ a post, and add an entry at the top whenever the user gives feedback (see SKILL.
 
 ---
 
+## 2026-10-26 — Companion /brag video, two ratios, up to 45s
+- Said: "add one more slide for status feature , but thistime use /brag for videos with
+  this instagram ration and use audio with voice" then "same vid in 2 ratios instagram
+  and wide" then (on scope) "don't restrict with 22 sec video give a detaied video upto
+  45 secs max"
+- Decision: built a narrated companion video to this carousel via the project's `/brag`
+  skill (not this skill) — `brag-output-2026-10-26-124233/`, tone `default`, ~45s (an
+  explicit override of brag's usual 15-25s cap), Kokoro `af_heart` voiceover, music bed
+  ducked under narration, rendered in both `vertical` (1080x1920, Instagram/Reels) and
+  `landscape` (1920x1080, wide) from the same timeline/audio. Reused this post's real
+  screenshots (notes-column.png, status-card.png, app-desktop/mobile.png) and the same
+  CSS component language (chip/note/backdrop/counter/strip/swatches) so the video and
+  the carousel read as the same launch, not two different designs.
+- Scope: documented here since it was built directly off this carousel's assets, but the
+  actual plan/brief/decisions for that video live under `/brag`'s own output directory,
+  not this skill's files.
+- Status: active
+
+## 2026-10-26 — Added a Status slide; carousel now 10 slides (Instagram's max)
+- Said: "add one more slide for status feature" (post: taskodoro-feature-tour)
+- Decision: inserted as slide 5 (after Notes, before Templates) — "Give any task a
+  status." / "Add dated updates to a note — see the latest on the card, the full
+  history in the Diary." Used the same real-screenshot technique as the Notes slide
+  (see entry below): created a note with two dated status entries via
+  `.claude/skills/promo-poster/scripts/status-screenshot.cjs`, cropped to the title
+  card + status block at 2x. Renumbered slides 6-10 and the `#root`/footer chip counts
+  accordingly.
+- Scope: this post. Reusable: the status-screenshot script, same pattern as
+  notes-screenshot.cjs — adapt for future posts that need a single-note feature shot.
+- Status: active
+
 ## 2026-10-25 — Real screenshot instead of a hand-built mockup when it keeps breaking
 - Said: "in slide 5 there is an additiional chip for template fix , side 4 is fully
   broken todos , try scaled down ( more resolution display version of components )"

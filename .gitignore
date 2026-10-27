@@ -33,8 +33,5 @@ dist-ssr
 # Brag videos (renders, narration virtualenv, temp files)
 brag-output*/
 
-# Promotion posters: scratch files from exporting
-promotions/.tmp/
-promotions/*/source/snapshots/
-promotions/*/source/snapshot.log
-promotions/*/source/contact-sheet.jpg
+# Promotion content (posters, carousels, brag videos): not part of the app, don't track
+promotions/
