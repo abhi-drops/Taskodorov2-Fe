@@ -21,11 +21,20 @@ utility classes (same mechanism that turns `--radius-card` into `rounded-card`).
 
 ## Grid background
 
-`src/assets/background.jpeg` (a grid-paper texture) applied via a `.bg-grid` utility
-class in `src/index.css` — `background-size: cover` (not tiled; the source file has no
-clean seamless-tile crop available, cover-fill reads the same). Used on board-type
-screens only (`AppShell`), never globally on `body` — auth screens stay flat
-`bg-surface`.
+A `.bg-grid` utility class in `src/index.css`, drawn with two tiled `linear-gradient`
+lines (40px cells, `--color-ink` at 12% over `--color-surface`) rather than a raster
+image — a fixed `background-size` tile keeps the cell size constant no matter how tall
+the container grows, instead of a `cover`-fill image rescaling (and distorting) with its
+container's aspect ratio. `background-position-x: 24px` lines up a vertical line with
+the shared `p-6` (24px) left edge page headings/content start at, on both web and
+mobile. Below the 640px mobile breakpoint, where the board is a single full-width note
+column, a media query swaps the fixed-px tile for `background-size:
+calc((100% - 48px) / 8) 40px` — dividing the exact content width into 8 even cells so a
+line lands on the note's *right* edge too, at any phone width, not just one measured by
+hand. Desktop keeps the fixed 40px tile (its `w-[22rem]` column + backdrop
+padding/negative-margin combination doesn't reduce to one clean content width the same
+way, so there's no equivalent exact-fit formula there). Used on board-type screens only
+(`AppShell`), never globally on `body` — auth screens stay flat `bg-surface`.
 
 ## Icons
 

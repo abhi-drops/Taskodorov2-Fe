@@ -4,7 +4,30 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
-## 2026-10-29 — Diary calendar mobile chips swapped for plain dots
+## 2026-10-29 — `.bg-grid` background switched from a raster image to CSS gradients
+
+- **What.** `.bg-grid` (`src/index.css`, used by `AppShell`) no longer uses
+  `background.jpeg` with `background-size: cover`. A `cover`-fill image rescales to
+  fill its container's exact aspect ratio, so on any page taller than one viewport
+  (a long board, a long Diary day) the grid cell size grew and the lines visibly
+  distorted compared to shorter pages — worse on mobile where content height varies
+  more. Replaced with two tiled `linear-gradient` lines (40px cells, `--color-ink` at
+  12% opacity over `--color-surface`) at a fixed `background-size`, so the cell size
+  never depends on container height and tiles identically on desktop and mobile at any
+  page length. `src/assets/background.jpeg` removed (no remaining references).
+- `background-position-x: 24px` so a vertical line sits under the shared `p-6` (24px)
+  left edge that page headings and content start at (e.g. the workspace name), instead
+  of landing arbitrarily — same 24px offset on web and mobile since both share
+  `AppShell`'s `p-6` wrapper.
+- **Follow-up (same day).** Below the mobile breakpoint (640px) the board is a single
+  full-width note column, so a note's left/right edges sit exactly at the 24px `p-6`
+  inset on each side. A fixed 40px tile only lands a line on the right edge by
+  coincidence at one specific viewport width, so under 640px `.bg-grid` now sizes its
+  columns with `calc((100% - 48px) / 8)` instead — this divides the *exact* content
+  width into 8 even cells, so a line lands on the note's right edge too, at any phone
+  width. Desktop keeps the fixed 40px tile (its column/backdrop padding math doesn't
+  reduce to a single clean width the same way).
+- See `docs/style-guide.md`'s "Grid background" section (updated in this change).
 
 - **What.** Follow-up to the 2026-10-27 fixed-height fix below: on mobile,
   `DayActivityChips` (`DiaryShell.tsx`) now renders a plain colour dot per active

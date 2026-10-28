@@ -259,14 +259,33 @@ html[data-pt='note-close']::view-transition-new(root) {
 }
 
 .bg-grid {
-  /* background-image doesn't have its own opacity, and a plain `opacity` on this
-     element would dim the nav/content sitting inside it too — so the image is faded
-     to 15% by layering a translucent surface-color wash on top of it instead. */
-  background-image: linear-gradient(
-      color-mix(in srgb, var(--color-surface) 85%, transparent),
-      color-mix(in srgb, var(--color-surface) 85%, transparent)
-    ), url('./assets/background.jpeg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  /* Grid-paper texture drawn with gradients instead of the old background.jpeg —
+     a `background-size: cover` raster rescales to fill its container, so cell size
+     drifted (and the lines distorted) on anything taller than one viewport. A fixed
+     `background-size` tile has no container-relative scale to drift: the 40px cell
+     repeats identically no matter how tall the page grows, on desktop or mobile. */
+  background-color: var(--color-surface);
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--color-ink) 12%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--color-ink) 12%, transparent) 1px, transparent 1px);
+  background-size: 40px 40px;
+  /* x offset keeps a vertical line under the shared `p-6` (24px) left edge that page
+     headings (e.g. the workspace name) and content start at, so the pattern reads as
+     aligned with the UI rather than arbitrary — same 24px on both web and mobile
+     since both go through AppShell's identical `p-6` wrapper. */
+  background-position: 24px -1px;
+}
+
+/* Below the mobile breakpoint (`usePlatform`'s 640px), the board is a single
+   full-width note column — no desktop column indent/backdrop padding — so a note's
+   left and right edges sit exactly at the shared 24px `p-6` inset on each side
+   (already where the 24px offset above lands a line). Swapping the fixed 40px tile
+   for one that divides the exact content width (100% minus the 24px inset each side)
+   into 8 even cells makes a line land on the *right* edge too, at any phone width —
+   not just a width we happened to measure — instead of a fixed px size that only
+   lines up by coincidence. */
+@media (max-width: 639.98px) {
+  .bg-grid {
+    background-size: calc((100% - 48px) / 8) 40px;
+  }
 }
