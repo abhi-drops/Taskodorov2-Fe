@@ -74,9 +74,27 @@ export function DiaryHeader({ detailsToggle = false, children }: { detailsToggle
  * The small Created / Moved / Changes chips in a calendar day cell, in the Diary's colour
  * scheme: violet created, blue moved, yellow changes (see `DiarySidebar`).
  * Renders nothing for a day with no activity, so a quiet month isn't a wall of zeros.
+ *
+ * Mobile swaps the icon+count pills for plain colour dots: a narrow column rarely fits
+ * two pills side by side, so with all 3 categories active the pills wrap to 3 stacked
+ * lines. Dots carry no number, so all 3 always fit on one line — exact counts are a tap
+ * away on the day page.
  */
 export function DayActivityChips({ created, moved, changes }: { created: number; moved: number; changes: number }) {
+  const { isMobile } = usePlatform()
   if (created + moved + changes === 0) return null
+
+  if (isMobile) {
+    const dot = 'h-2 w-2 rounded-full border border-ink'
+    return (
+      <div className="flex items-center gap-1">
+        {created > 0 && <span className={`${dot} bg-accent-purple`} title={`${created} created`} />}
+        {moved > 0 && <span className={`${dot} bg-sticky-blue`} title={`${moved} moved`} />}
+        {changes > 0 && <span className={`${dot} bg-sticky-yellow`} title={`${changes} changes`} />}
+      </div>
+    )
+  }
+
   // Text colour is set per chip (not here): two text-* utilities on one element have no
   // guaranteed winner in Tailwind.
   const chip = 'inline-flex items-center gap-px rounded-card border border-ink px-1 font-display text-[10px] font-bold leading-4'

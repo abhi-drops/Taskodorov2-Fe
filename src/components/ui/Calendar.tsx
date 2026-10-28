@@ -38,7 +38,7 @@ function CalendarDayButton({ day, modifiers, className = '', ...buttonProps }: D
   return (
     <button
       {...buttonProps}
-      className={`flex h-full min-h-14 w-full flex-col items-start gap-1 rounded-card border-2 border-ink p-1.5 text-left shadow-card transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-purple lg:min-h-20 ${tone} ${
+      className={`flex h-14 w-full flex-col items-start gap-1 overflow-hidden rounded-card border-2 border-ink p-1.5 text-left shadow-card transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-purple sm:h-24 lg:h-20 ${tone} ${
         modifiers.outside ? 'opacity-40' : ''
       } ${className}`}
     >

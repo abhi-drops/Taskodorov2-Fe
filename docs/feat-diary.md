@@ -17,10 +17,19 @@ against the wireframes `docs/design-references/web/diary.png`, `diary_sidebar.pn
   `×` and ☰ are shorthand. On screen they are icons from `components/ui/icons.ts` (see
   `style-guide.md`, "Icons"); `○` unchecked is drawn as an undo arrow, and `✎` is the pen icon (`EditIcon`).
 - **Calendar:**
-  - each day cell shows small chips in the Diary colour scheme (below): violet `+N`
-    created, blue `↔N` moved, yellow `✎N` changes;
+  - **desktop/web-wide:** each day cell shows small chips in the Diary colour scheme
+    (below): violet `+N` created, blue `↔N` moved, yellow `✎N` changes;
+  - **mobile** (`isMobile`): the same 3 categories instead as plain colour dots, no
+    icon or count — a narrow column rarely fits two icon+count pills side by side, so
+    with all 3 categories active they wrapped to 3 stacked lines; dots carry no
+    number, so all 3 always fit on one line. Exact counts are a tap away on the day
+    page (`DiaryDayPage`'s mobile summary);
   - "changes" is a rollup of title/colour edits, status entries and deletions;
-  - days with no activity show no chips, and today is yellow;
+  - days with no activity show no chips/dots, and today is yellow;
+  - day cells are a **fixed height** (`Calendar.tsx`'s `CalendarDayButton`: `h-14`
+    base/mobile, `sm:h-24` for the pill chips between the `sm`/`lg` breakpoints,
+    `lg:h-20` desktop) rather than `min-h-*` — otherwise one busy day stretches its
+    whole week row (`react-day-picker` sizes a row to its tallest cell);
   - the yellow square ‹ › buttons change month, and tapping a day opens it;
   - the viewed month is remembered while you're in and out of days (module variable in
     `useDiaryCalendar`).

@@ -4,6 +4,42 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-29 — Diary calendar mobile chips swapped for plain dots
+
+- **What.** Follow-up to the 2026-10-27 fixed-height fix below: on mobile,
+  `DayActivityChips` (`DiaryShell.tsx`) now renders a plain colour dot per active
+  category (violet created, blue moved, yellow changes — no icon, no count) instead
+  of the icon+count pills. A narrow mobile column rarely fits two pills side by side,
+  so a day with all 3 categories still wrapped to 3 stacked lines even inside the
+  fixed-height cell; dots carry no number, so all 3 always sit on one line. Exact
+  counts are still one tap away on the day page.
+- Desktop/web-wide is unchanged (still the icon+count pills) — only `isMobile`
+  (`usePlatform`) switches to dots.
+- Mobile's fixed cell height (`Calendar.tsx`) dropped from `h-24` to `h-14` to match
+  the now much shorter dot row, with `sm:h-24`/`lg:h-20` keeping the taller size for
+  the pill chips above the `sm` (640px) breakpoint.
+- Verified in the Browser pane at 375px (dots, single line, uniform grid) and 1280px
+  (pills unchanged).
+
+## 2026-10-27 — Diary calendar day cells fixed to a uniform height
+
+- **What.** Day cells in the Diary month calendar (`components/ui/Calendar.tsx`'s
+  `CalendarDayButton`) used `min-h-*` with no cap, so a day's stacked
+  created/moved/changes chips (`DayActivityChips` in `DiaryShell.tsx`) grew the cell
+  to fit, and — since `react-day-picker`'s week rows size to their tallest cell — one
+  busy day stretched its *entire row*. On mobile's narrow columns each chip almost
+  always wraps to its own line (little room for two chips side by side), so a day
+  with all three categories made its row roughly 3x a quiet row's height: a visibly
+  jagged, uneven grid, worst on mobile.
+- **Fix.** Switched to a fixed cell height — `h-24` (96px) on mobile, `lg:h-20` (80px)
+  on desktop where cells are wide enough for chips to sit side by side — plus
+  `overflow-hidden` as a safety net. 96px comfortably fits the worst case (day number
+  + 3 stacked chip lines, verified in the Browser pane by injecting a 3rd chip into a
+  live cell); quiet days just carry a little blank space instead of the grid lurching
+  between row heights.
+- Verified in the Browser pane at mobile (375px) and desktop (1280px) widths — see
+  `docs/feat-diary.md` ("Calendar").
+
 ## 2026-10-25 — Vercel Web Analytics added (web only)
 
 - **What.** Added `@vercel/analytics` and mounted `<Analytics />` (from
