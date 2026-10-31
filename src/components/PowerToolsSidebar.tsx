@@ -18,7 +18,7 @@ const TABS: SidebarItem[] = [
  */
 export function PowerToolsDesktopLayout({ activeTab, children }: { activeTab: PowerToolsTab; children: ReactNode }) {
   return (
-    <SidebarPanelLayout items={TABS} activeId={activeTab}>
+    <SidebarPanelLayout items={TABS} activeId={activeTab} className="max-w-6xl">
       {children}
     </SidebarPanelLayout>
   )

@@ -4,6 +4,15 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-31 — `.bg-grid` scaled up to 80px cells with thicker lines
+
+- **What.** `.bg-grid` (`src/index.css`) doubled from 40px to 80px cells and the line
+  thickness from 1px to 2px, for a bolder grid-paper look. The mobile breakpoint's
+  exact-fit formula (see the 2026-10-29 entry below) moved from dividing the content
+  width into 8 cells to 4, so the doubled cell size still lands a line on the note's
+  right edge at any phone width. The 24px left offset and sticky-header alignment are
+  unaffected.
+
 ## 2026-10-31 — Fixed tape backdrop stacking with WorkspaceSwitcher's dropdown overlay
 
 - **What.** Opening `WorkspaceSwitcher`'s desktop dropdown while scrolled made the
