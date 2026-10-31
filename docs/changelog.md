@@ -4,6 +4,59 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-31 — New "About" section in Settings; App Updates moved into it
+
+- **What.** Added an "About" section to `/settings` (`PowerToolsPage.tsx`): on mobile,
+  stacked last after Account; on desktop, its own third sidebar tab next to Groups and
+  Account & Sync (`components/PowerToolsSidebar.tsx`'s `PowerToolsTab` gained `'about'`).
+  Shows the Taskodoro app identity (`assets/logo.png`, name, "Your Comfort Planner"
+  tagline), a Web Version link (`https://taskodoro.mavnt.in/`), the parent org MAVNT's
+  identity (`assets/MAVNT_LOGO_TRANSPARENT.png`, "Free & Opensource" tagline) linking to
+  `https://www.mavnt.in/` (doubles as the website link), and an Instagram link
+  (`@mavn.t`). The existing native-only **App Updates** chip (`UpdateChip`) moved out of
+  Account and into this new section — same component/hook, no behavior change.
+- Three new icons re-exported in `components/ui/icons.ts` from the existing
+  `@animateicons/react/huge` pin (no new dependency): `WebsiteIcon` (`Globe02Icon`),
+  `WebVersionIcon` (`Link01Icon`), `InstagramIcon`.
+- No `@capacitor/browser` plugin existed in this app; the new links are plain
+  `<a target="_blank" rel="noreferrer">` chips, following the existing `CHIP` row
+  convention.
+- **Follow-up pass same day**, after first-cut feedback that logos read too small and
+  the app version wasn't shown:
+  - The two identity rows (Taskodoro, MAVNT) now use a wider `IDENTITY_CARD` layout with
+    a 64px logo instead of the 40px `CHIP` icon size.
+  - Added a version badge next to the Taskodoro identity row:
+    `v{currentVersionName ?? APP_VERSION_FALLBACK}`, where `APP_VERSION_FALLBACK` is a
+    hand-kept constant mirroring `android/app/build.gradle`'s `versionName` — shown on
+    web immediately and on native until `useAppUpdate`'s live value resolves.
+  - Instagram handle corrected to `@mavn.t` (was `@mav.nt`).
+- **Second follow-up same day**: the version link chip now cross-promotes the other
+  platform instead of always reading "Web Version" — web shows "Android Version" →
+  `https://www.mavnt.in/`, native shows "Web Version" → `https://taskodoro.mavnt.in/`
+  (`usePlatform().isNative` branch in `AboutSection`).
+- **Third follow-up same day**, full visual redesign after feedback that the row-based
+  layout still "looked bad" and logos needed to be bigger: replaced the flat stack of
+  `CHIP`/`IDENTITY_CARD` rows with three distinct blocks — a `HERO_CARD` for Taskodoro's
+  own identity (logo up from 64px, plus the version pill), a 2-column grid of square
+  `LINK_TILE`s for the cross-platform link and Instagram, and an 80px-logo MAVNT footer
+  card with an "A product by" eyebrow line. `UpdateChip` sits between the hero card and
+  the link grid.
+- **Fourth follow-up same day**: `HERO_CARD` reworked from a centered column (logo on
+  top, text below) to a fixed 30:70 `grid-cols-[30%_70%]` row — logo in the left 30%,
+  name/tagline/version stacked left-aligned in the right 70%.
+- **Fifth follow-up same day**, after feedback to make the text (the "Taskodoro" name
+  especially) way bigger: bumped the name to `text-7xl`, which fit at mobile (375px) and
+  the default desktop pane width (1024px) but **overflowed the card at in-between
+  desktop widths** (~700px) — the right-panel column's actual width doesn't scale 1:1
+  with viewport width because of the sidebar + `max-w-6xl` cap, so a `sm:`/`lg:`
+  viewport-breakpoint pass couldn't track it correctly. Fixed by switching the name/
+  tagline/version column to a CSS container (`@container`, native in Tailwind v4) with
+  `cqw`-based fluid `clamp()` sizing instead of breakpoints, plus `min-w-0` on that flex
+  column (its missing `min-width: 0` was letting the text overflow instead of wrapping
+  in the first place). Verified no overflow at 375px, 700px, 1024px and 1440px.
+- Templates' AI Guide not affected — this doesn't touch the template file format.
+- See `docs/feat-power-tools.md` ("About").
+
 ## 2026-10-31 — Sync status badge deep-links to a highlighted Sync With Google chip
 
 - **What.** Tapping `SyncStatusBadge` (the small dark circle on the board, left of the

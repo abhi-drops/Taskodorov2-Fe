@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react'
 import { SidebarPanelLayout, type SidebarItem } from './SidebarPanelLayout'
 
-export type PowerToolsTab = 'groups' | 'account'
+export type PowerToolsTab = 'groups' | 'account' | 'about'
 
 const TABS: SidebarItem[] = [
   { id: 'groups', label: 'Groups', to: '/settings?tab=groups' },
   { id: 'account', label: 'Account & Sync', to: '/settings?tab=account' },
+  { id: 'about', label: 'About', to: '/settings?tab=about' },
 ]
 
 /**

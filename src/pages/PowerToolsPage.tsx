@@ -3,7 +3,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { GoogleLogin } from '@react-oauth/google'
 import { Link, useSearchParams } from 'react-router'
 import { AppShell } from '../components/AppShell'
-import { PowerToolsDesktopLayout } from '../components/PowerToolsSidebar'
+import { PowerToolsDesktopLayout, type PowerToolsTab } from '../components/PowerToolsSidebar'
 import { CHIP, DANGER_CHIP } from '../components/SidebarPanelLayout'
 import { useAuth } from '../lib/auth/useAuth'
 import { useSync } from '../lib/sync/useSync'
@@ -12,7 +12,19 @@ import { useGoogleSignIn } from '../common_logics/useGoogleSignIn'
 import { useWorkspace } from '../lib/workspace/useWorkspace'
 import { usePlatform } from '../lib/platform/usePlatform'
 import { AnimatedIcon } from '../components/ui/AnimatedIcon'
-import { CloseIcon, GroupIcon, SettingsIcon, SyncIcon, TrashIcon, UpdateIcon } from '../components/ui/icons'
+import {
+  CloseIcon,
+  GroupIcon,
+  InstagramIcon,
+  SettingsIcon,
+  SyncIcon,
+  TrashIcon,
+  UpdateIcon,
+  WebsiteIcon,
+  WebVersionIcon,
+} from '../components/ui/icons'
+import taskodoroLogo from '../assets/logo.png'
+import mavntLogo from '../assets/MAVNT_LOGO_TRANSPARENT.png'
 import { Spinner } from '../components/ui/Spinner'
 import { Button } from '../components/ui/Button'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
@@ -33,7 +45,21 @@ function SectionHeading({ children }: { children: string }) {
   return <h2 className="text-sm font-medium text-slate-600">{children}</h2>
 }
 
+// Desktop already shows the active tab in the sidebar, so the per-section
+// `SectionHeading` below would just repeat it there — only the stacked mobile layout
+// (where all sections show at once) needs it to tell sections apart.
+const TAB_SUBTITLES: Record<PowerToolsTab, string> = {
+  groups: 'Groups and workspace data.',
+  account: 'Account, sync & reset.',
+  about: 'App info, updates & links.',
+}
+
 const ADD_BUTTON_POSITION_LABELS: Record<AddButtonPosition, string> = { high: 'High', medium: 'Medium', low: 'Low' }
+
+const WEB_VERSION_URL = 'https://taskodoro.mavnt.in/'
+const ANDROID_VERSION_URL = 'https://www.mavnt.in/'
+const MAVNT_WEBSITE_URL = 'https://www.mavnt.in/'
+const MAVNT_INSTAGRAM_URL = 'https://www.instagram.com/mavn.t/'
 
 /** Mobile-only: web has no floating "+". */
 function BoardSection() {
@@ -81,6 +107,7 @@ function GroupsSection({
   completedGroupId,
   onCompletedGroupChange,
   onWipeRequest,
+  showHeading = true,
 }: {
   groups: Group[]
   name: string
@@ -90,10 +117,11 @@ function GroupsSection({
   completedGroupId: string | null
   onCompletedGroupChange: (groupId: string | null) => void
   onWipeRequest: () => void
+  showHeading?: boolean
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <SectionHeading>Groups</SectionHeading>
+      {showHeading && <SectionHeading>Groups</SectionHeading>}
       {groups.map((group) => (
         <div key={group.id} className={CHIP}>
           <AnimatedIcon icon={GroupIcon} size={20} still className="text-ink" />
@@ -393,14 +421,16 @@ function AccountSection({
   auth,
   onResetRequest,
   focusSync,
+  showHeading = true,
 }: {
   auth: Pick<AuthState, 'user' | 'status'> & { logout: () => Promise<void> }
   onResetRequest: () => void
   focusSync: boolean
+  showHeading?: boolean
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <SectionHeading>Account</SectionHeading>
+      {showHeading && <SectionHeading>Account</SectionHeading>}
 
       {auth.status === 'authenticated' && (
         <div className={`${CHIP} justify-between`}>
@@ -417,11 +447,98 @@ function AccountSection({
           the one sign-in entry point in Settings, since sync needs Google either way;
           email/password login still works, just isn't offered from this page. */}
       <SyncChip highlight={focusSync} />
-      <UpdateChip />
 
       <button type="button" onClick={onResetRequest} className={DANGER_CHIP}>
         Reset To Default
       </button>
+    </div>
+  )
+}
+
+// Hero card for the app's own identity — a bigger, standalone moment (large logo,
+// large name) rather than just another row among the link chips below it. A fixed
+// 30:70 grid (not `flex` + intrinsic sizing) so the logo column's width stays exactly
+// 30% regardless of how long the name/tagline text runs.
+const HERO_CARD =
+  'grid grid-cols-[30%_70%] items-center gap-4 rounded-card border-[3px] border-ink bg-white p-6 shadow-card'
+
+// Square icon-tile used for the two secondary links (cross-platform version,
+// Instagram) — a 2-up grid reads as a distinct "links" row rather than more rows of
+// the same `CHIP` shape repeated down the page.
+const LINK_TILE =
+  'flex flex-col items-center justify-center gap-2 rounded-card border-[3px] border-ink bg-white p-5 text-center shadow-card transition hover:opacity-90'
+
+// Mirrors `android/app/build.gradle`'s `versionName` — shown on web (which has no
+// native build to read) and as the native fallback before `useAppUpdate`'s
+// `currentVersionName` resolves from `getNativeAppInfo()`.
+const APP_VERSION_FALLBACK = '0.1 beta'
+
+/** App identity, the MAVNT parent-org link and the native-only update check — grouped
+ * together as the one place in Settings that isn't about this device's data. */
+function AboutSection({ showHeading = true }: { showHeading?: boolean }) {
+  const { isNative } = usePlatform()
+  const { currentVersionName } = useAppUpdate()
+  const version = currentVersionName ?? APP_VERSION_FALLBACK
+  // Cross-link to the other platform's build — on native that's the web app, on web
+  // that's the Android app — rather than linking back to the version already in use.
+  const otherPlatformUrl = isNative ? WEB_VERSION_URL : ANDROID_VERSION_URL
+  const otherPlatformLabel = isNative ? 'Web Version' : 'Android Version'
+
+  return (
+    <div className="flex flex-col gap-3">
+      {showHeading && <SectionHeading>About</SectionHeading>}
+
+      <div className={HERO_CARD}>
+        <img src={taskodoroLogo} alt="" className="aspect-square w-full rounded-card object-contain" />
+        {/* `@container` + `cqw` sizes the text off this column's own rendered width —
+            not viewport breakpoints — since the column's actual width depends on
+            whether the desktop sidebar is present, not just window size (a `sm:`/`lg:`
+            breakpoint pass overflowed the card at in-between desktop widths where the
+            column is narrower than the viewport alone would suggest). `min-w-0` is
+            required alongside it: a flex item's default `min-width: auto` lets long
+            text overflow its flex parent instead of wrapping/shrinking. */}
+        <div className="@container flex min-w-0 flex-col items-start gap-2">
+          <span className="font-display text-[clamp(1.5rem,15cqw,4.5rem)] font-bold leading-none text-ink">
+            Taskodoro
+          </span>
+          <span className="text-[clamp(0.8rem,5cqw,1.25rem)] text-slate-600">Your Comfort Planner</span>
+          <span className="mt-1 shrink-0 rounded-card border-2 border-ink bg-sticky-yellow px-3 py-1.5 font-display text-[clamp(0.7rem,3.5cqw,1rem)] font-bold uppercase text-ink">
+            v{version}
+          </span>
+        </div>
+      </div>
+
+      <UpdateChip />
+
+      <div className="grid grid-cols-2 gap-3">
+        <a href={otherPlatformUrl} target="_blank" rel="noreferrer" className={LINK_TILE}>
+          <AnimatedIcon icon={WebVersionIcon} size={28} className="text-ink" />
+          <span className="font-medium text-ink">{otherPlatformLabel}</span>
+        </a>
+        <a href={MAVNT_INSTAGRAM_URL} target="_blank" rel="noreferrer" className={LINK_TILE}>
+          <AnimatedIcon icon={InstagramIcon} size={28} className="text-ink" />
+          <span className="flex flex-col">
+            <span className="font-medium text-ink">Instagram</span>
+            <span className="text-xs text-slate-500">@mavn.t</span>
+          </span>
+        </a>
+      </div>
+
+      <a
+        href={MAVNT_WEBSITE_URL}
+        target="_blank"
+        rel="noreferrer"
+        className="flex items-center gap-4 rounded-card border-[3px] border-ink bg-white p-4 shadow-card transition hover:opacity-90"
+        aria-label="MAVNT — visit website"
+      >
+        <img src={mavntLogo} alt="" className="h-20 w-20 shrink-0 object-contain" />
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="text-xs font-medium uppercase tracking-wide text-slate-500">A product by</span>
+          <span className="font-display text-xl font-bold text-ink">MAVNT</span>
+          <span className="text-sm text-slate-600">Free &amp; Opensource</span>
+        </span>
+        <AnimatedIcon icon={WebsiteIcon} size={24} className="shrink-0 text-ink" />
+      </a>
     </div>
   )
 }
@@ -432,8 +549,9 @@ export default function PowerToolsPage() {
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId)
   const { isMobile } = usePlatform()
   const [searchParams] = useSearchParams()
-  // Anything other than 'account' (including an old `?tab=addons` link) lands on Groups.
-  const activeTab = searchParams.get('tab') === 'account' ? 'account' : 'groups'
+  // Anything other than 'account'/'about' (including an old `?tab=addons` link) lands on Groups.
+  const tabParam = searchParams.get('tab')
+  const activeTab: PowerToolsTab = tabParam === 'account' ? 'account' : tabParam === 'about' ? 'about' : 'groups'
   // `SyncStatusBadge` deep-links here with `?focus=sync` to highlight the Sync chip.
   const focusSync = searchParams.get('focus') === 'sync'
 
@@ -505,11 +623,18 @@ export default function PowerToolsPage() {
       completedGroupId={completedGroupId}
       onCompletedGroupChange={handleCompletedGroupChange}
       onWipeRequest={() => setConfirmWipe(true)}
+      showHeading={isMobile}
     />
   )
   const accountSection = (
-    <AccountSection auth={auth} onResetRequest={() => setConfirmReset(true)} focusSync={focusSync} />
+    <AccountSection
+      auth={auth}
+      onResetRequest={() => setConfirmReset(true)}
+      focusSync={focusSync}
+      showHeading={isMobile}
+    />
   )
+  const aboutSection = <AboutSection showHeading={isMobile} />
 
   return (
     <AppShell>
@@ -522,15 +647,17 @@ export default function PowerToolsPage() {
           {groupsSection}
           <BoardSection />
           {accountSection}
+          {aboutSection}
         </div>
       ) : (
         <PowerToolsDesktopLayout activeTab={activeTab}>
           <div className="flex flex-col gap-6">
             <div>
               <h1 className="font-display text-2xl font-bold text-ink">Settings</h1>
-              <p className="text-slate-600">Groups, account & sync.</p>
+              <p className="text-slate-600">{TAB_SUBTITLES[activeTab]}</p>
             </div>
             {activeTab === 'account' && accountSection}
+            {activeTab === 'about' && aboutSection}
             {activeTab === 'groups' && groupsSection}
           </div>
         </PowerToolsDesktopLayout>

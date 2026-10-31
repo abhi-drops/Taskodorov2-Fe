@@ -19,12 +19,12 @@ desktop wireframe — see `docs/style-guide.md`'s "Power Tools: row chips + desk
 2-panel drill-down" section for the full visual system (chip rows, `DANGER_CHIP`,
 `GroupIcon`). Structurally the two platforms now genuinely diverge:
 
-- **Mobile** — `/settings` is one scrolling page (Groups → Account, in that order) and
-  `/settings/groups/:id` is a separate full-page screen, matching the two distinct
-  mobile mockups.
-- **Desktop** — a persistent left sidebar (`components/PowerToolsSidebar.tsx`, 2 tabs:
-  Groups / Account & Sync, selected via `?tab=` on `/settings`, default `groups`) with a
-  right panel whose content depends on the active tab. Opening a
+- **Mobile** — `/settings` is one scrolling page (Groups → Account → About, in that
+  order) and `/settings/groups/:id` is a separate full-page screen, matching the two
+  distinct mobile mockups.
+- **Desktop** — a persistent left sidebar (`components/PowerToolsSidebar.tsx`, 3 tabs:
+  Groups / Account & Sync / About, selected via `?tab=` on `/settings`, default
+  `groups`) with a right panel whose content depends on the active tab. Opening a
   specific group's settings **is still a real navigation** to
   `/settings/groups/:id` (kept as a separate route on purpose — browser
   back/forward and deep-linking both still work), but visually it reads as the same
@@ -77,12 +77,53 @@ desktop wireframe — see `docs/style-guide.md`'s "Power Tools: row chips + desk
   `docs/phase3-sync-plan-from-be.md` for the full design; `SyncStrategyDialog.tsx`
   (rendered from `App.tsx`, not this page) is the first-sync "keep local vs. use
   account" conflict prompt.
-- **App Updates** (`UpdateChip`, next to Sync With Google; native/Android only — hidden
-  entirely on web, not shown-but-disabled like the Board section above) — shows the
-  installed version and the result of the once-per-launch update check, with a manual
-  "Check" trigger (`useAppUpdate()`, `lib/appUpdate/`). An update found anywhere in the
-  app (not just here) also surfaces through `AppUpdateBanner.tsx`, rendered from
-  `App.tsx` next to `SyncStrategyDialog`. See `docs/feat-app-update-check-from-be.md`.
+- **About** (own section/tab — mobile: last in the scrolling page; desktop: its own
+  sidebar tab, `PowerToolsTab = 'about'`; 2026-10-31) — static app/parent-org identity
+  plus the App Updates chip, laid out as three distinct blocks rather than more `CHIP`
+  rows (a flat list of same-weight rows read as visually flat/boring in review — this
+  gives the app's own identity a real hero moment and keeps the two brand logos large):
+  1. **`HERO_CARD`** — a fixed 30:70 `grid-cols-[30%_70%]` split (not `flex` +
+     intrinsic sizing, so the logo column's width stays exactly 30% regardless of text
+     length): logo filling the left 30% column (`aspect-square w-full`), name/tagline/
+     version stacked left-aligned in the right 70% column. The version pill reads
+     `v{currentVersionName ?? APP_VERSION_FALLBACK}`. `APP_VERSION_FALLBACK` (`'0.1
+     beta'` in `PowerToolsPage.tsx`) mirrors `android/app/build.gradle`'s `versionName`
+     by hand (no runtime link between them) and is what web shows, since it has no
+     native build to read; native shows the same on first paint, then swaps to the live
+     `currentVersionName` once `useAppUpdate`'s auto-check resolves. **Keep this
+     constant in sync whenever `build.gradle`'s `versionName` changes.**
+     - The name/tagline/version column is a CSS container (`@container`, Tailwind v4
+       built-in — no plugin) with its three text sizes set via `cqw`-based `clamp()`
+       (e.g. `text-[clamp(1.5rem,15cqw,4.5rem)]`) rather than viewport `sm:`/`lg:`
+       breakpoints. This column's actual rendered width doesn't track viewport width
+       1:1 (the desktop sidebar + `max-w-6xl` cap mean a mid-width browser window can
+       give the card a *narrower* column than a phone-width one gets in the mobile
+       stack), so a viewport-breakpoint pass overflowed "Taskodoro" past the card
+       border at some in-between desktop widths (e.g. ~700px) even though it fit fine
+       at both 375px and 1024px. Sizing off the container's own width instead of the
+       viewport fixes that by construction. The column also needs `min-w-0` — a flex
+       item's default `min-width: auto` otherwise lets long text overflow instead of
+       wrapping/shrinking, which was the other half of that bug.
+  2. **`UpdateChip`** (native/Android only — hidden entirely on web, not
+     shown-but-disabled like the Board section above) — shows the installed version and
+     the result of the once-per-launch update check, with a manual "Check" trigger
+     (`useAppUpdate()`, `lib/appUpdate/`). An update found anywhere in the app (not just
+     here) also surfaces through `AppUpdateBanner.tsx`, rendered from `App.tsx` next to
+     `SyncStrategyDialog`. See `docs/feat-app-update-check-from-be.md`. (Moved here from
+     next to Sync With Google — same component and hook, just relocated.)
+  3. A 2-column grid of square **`LINK_TILE`**s:
+     - **Cross-platform link** — points at whichever platform you're *not* currently on,
+       rather than linking back to the one already in use: on web, "Android Version" →
+       `ANDROID_VERSION_URL` (`https://www.mavnt.in/`); on native, "Web Version" →
+       `WEB_VERSION_URL` (`https://taskodoro.mavnt.in/`). Branches on
+       `usePlatform().isNative`.
+     - Instagram → `https://www.instagram.com/mavn.t/` (`@mavn.t`).
+  4. MAVNT (parent org) footer card — 80px logo (`assets/MAVNT_LOGO_TRANSPARENT.png`), a
+     small "A product by" eyebrow, name, tagline ("Free & Opensource"); the whole card
+     links to `https://www.mavnt.in/` (doubles as the "website" link).
+  No `@capacitor/browser` plugin in this app — these are plain `<a target="_blank"
+  rel="noreferrer">` elements (web opens a new tab; native Capacitor WebView hands
+  off-origin navigations to the system browser by default).
 - **Wipe All Notes** (Groups section, under Completed Group; 2026-10-05) — danger chip →
   `ConfirmDialog` → `wipeWorkspaceNotes` (`lib/db/notes.ts`). Soft-deletes every note in
   the **active workspace** in one write. The workspace, its groups and their settings
