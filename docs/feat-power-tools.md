@@ -130,9 +130,17 @@ desktop wireframe — see `docs/style-guide.md`'s "Power Tools: row chips + desk
   3. A 2-column grid of square **`LINK_TILE`**s:
      - **Cross-platform link** — points at whichever platform you're *not* currently on,
        rather than linking back to the one already in use: on web, "Android Version" →
-       `ANDROID_VERSION_URL` (`https://www.mavnt.in/`); on native, "Web Version" →
-       `WEB_VERSION_URL` (`https://taskodoro.mavnt.in/`). Branches on
-       `usePlatform().isNative`.
+       `ANDROID_VERSION_URL` (`https://www.mavnt.in/`) with `AndroidIcon`; on native,
+       "Web Version" → `WEB_VERSION_URL` (`https://taskodoro.mavnt.in/`) with
+       `WebVersionIcon`. Both label/URL/icon branch together on `usePlatform().isNative`.
+       Huge (the app's one icon family, `components/ui/icons.ts`) has neither an
+       Android-branded glyph nor a laptop/monitor/computer one at all — so both
+       `AndroidIcon` and `WebVersionIcon` are **deliberate exceptions to "Huge only"**:
+       they re-export `SmartphoneIcon`/`LaptopIcon` from the Lucide family, also bundled
+       in `@animateicons/react` (`@animateicons/react/lucide`). Both stay re-exported
+       under app-level names in `icons.ts` per that file's own convention, so the glyph
+       choice (and, for these two, the family) stays centralized if a better match is
+       ever added to Huge.
      - Instagram → `https://www.instagram.com/mavn.t/` (`@mavn.t`).
   4. MAVNT (parent org) footer card — 80px logo (`assets/MAVNT_LOGO_TRANSPARENT.png`), a
      small "A product by" eyebrow, name, tagline ("Free & Opensource"); the whole card

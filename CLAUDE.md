@@ -114,7 +114,7 @@ The core data model and UI, in dependency order: a workspace contains groups, a 
 
 Self-hosted fonts (never a Google Fonts CDN link — this is an offline-first app), the grid background, and the shared `components/ui/*` primitive set. `docs/style-guide.md`.
 
-- **Icons** come from one library, `@animateicons/react` (Huge family, pinned exactly). Add icons in `components/ui/icons.ts` and render them with `components/ui/AnimatedIcon.tsx`, never as text characters, inline SVGs or direct library imports. Exceptions: the note checkbox (`CheckCircle`) and the search icon are still PNGs.
+- **Icons** come from one library, `@animateicons/react` (Huge family, pinned exactly). Add icons in `components/ui/icons.ts` and render them with `components/ui/AnimatedIcon.tsx`, never as text characters, inline SVGs or direct library imports. Exceptions: the note checkbox (`CheckCircle`) and the search icon are still PNGs; `AndroidIcon`/`WebVersionIcon` (Settings' About section, cross-platform link) pull `SmartphoneIcon`/`LaptopIcon` from `@animateicons/react/lucide` instead of Huge, which has neither a smartphone-device nor a laptop/monitor glyph — still re-exported from `icons.ts` under app-level names like everything else, just from the other family bundled in the same package.
 - **Dropdowns** go through `components/ui/Select.tsx`: a styled Radix Select on web, a native `<select>` on mobile (`isMobile`). It takes an `options` array, not `<option>` children.
 
 ### Auth

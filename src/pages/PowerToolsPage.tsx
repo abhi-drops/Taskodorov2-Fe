@@ -18,6 +18,7 @@ import { useIsHeaderBackdropSuppressed } from '../lib/layout/headerBackdropSuppr
 import { TapeBackdrop } from '../components/ui/TapeBackdrop'
 import { AnimatedIcon } from '../components/ui/AnimatedIcon'
 import {
+  AndroidIcon,
   CloseIcon,
   GroupIcon,
   InstagramIcon,
@@ -585,6 +586,7 @@ function AboutSection({ showHeading = true }: { showHeading?: boolean }) {
   // that's the Android app — rather than linking back to the version already in use.
   const otherPlatformUrl = isNative ? WEB_VERSION_URL : ANDROID_VERSION_URL
   const otherPlatformLabel = isNative ? 'Web Version' : 'Android Version'
+  const otherPlatformIcon = isNative ? WebVersionIcon : AndroidIcon
 
   return (
     <div className="flex flex-col gap-3">
@@ -614,7 +616,7 @@ function AboutSection({ showHeading = true }: { showHeading?: boolean }) {
 
       <div className="grid grid-cols-2 gap-3">
         <a href={otherPlatformUrl} target="_blank" rel="noreferrer" className={LINK_TILE}>
-          <AnimatedIcon icon={WebVersionIcon} size={28} className="text-ink" />
+          <AnimatedIcon icon={otherPlatformIcon} size={28} className="text-ink" />
           <span className="font-medium text-ink">{otherPlatformLabel}</span>
         </a>
         <a href={MAVNT_INSTAGRAM_URL} target="_blank" rel="noreferrer" className={LINK_TILE}>

@@ -4,6 +4,29 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-11-01 — About section's cross-platform link gets a matching icon per platform
+
+- **What.** The About section's cross-platform link tile (`AboutSection`,
+  `PowerToolsPage.tsx`) previously used the same icon for both directions. It now
+  branches its icon with the label/URL: `AndroidIcon` for "Android Version" on web,
+  `WebVersionIcon` (a browser-window glyph) for "Web Version" on native.
+- Neither is a literal Android or laptop/monitor icon — Huge (`@animateicons/react`,
+  this app's one pinned icon family) has no such glyphs. `WebVersionIcon` re-exports
+  `BrowserIcon` (previously `Link01Icon`), added/changed in `components/ui/icons.ts` per
+  that file's own convention of centralizing the glyph choice under an app-level name.
+- **Follow-up same day**: `AndroidIcon` first re-exported Huge's `PhoneIcon`, but that's
+  a call-handset glyph, not a device — feedback asked for an actual smartphone icon
+  instead. Huge has no such glyph at all, so `AndroidIcon` is now a deliberate, one-off
+  exception to "Huge only" (`icons.ts`, `CLAUDE.md`): it re-exports `SmartphoneIcon`
+  from the Lucide family, also bundled in `@animateicons/react` (import path
+  `@animateicons/react/lucide`). `AnimatedIcon` is already icon-family-agnostic (any
+  `@animateicons/react` `IconHandle` component), so no changes needed there.
+- **Second follow-up same day**: `WebVersionIcon` switched from Huge's `BrowserIcon` to
+  Lucide's `LaptopIcon` (same `@animateicons/react/lucide` exception as `AndroidIcon`
+  above) — feedback asked for a laptop/monitor-style icon specifically rather than a
+  browser-window one.
+- See `docs/feat-power-tools.md` ("About").
+
 ## 2026-11-01 — Desktop back button on Settings, group settings and the note editor
 
 - **What.** Added `components/ui/BackLink.tsx`: a desktop-only, icon-only circular back

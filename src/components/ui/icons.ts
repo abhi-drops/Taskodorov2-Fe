@@ -2,7 +2,8 @@
  * The app's icon set: every icon comes from `@animateicons/react`'s Huge family, re-exported
  * here under app-level names so the choice of glyph lives in one place. Render them through
  * `AnimatedIcon`, not directly. (The note checkbox is the one exception: `CheckCircle`
- * still composites its own PNGs.)
+ * still composites its own PNGs.) `AndroidIcon`/`WebVersionIcon` below are the deliberate
+ * exceptions to "Huge only" — Huge has no smartphone-device or laptop/monitor glyph at all.
  */
 export {
   Add01Icon as PlusIcon,
@@ -31,7 +32,6 @@ export {
   Home01Icon as HomeIcon,
   InstagramIcon,
   LayoutTemplateIcon as TemplatesIcon,
-  Link01Icon as WebVersionIcon,
   Loading02Icon as SyncingIcon,
   Menu01Icon as MenuIcon,
   MinusSignIcon as MinusIcon,
@@ -46,3 +46,8 @@ export {
   UndoIcon as UncheckedIcon,
   Upload01Icon as ImportIcon,
 } from '@animateicons/react/huge'
+
+// Huge has no smartphone-device or laptop/monitor glyph (only call-related `Phone*`
+// icons, and nothing for "a computer" at all) — these two come from the Lucide family
+// instead, also bundled in `@animateicons/react`.
+export { SmartphoneIcon as AndroidIcon, LaptopIcon as WebVersionIcon } from '@animateicons/react/lucide'
