@@ -4,6 +4,22 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-11-01 — Desktop back button on Settings, group settings and the note editor
+
+- **What.** Added `components/ui/BackLink.tsx`: a desktop-only, icon-only circular back
+  button (`ChevronLeftIcon` in a round `border-2 border-ink shadow-card` button, the same
+  visual weight as the note card's `CheckCircle` status circle). `fixed left-6 top-6 z-40`
+  — pinned to the actual top-left corner of the viewport, above `AppShell`'s header —
+  rather than placed inline in page content. Navigates `navigate(-1)`, falling back to `/`
+  when `location.key === 'default'` (a direct URL load/refresh has no history entry to go
+  back to). Self-gates on `isMobile` (renders `null`), so it's safe to drop into a
+  component shared with mobile rather than needing a desktop-only branch at the call site.
+- **Where.** Not global `AppShell` chrome — each page renders it itself. Currently
+  `pages/PowerToolsPage.tsx` (Settings), `pages/GroupSettingsPage.tsx` (desktop branch)
+  and `pages/NoteEditorPage.tsx`. Deliberately **not** on Home, Apps, or the Diary/
+  Templates/Search sub-pages.
+- Documented in `docs/style-guide.md`'s "Shared primitives" table, next to `CheckCircle`.
+
 ## 2026-10-31 — Quick-nav strip for mobile Settings
 
 - **What.** Added a `StickySettingsTabs` strip (`pages/PowerToolsPage.tsx`, mobile

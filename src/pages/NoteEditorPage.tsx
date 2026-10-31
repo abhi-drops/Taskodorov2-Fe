@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode }
 import { useFillViewportHeight } from '../lib/layout/useFillViewportHeight'
 import { useParams, useSearchParams } from 'react-router'
 import { AppShell } from '../components/AppShell'
+import { BackLink } from '../components/ui/BackLink'
 import { CheckCircle } from '../components/ui/CheckCircle'
 import { Select } from '../components/ui/Select'
 import { SwatchPicker } from '../components/ui/SwatchPicker'
@@ -107,6 +108,7 @@ export default function NoteEditorPage() {
 
   return (
     <AppShell>
+      <BackLink />
       <EditorColumns>
         <div className={`flex flex-col gap-6 ${COLUMN_SCROLL}`}>
           {/* Morph target when this note was opened from its card (pageTransitions.ts). */}

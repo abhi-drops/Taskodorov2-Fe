@@ -5,6 +5,7 @@ import { Link, useSearchParams } from 'react-router'
 import { AppShell } from '../components/AppShell'
 import { PowerToolsDesktopLayout, type PowerToolsTab } from '../components/PowerToolsSidebar'
 import { CHIP, DANGER_CHIP } from '../components/SidebarPanelLayout'
+import { BackLink } from '../components/ui/BackLink'
 import { useAuth } from '../lib/auth/useAuth'
 import { useSync } from '../lib/sync/useSync'
 import { useAppUpdate } from '../lib/appUpdate/useAppUpdate'
@@ -810,6 +811,7 @@ export default function PowerToolsPage() {
 
   return (
     <AppShell>
+      <BackLink />
       {isMobile ? (
         <div className="mx-auto flex w-full max-w-sm flex-1 flex-col gap-8">
           <div className="text-center">

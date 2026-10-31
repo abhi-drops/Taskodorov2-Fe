@@ -6,6 +6,7 @@ import { DANGER_CHIP } from '../components/SidebarPanelLayout'
 import { GroupSettingsFields } from '../components/GroupSettingsFields'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { AnimatedIcon } from '../components/ui/AnimatedIcon'
+import { BackLink } from '../components/ui/BackLink'
 import { TrashIcon } from '../components/ui/icons'
 import { useGroupSettings } from '../common_logics/useGroupSettings'
 import { usePlatform } from '../lib/platform/usePlatform'
@@ -110,6 +111,7 @@ export default function GroupSettingsPage() {
       ) : (
         <PowerToolsDesktopLayout activeTab="groups">
           <div className="flex flex-col gap-6">
+            <BackLink />
             <div>
               {nameField}
               <p className="text-slate-600">Group settings</p>
