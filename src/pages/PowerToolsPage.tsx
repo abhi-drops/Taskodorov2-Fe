@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import { formatDistanceToNow } from 'date-fns'
 import { GoogleLogin } from '@react-oauth/google'
 import { Link, useSearchParams } from 'react-router'
@@ -11,6 +11,10 @@ import { useAppUpdate } from '../lib/appUpdate/useAppUpdate'
 import { useGoogleSignIn } from '../common_logics/useGoogleSignIn'
 import { useWorkspace } from '../lib/workspace/useWorkspace'
 import { usePlatform } from '../lib/platform/usePlatform'
+import { useScrolled } from '../lib/layout/useScrolled'
+import { useBlurredPeek } from '../lib/layout/useBlurredPeek'
+import { useIsHeaderBackdropSuppressed } from '../lib/layout/headerBackdropSuppression'
+import { TapeBackdrop } from '../components/ui/TapeBackdrop'
 import { AnimatedIcon } from '../components/ui/AnimatedIcon'
 import {
   CloseIcon,
@@ -55,6 +59,103 @@ const TAB_SUBTITLES: Record<PowerToolsTab, string> = {
 }
 
 const ADD_BUTTON_POSITION_LABELS: Record<AddButtonPosition, string> = { high: 'High', medium: 'Medium', low: 'Low' }
+
+/** Mobile-only quick nav between Settings' stacked sections — all four are always on
+ * screen at once (unlike the board's tabs, which switch which group is shown), so
+ * selecting one here just scrolls to it rather than changing what's rendered. */
+type SettingsSection = 'groups' | 'board' | 'account' | 'about'
+
+const SETTINGS_NAV_TABS: { id: SettingsSection; label: string }[] = [
+  { id: 'groups', label: 'Groups' },
+  { id: 'board', label: 'Board' },
+  { id: 'account', label: 'Account' },
+  { id: 'about', label: 'About' },
+]
+
+/** Offsets a scroll target below the sticky nav strip's own height, so
+ * `scrollIntoView` doesn't land a section's heading half-hidden underneath it. */
+const SCROLL_OFFSET_CLASS = 'scroll-mt-20'
+
+/**
+ * Mobile only: a quick nav for jumping between Settings' sections, shown only once
+ * scrolled past the Groups section's own heading (`groupsRef`) — unlike `HomePage`'s
+ * `StickyGroupTabs`, which sits in flow right at the top of the board already (so
+ * sticky positioning alone keeps it hidden until relevant), Settings' Groups section
+ * starts right under a short intro, too close to the top for a plain `position:
+ * sticky` placement to ever look "hidden" — it would just render immediately. So this
+ * is `fixed` (not sticky, no flow space reserved) and stays invisible — `opacity-0`,
+ * `inert` so it can't steal focus/taps while hidden — until `groupsRef`'s own measured
+ * top has scrolled past the viewport's top edge, at which point it fades in over the
+ * same 300ms as `TapeBackdrop`'s own transition (and fades back out on scrolling back
+ * up), rather than popping in/out instantly. `fixed inset-x-0` also sidesteps the gap
+ * `-mx-6`'s cancel-the-parent's-padding trick would otherwise leave once nested inside
+ * this page's `max-w-sm` mobile wrapper (unlike `HomePage`, whose strip sits directly
+ * inside `AppShell`'s own padded content div). Same "tape material" backdrop as
+ * `StickyGroupTabs` otherwise.
+ */
+function StickySettingsTabs({
+  groupsRef,
+  sectionsRef,
+  active,
+  onSelect,
+}: {
+  groupsRef: RefObject<HTMLElement | null>
+  sectionsRef: RefObject<HTMLElement | null>
+  active: SettingsSection
+  onSelect: (section: SettingsSection) => void
+}) {
+  const [groupsOffsetTop, setGroupsOffsetTop] = useState<number | null>(null)
+  useEffect(() => {
+    const measure = () => {
+      if (groupsRef.current) setGroupsOffsetTop(groupsRef.current.getBoundingClientRect().top + window.scrollY)
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [groupsRef])
+
+  // Stays hidden (threshold effectively infinite) until the real offset is measured,
+  // so there's no one-frame flash of the strip at the top before layout settles.
+  const shown = useScrolled(groupsOffsetTop ?? Number.POSITIVE_INFINITY)
+  const suppressed = useIsHeaderBackdropSuppressed()
+  const [sectionsOffsetTop, setSectionsOffsetTop] = useState(0)
+  const peekRef = useBlurredPeek(sectionsRef, sectionsOffsetTop, shown && !suppressed)
+
+  useEffect(() => {
+    const measure = () => {
+      if (sectionsRef.current) setSectionsOffsetTop(sectionsRef.current.getBoundingClientRect().top + window.scrollY)
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [sectionsRef])
+
+  return (
+    <div
+      className={`fixed inset-x-0 top-0 z-20 transition-opacity duration-300 ${shown ? 'opacity-100' : 'opacity-0'}`}
+      aria-hidden={!shown}
+      inert={!shown}
+    >
+      <TapeBackdrop active={!suppressed} peekRef={peekRef} blurPx={36} washOpacity={0.6} />
+      <div className="relative mx-auto flex w-full max-w-sm gap-2 overflow-x-auto px-6 py-3" role="tablist">
+        {SETTINGS_NAV_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={active === tab.id}
+            onClick={() => onSelect(tab.id)}
+            className={`shrink-0 rounded-card px-3.5 py-1.5 text-sm font-medium transition ${
+              active === tab.id ? 'bg-ink text-white' : 'border border-slate-200 bg-white text-slate-700'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 const WEB_VERSION_URL = 'https://taskodoro.mavnt.in/'
 const ANDROID_VERSION_URL = 'https://www.mavnt.in/'
@@ -613,6 +714,77 @@ export default function PowerToolsPage() {
     await setCompletedGroupId(activeWorkspaceId, groupId)
   }
 
+  // Mobile only: section wrappers for `StickySettingsTabs` — both as scrollspy
+  // observation targets and as `scrollIntoView` destinations for its tabs.
+  const groupsSectionRef = useRef<HTMLDivElement>(null)
+  const boardSectionRef = useRef<HTMLDivElement>(null)
+  const accountSectionRef = useRef<HTMLDivElement>(null)
+  const aboutSectionRef = useRef<HTMLDivElement>(null)
+  const settingsSectionsRef = useRef<HTMLDivElement>(null)
+  const [activeSettingsSection, setActiveSettingsSection] = useState<SettingsSection>('groups')
+
+  // Mobile only: tracks which section the sticky strip should highlight as the user
+  // scrolls — the last section (in order) whose top has crossed the "just below the
+  // strip" line wins, same rule a scrollspy nav normally uses. Picking the section
+  // nearest-above-zero rather than "whichever is currently intersecting" matters once
+  // a later, short section (e.g. About) reaches the bottom of the page without being
+  // able to fill the viewport: an earlier section further off-screen above would
+  // otherwise still count as "visible" and wrongly win.
+  useEffect(() => {
+    if (!isMobile) return
+    const sectionRefs: [SettingsSection, RefObject<HTMLDivElement | null>][] = [
+      ['groups', groupsSectionRef],
+      ['board', boardSectionRef],
+      ['account', accountSectionRef],
+      ['about', aboutSectionRef],
+    ]
+    const STRIP_LINE_PX = 96 // just below the sticky strip's own height
+
+    let frame = 0
+    const check = () => {
+      // Pinned to the last section once scrolled to the bottom of the page: About
+      // (the last/shortest section) can end the document before its own top is able
+      // to reach STRIP_LINE_PX, since the page can't scroll any further to get it
+      // there — the threshold loop below would otherwise strand the previous
+      // section's tab highlighted forever.
+      const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2
+      if (atBottom) {
+        setActiveSettingsSection(sectionRefs[sectionRefs.length - 1][0])
+        return
+      }
+      let current: SettingsSection = sectionRefs[0][0]
+      for (const [id, ref] of sectionRefs) {
+        if (!ref.current) continue
+        if (ref.current.getBoundingClientRect().top <= STRIP_LINE_PX) current = id
+      }
+      setActiveSettingsSection(current)
+    }
+    const schedule = () => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(check)
+    }
+
+    schedule()
+    window.addEventListener('scroll', schedule, { passive: true })
+    window.addEventListener('resize', schedule)
+    return () => {
+      cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', schedule)
+      window.removeEventListener('resize', schedule)
+    }
+  }, [isMobile])
+
+  const sectionRefById: Record<SettingsSection, RefObject<HTMLDivElement | null>> = {
+    groups: groupsSectionRef,
+    board: boardSectionRef,
+    account: accountSectionRef,
+    about: aboutSectionRef,
+  }
+
+  function scrollToSettingsSection(section: SettingsSection) {
+    sectionRefById[section].current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   const groupsSection = (
     <GroupsSection
       groups={groups}
@@ -644,10 +816,26 @@ export default function PowerToolsPage() {
             <h1 className="font-display text-2xl font-bold text-ink">Settings</h1>
             <p className="text-slate-600">Groups, account & sync.</p>
           </div>
-          {groupsSection}
-          <BoardSection />
-          {accountSection}
-          {aboutSection}
+          <StickySettingsTabs
+            groupsRef={groupsSectionRef}
+            sectionsRef={settingsSectionsRef}
+            active={activeSettingsSection}
+            onSelect={scrollToSettingsSection}
+          />
+          <div ref={settingsSectionsRef} className="flex flex-col gap-8">
+            <div ref={groupsSectionRef} className={SCROLL_OFFSET_CLASS}>
+              {groupsSection}
+            </div>
+            <div ref={boardSectionRef} className={SCROLL_OFFSET_CLASS}>
+              <BoardSection />
+            </div>
+            <div ref={accountSectionRef} className={SCROLL_OFFSET_CLASS}>
+              {accountSection}
+            </div>
+            <div ref={aboutSectionRef} className={SCROLL_OFFSET_CLASS}>
+              {aboutSection}
+            </div>
+          </div>
         </div>
       ) : (
         <PowerToolsDesktopLayout activeTab={activeTab}>

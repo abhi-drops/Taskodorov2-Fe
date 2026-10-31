@@ -4,6 +4,28 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-31 — Quick-nav strip for mobile Settings
+
+- **What.** Added a `StickySettingsTabs` strip (`pages/PowerToolsPage.tsx`, mobile
+  only) for jumping between Settings' stacked Groups/Board/Account/About sections —
+  same "tape material" backdrop treatment as the board's
+  `StickyGroupTabs`/`BoardTabStrip` on `HomePage.tsx`, but tapping a tab scrolls to
+  that section (`scrollIntoView`, offset via `scroll-mt-20`) rather than switching
+  which section renders, since all four stay visible on this page as before. The
+  active tab tracks scroll position via a small scrollspy effect. See
+  `docs/feat-power-tools.md`'s "Layout: mobile vs desktop" section for the mechanics
+  and the bottom-of-page edge case it accounts for.
+- **Follow-up pass same day**, after first-cut feedback that the strip was visible
+  immediately on load (no scroll needed) and its backdrop left a gap on both sides once
+  pinned: switched from `position: sticky` (which, placed this close to the top of the
+  page, never actually looked "hidden") to `position: fixed`, **not rendered at all**
+  until the Groups section's own measured top has scrolled past the viewport's top
+  edge — and `fixed inset-x-0` instead of the `-mx-6` cancel-the-parent-padding trick,
+  which left a gap once nested inside this page's `max-w-sm` mobile wrapper (unlike
+  `HomePage`'s strip, a direct child of `AppShell`'s own padded content div). Stays
+  mounted (`inert` + `opacity-0` while hidden, instead of unmounting) so it fades in
+  and out over the same 300ms as `TapeBackdrop`'s own transition rather than popping.
+
 ## 2026-10-31 — New "About" section in Settings; App Updates moved into it
 
 - **What.** Added an "About" section to `/settings` (`PowerToolsPage.tsx`): on mobile,

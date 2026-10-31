@@ -19,9 +19,25 @@ desktop wireframe — see `docs/style-guide.md`'s "Power Tools: row chips + desk
 2-panel drill-down" section for the full visual system (chip rows, `DANGER_CHIP`,
 `GroupIcon`). Structurally the two platforms now genuinely diverge:
 
-- **Mobile** — `/settings` is one scrolling page (Groups → Account → About, in that
-  order) and `/settings/groups/:id` is a separate full-page screen, matching the two
-  distinct mobile mockups.
+- **Mobile** — `/settings` is one scrolling page (Groups → Board → Account → About, in
+  that order) and `/settings/groups/:id` is a separate full-page screen, matching the
+  two distinct mobile mockups. A `StickySettingsTabs` quick-nav strip (2026-10-31,
+  `PowerToolsPage.tsx`) is `position: fixed` (not `sticky` — unlike `HomePage`'s strip,
+  which already sits in flow right at the top of the board, Settings' Groups section
+  starts right under a short intro, too close to the top for plain `sticky` to ever
+  look hidden) and **not rendered at all** until the Groups section's own measured top
+  has scrolled past the viewport's top edge, at which point it mounts pinned to the top
+  with the same "tape material" backdrop as `HomePage`'s `StickyGroupTabs`
+  (`docs/style-guide.md`'s "Scrolled header" section). `fixed inset-x-0` also avoids a
+  side-gap `-mx-6`'s cancel-the-parent's-padding trick would otherwise leave once
+  nested inside this page's `max-w-sm` mobile wrapper. Unlike the board strip, tapping
+  a tab here doesn't switch which section is rendered — all four stay stacked and
+  visible as always — it `scrollIntoView`s the tapped section instead (each wrapped in
+  `scroll-mt-20` so it doesn't land hidden under the strip), and the active tab is
+  driven by a small scroll-position scrollspy (last section whose top has crossed a
+  line just below the strip, pinned to the last section once scrolled to the bottom of
+  the page since a short last section can't always cross that line on its
+  own).
 - **Desktop** — a persistent left sidebar (`components/PowerToolsSidebar.tsx`, 3 tabs:
   Groups / Account & Sync / About, selected via `?tab=` on `/settings`, default
   `groups`) with a right panel whose content depends on the active tab. Opening a
