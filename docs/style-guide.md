@@ -216,6 +216,84 @@ renders its own `WorkspaceSwitcher` + search row inline as page content for that
 unchanged from before. If you add a new page that needs left/right header content on web,
 reuse this prop pair rather than inventing a page-local header row.
 
+### Scrolled header: the "tape material"
+
+**Shared building blocks**, used by both the desktop header and mobile's sticky group-
+tab strip (below): `lib/layout/useBlurredPeek.ts` (the `useBlurredPeek` hook) and
+`components/ui/TapeBackdrop.tsx` (the `TapeBackdrop` visual layers). Each caller owns its
+own positioning (`fixed` vs `sticky`) and figures out its own `contentOffsetTop` (see
+`useBlurredPeek`'s own docs for what that number means) — the hook and the backdrop
+component don't know or care which. `TapeBackdrop` also takes optional `blurPx`/
+`washOpacity` (defaulting to the desktop header's original 24/0.45) — how convincing a
+given blur/wash strength looks depends on what's actually behind it: the board's mixed,
+saturated note colors blur into an uneven "smudge," but a single note's flat-colored
+body (e.g. a list note's solid `sticky-blue`) blurs into a much more even wash at the
+same settings and can still read as legible text underneath. The mobile tab strip, which
+sits over exactly that kind of flatter content, uses `blurPx={36} washOpacity={0.6}`.
+
+**Desktop**: the whole header row (`TopNav` plus the `headerStart`/`headerEnd` slots) is
+`position: fixed`, not `sticky` — `backdrop-filter` on a `sticky` element has known
+rendering bugs across browser engines where the blurred backdrop stops live-sampling
+scrolled content (it can effectively freeze on whatever was behind it when it first
+became stuck). `fixed` removes the header from normal document flow, so `AppShell`
+measures its own rendered height with a `ResizeObserver` (not a hardcoded pixel value —
+the row's height doesn't vary by content, but guessing it wrong would be a silent, hard
+-to-notice layout bug) and renders a spacer of that height right after it, so the board
+content below doesn't jump up underneath it.
+
+**Mobile**: `HomePage`'s `StickyGroupTabs` pins whichever of `BoardTabStrip`/
+`GroupDropTargets` is active (the board's "Todo / In Progress / Completed" tab row) to
+the top of the viewport once scrolled past, with the same tape material. This one *is*
+plain `position: sticky` — it already sits in normal page flow below the (non-sticky)
+workspace/icons row, so sticky reserves its own layout slot for free, no spacer needed.
+Its `contentOffsetTop` is measured directly (`getBoundingClientRect().top + scrollY` on
+the `GroupColumn` notes wrapper immediately below it), rather than derived from a known
+fixed height the way desktop's is.
+
+Once scrolled (`useScrolled`, `lib/layout/useScrolled.ts`), a backdrop fades in behind
+the whole bar — not a box around each item, one continuous surface everything in the row
+sits on. It's styled to read as a literal strip of translucent tape laid over the page,
+not a plain frosted panel, in four layers (`TapeBackdrop`), bottom to top:
+
+1. **`useBlurredPeek`** — a real, manual blur of whatever's actually behind the bar.
+   Plain `backdrop-filter: blur()` turned out not to render at all in some real test
+   environments here (GPU/WebView-dependent — confirmed by testing, not assumed), so
+   this fakes the same effect with a technique that only needs the far more widely
+   supported `filter: blur()`: clone the live scrollable content's DOM once with
+   `cloneNode` (**not** a second React render of `children` — re-mounting the real tree
+   would re-run every page's hooks/effects a second time, unsafe for anything with real
+   side effects like drag-and-drop or DB subscriptions), strip every `id` recursively so
+   the clone can never shadow the real element for `getElementById`/`for=`/etc., mark it
+   `inert` so it's fully non-interactive and invisible to assistive tech, and translate
+   it in lockstep with the page's real scroll position (a rAF-throttled `scroll`
+   listener) so the clipped, blurred window shows the same content that's really behind
+   the bar. Only re-clones when it turns active, not continuously — blurred this
+   heavily, staleness between re-clones is imperceptible.
+2. A translucent `bg-white/45` wash over the blurred peek, so the bar's own text/icons
+   stay legible without hiding the blur entirely.
+3. `feTurbulence` grain (`tape-grain`, `mix-blend-overlay`): the slightly fibrous/
+   bubbled texture of tape's adhesive side, generated inline — no image asset,
+   consistent with this app's no-external-asset stance elsewhere — rather than a flat,
+   too-clean blur.
+4. A diagonal multi-stop white gradient (`mix-blend-screen`) standing in for light
+   refracting across the tape's surface, plus a 1px top highlight line for the raised
+   edge catching light.
+
+All four layers fade in together via the wrapper's opacity. This replaced an earlier
+version of this effect built on each slot's own `border-ink`/die-cut-sticker outline
+(an SVG `feMorphology` silhouette halo) — that approach never actually read as part of
+this app (every other "chip" here is a plain bordered box, not a shape that traces its
+own content's silhouette) and is not what's in the code now; don't resurrect it from
+git history as a reference.
+
+**Don't let it stack with another translucent overlay.** Something like
+`WorkspaceSwitcher`'s dropdown (a `bg-white/60 backdrop-blur-sm` dim covering the whole
+screen, including the header) will compound with the header's own wash/grain/sheen
+wherever they overlap into a far-more-washed-out look than either intends — call
+`useSuppressHeaderBackdrop(isOpen)` (`lib/layout/headerBackdropSuppression.ts`) from
+anything that opens a similar full-screen dim, so the header/tab-strip backdrop gets out
+of its way for as long as it's open.
+
 ### Motion
 
 Page transitions follow the same rules as the static design: **square edges, hard
@@ -278,7 +356,10 @@ system" above).
 same pattern as `WorkspaceSwitcher.tsx`: tied to one page's concept, not generic enough
 to live in `ui/`. `AppShell` wraps page content with `.bg-grid` + `TopNav`/`BottomNav`
 based on `usePlatform().isMobile` (plus the `headerStart`/`headerEnd` slots above) —
-every page routes through it. `GroupColumn` is the board's column renderer, used by
+every page routes through it. On desktop the header row is `position: fixed` (with a
+measured spacer — see "Scrolled header: the tape material" above for why, and for the
+scrolled backdrop's own layers). `GroupColumn` is the board's
+column renderer, used by
 both the web multi-column layout and the mobile single-active-tab view in
 `HomePage.tsx`. `SidebarPanelLayout.tsx` is the generic desktop 2-panel shell;
 `PowerToolsSidebar.tsx`'s `PowerToolsDesktopLayout` (Settings) and `AppsSidebar.tsx`'s

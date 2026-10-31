@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { Link } from 'react-router'
 import { DndContext, DragOverlay } from '@dnd-kit/core'
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
@@ -9,14 +10,62 @@ import { BoardTabStrip } from '../components/BoardTabStrip'
 import { GroupDropTargets } from '../components/GroupDropTargets'
 import { Icon } from '../components/ui/Icon'
 import { FloatingAddButton } from '../components/ui/FloatingAddButton'
+import { TapeBackdrop } from '../components/ui/TapeBackdrop'
 import { SWATCH_CLASSES } from '../components/ui/swatchColors'
 import { usePlatform } from '../lib/platform/usePlatform'
 import { useBoard } from '../common_logics/useBoard'
 import { useAddButtonSettings } from '../common_logics/useAddButtonSettings'
 import { useTransitionReady } from '../lib/motion/pageTransitions'
+import { useScrolled } from '../lib/layout/useScrolled'
+import { useBlurredPeek } from '../lib/layout/useBlurredPeek'
+import { useIsHeaderBackdropSuppressed } from '../lib/layout/headerBackdropSuppression'
 import { useBoardDnd, groupChipDragId } from '../common_logics/useBoardDnd'
 import { resolveNoteColor } from '../lib/notes/resolveNoteColor'
 import searchIcon from '../assets/search.png'
+
+/**
+ * Mobile only: pins whichever of `BoardTabStrip`/`GroupDropTargets` is passed as
+ * `children` to the top of the viewport once scrolled past, with the same "tape
+ * material" backdrop (`TapeBackdrop`/`useBlurredPeek`) the desktop header uses — see
+ * `docs/style-guide.md`'s "Scrolled header: the 'tape material'" section. Unlike
+ * `AppShell`'s own header, this is `position: sticky`, not `fixed`: it already sits in
+ * normal page flow below the (non-sticky) workspace/icons row, so sticky reserves its
+ * own layout slot for free — no spacer/`ResizeObserver` needed the way `fixed` requires.
+ * `notesRef` should point at the `GroupColumn` notes immediately below it in the DOM;
+ * its measured document-Y position is what `useBlurredPeek` blurs/tracks as "what's
+ * really behind the strip."
+ */
+function StickyGroupTabs({ children: tabs, notesRef }: { children: ReactNode; notesRef: RefObject<HTMLElement | null> }) {
+  const scrolled = useScrolled()
+  // See `lib/layout/headerBackdropSuppression.ts`: without this, something like
+  // `WorkspaceSwitcher`'s dropdown overlay (a translucent full-screen dim) would stack
+  // directly on top of this strip's own wash/grain/sheen, compounding into a far more
+  // washed-out look than either intends alone.
+  const suppressed = useIsHeaderBackdropSuppressed()
+  const backdropActive = scrolled && !suppressed
+  const [notesOffsetTop, setNotesOffsetTop] = useState(0)
+  const peekRef = useBlurredPeek(notesRef, notesOffsetTop, backdropActive)
+
+  useEffect(() => {
+    const measure = () => {
+      if (notesRef.current) setNotesOffsetTop(notesRef.current.getBoundingClientRect().top + window.scrollY)
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [notesRef])
+
+  return (
+    <div className="sticky top-0 z-20 -mx-6 px-6 py-3">
+      {/* Stronger than TapeBackdrop's desktop-tuned defaults — a note card's flat,
+          solid-color body (unlike the board's mixed, saturated columns) blurs into a
+          much more even wash and can still read as legible text underneath at the
+          default strength. */}
+      <TapeBackdrop active={backdropActive} peekRef={peekRef} blurPx={36} washOpacity={0.6} />
+      <div className="relative">{tabs}</div>
+    </div>
+  )
+}
 
 /** Lightweight drag ghost — not the full interactive card, just enough to track the cursor. */
 function DragGhost({ item, groups }: { item: NonNullable<ReturnType<typeof useBoardDnd>['activeDragItem']>; groups: ReturnType<typeof useBoard>['groups'] }) {
@@ -49,6 +98,7 @@ export default function HomePage() {
     onNoteMovedToGroup: isMobile ? setActiveGroupId : undefined,
   })
   const activeGroup = groups.find((g) => g.id === activeGroupId)
+  const notesRef = useRef<HTMLDivElement>(null)
 
   const workspaceSwitcher = <WorkspaceSwitcher />
   const searchLink = (
@@ -86,18 +136,22 @@ export default function HomePage() {
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
           {isMobile ? (
             <div className="mt-6 flex flex-1 flex-col gap-4">
-              {activeDragItem?.type === 'note' ? (
-                <GroupDropTargets groups={groups.filter((g) => g.id !== activeGroupId)} />
-              ) : (
-                <BoardTabStrip groups={groups} activeGroupId={activeGroupId ?? ''} onSelect={setActiveGroupId} />
-              )}
+              <StickyGroupTabs notesRef={notesRef}>
+                {activeDragItem?.type === 'note' ? (
+                  <GroupDropTargets groups={groups.filter((g) => g.id !== activeGroupId)} />
+                ) : (
+                  <BoardTabStrip groups={groups} activeGroupId={activeGroupId ?? ''} onSelect={setActiveGroupId} />
+                )}
+              </StickyGroupTabs>
               {activeGroup && (
-                <GroupColumn
-                  group={activeGroup}
-                  notes={notesForGroup(activeGroup)}
-                  onChange={refresh}
-                  showHeader={false}
-                />
+                <div ref={notesRef}>
+                  <GroupColumn
+                    group={activeGroup}
+                    notes={notesForGroup(activeGroup)}
+                    onChange={refresh}
+                    showHeader={false}
+                  />
+                </div>
               )}
               {/* Mobile's quick-add — adds to the active tab's group, same target the
                   web per-column "+" uses. Hidden mid-drag so it can't overlap the drop

@@ -4,6 +4,90 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-31 — Fixed tape backdrop stacking with WorkspaceSwitcher's dropdown overlay
+
+- **What.** Opening `WorkspaceSwitcher`'s desktop dropdown while scrolled made the
+  header area behind it blow out to a near-solid white haze — its own translucent
+  overlay (`bg-white/60 backdrop-blur-sm`) was stacking directly on top of the header's
+  tape-material wash/grain/sheen from the two entries below, and two translucent layers
+  compounding always look far more washed-out than either alone.
+- Added `src/lib/layout/headerBackdropSuppression.ts`: a small shared counter (via
+  React context, provided by `AppShell`) that anything which already fully dims the
+  screen on its own can increment while open (`useSuppressHeaderBackdrop`), read by
+  `AppShell`'s own header backdrop and `HomePage`'s mobile `StickyGroupTabs`
+  (`useIsHeaderBackdropSuppressed`) to suppress themselves for as long as it's nonzero.
+  `WorkspaceSwitcher` now calls `useSuppressHeaderBackdrop(isOpen)`.
+- A counter, not a single boolean, so more than one such overlay being open at once
+  (not expected today, but cheap to get right) composes instead of one closing and
+  clobbering the other's suppression.
+
+## 2026-10-30 — Mobile's group tab strip is now sticky, with the same tape material
+
+- **What.** The mobile board's "Todo / In Progress / Completed" group tab row
+  (`BoardTabStrip`, swapped for `GroupDropTargets` mid-drag) now pins to the top of the
+  viewport on scroll via a new `StickyGroupTabs` wrapper in `src/pages/HomePage.tsx`,
+  with the same tape-material backdrop the desktop header got the entry below — plain
+  `position: sticky` (it already sits in normal flow below the non-sticky workspace/
+  icons row, so no spacer/`ResizeObserver` needed the way the desktop header's `fixed`
+  positioning requires), with its blur target measured directly off the `GroupColumn`
+  notes wrapper immediately below it.
+- Pulled the reusable pieces of the desktop effect out of `AppShell.tsx` so both places
+  could share them: `useBlurredPeek` → `src/lib/layout/useBlurredPeek.ts` (generalized
+  from a hardcoded header height to a `contentOffsetTop` either caller can supply its own
+  way), `TapeBackdrop` → `src/components/ui/TapeBackdrop.tsx`. `AppShell`'s own behavior
+  is unchanged, just re-pointed at the shared modules.
+- `TapeBackdrop` gained optional `blurPx`/`washOpacity` props (defaulting to the desktop
+  header's original 24/0.45): a flat-colored card blurs into a much more even wash than
+  the board's mixed, saturated note colors do, and stayed legible underneath at the
+  default strength on mobile — the tab strip now passes `blurPx={36} washOpacity={0.6}`.
+- See `docs/style-guide.md`'s "Scrolled header: the 'tape material'" section (now
+  covering both the desktop and mobile cases) for the full layer breakdown.
+
+## 2026-10-30 — Scrolled desktop header now blurs behind it like translucent tape
+
+- **What.** Reworked the scrolled-header treatment from 2026-10-29 below: `AppShell`'s
+  desktop header row (`src/components/AppShell.tsx`) switched from `position: sticky`
+  to `position: fixed` (with a `ResizeObserver`-measured spacer reserving its layout
+  space, since `fixed` removes it from flow) — `backdrop-filter` on a `sticky` element
+  has known cross-engine bugs where the blurred backdrop stops live-sampling scrolled
+  content, which was indistinguishable from no blur at all.
+- The per-slot `border-neutral-300 bg-surface shadow-card` pill (`HeaderEdge`, from the
+  entry below) is gone. In its place, one continuous backdrop fades in behind the whole
+  header row (`TopNav` plus both `headerStart`/`headerEnd` slots) on scroll — not a box
+  around each item. Styled to read as a literal strip of translucent tape: a real manual
+  blur of the content behind it (`useBlurredPeek` — `backdrop-filter` turned out not to
+  render at all in some real test environments here, GPU/WebView-dependent, so this
+  clones the live content's DOM once with `cloneNode`, strips every `id`, marks it
+  `inert`, and blurs *that* with plain `filter: blur()` instead, translated to track
+  real scroll position), a translucent white wash, inline `feTurbulence` grain (the
+  adhesive-side texture), and a diagonal `mix-blend-screen` gradient standing in for
+  light refracting across the tape.
+- Several earlier variants of this effect (a drawn SVG blob outline, a silhouette-
+  hugging `feMorphology` halo matching the text/icon shapes) were tried and discarded —
+  none of them read as part of this app's design system, which uses plain bordered
+  boxes for every other chip, not shapes that trace their own content.
+- See `docs/style-guide.md`'s "Scrolled header: the 'tape material'" section for the
+  full layer breakdown. Mobile is unaffected — it has no desktop header to begin with.
+
+## 2026-10-29 — Desktop header is now sticky, with a fade-in backdrop on scroll
+
+- **What.** `AppShell`'s desktop header row (`src/components/AppShell.tsx`) is now
+  `position: sticky; top: 0`, so it stays pinned to the top of the viewport instead of
+  scrolling away on tall pages (a long board, a long Diary day) — previously it just
+  scrolled off with the rest of the page.
+- Because the sticky header now sits over scrolled-past content, the workspace-name
+  side (`headerStart`) and icons side (`headerEnd`) pick up the same white pill
+  backdrop `TopNav`'s center pill already has (`border-neutral-300 bg-surface
+  shadow-card`), via a new `HeaderEdge` wrapper — but only once the page has actually
+  scrolled (new `src/lib/layout/useScrolled.ts` hook, `window.scrollY` past a 4px
+  threshold, rAF-coalesced like `useFillViewportHeight`), fading in/out with a 300ms
+  `transition` rather than popping in. Padding stays constant whether scrolled or not,
+  so the fade never shifts `headerStart`/`headerEnd`'s position.
+- `HeaderEdge` skips rendering the pill entirely when its slot has no content (e.g.
+  `PowerToolsPage`/`AppsPage` pass neither `headerStart` nor `headerEnd`) — otherwise an
+  empty bordered box would appear on scroll with nothing in it.
+- Mobile is unaffected — its header isn't sticky and has no `TopNav` pill to match.
+
 ## 2026-10-29 — `.bg-grid` background switched from a raster image to CSS gradients
 
 - **What.** `.bg-grid` (`src/index.css`, used by `AppShell`) no longer uses

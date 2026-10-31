@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { usePlatform } from '../lib/platform/usePlatform'
+import { useSuppressHeaderBackdrop } from '../lib/layout/headerBackdropSuppression'
 import { useWorkspaceSwitcher } from '../common_logics/useWorkspaceSwitcher'
 import { AnimatedIcon } from './ui/AnimatedIcon'
 import { ChevronDownIcon, CloseIcon, EditIcon, PlusIcon } from './ui/icons'
@@ -33,6 +34,11 @@ export function WorkspaceSwitcher() {
     cancelDelete,
     confirmDelete,
   } = useWorkspaceSwitcher()
+
+  // Its own dropdown overlay already fully dims the screen on its own — see
+  // `lib/layout/headerBackdropSuppression.ts` for why that needs to suppress the
+  // header's tape backdrop rather than the two stacking.
+  useSuppressHeaderBackdrop(isOpen)
 
   const containerRef = useRef<HTMLDivElement>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
