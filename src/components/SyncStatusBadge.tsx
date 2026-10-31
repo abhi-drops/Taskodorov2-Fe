@@ -36,7 +36,7 @@ export function SyncStatusBadge() {
 
   return (
     <Link
-      to="/settings?tab=account"
+      to="/settings?tab=account&focus=sync"
       aria-label={`Sync status: ${label}`}
       className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink"
     >

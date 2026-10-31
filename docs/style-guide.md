@@ -196,6 +196,32 @@ This is a genuine `isMobile` branch, not a CSS breakpoint (unlike `NoteEditorPag
 `lg:` grid) — the sidebar+drill-down is a real interaction/navigation-model
 difference from mobile's flat page stack, not just a layout reflow at the same width.
 
+### Deep-link highlight: `focus-ring-blink`
+
+`SyncStatusBadge.tsx` (the small dark circle left of the header's search icon on both
+platforms, `HomePage.tsx`) links to `/settings?tab=account&focus=sync` instead of a
+bare `?tab=account` — the `focus=sync` param tells `PowerToolsPage.tsx` to draw the
+eye straight to the Sync With Google chip rather than leaving the user to find it
+themselves on a page that also has Groups, Board and Reset rows. The pattern is
+general enough to reuse for any other badge-style shortcut that should land on and
+call out one specific chip: a `focus=<id>` query param read by the destination page,
+not a route of its own.
+
+- The highlighted element gets a purple (`--color-accent-purple`) outline that blinks
+  4 times at 0.5s each (2s total) via the `focus-ring-blink` keyframes in
+  `index.css` — `outline`, not `box-shadow` or `border`, so it overlays the chip's
+  existing `border-[3px] border-ink shadow-card` without fighting it for the same CSS
+  property. The animation has no `forwards` fill, so it just stops cleanly after 2s
+  and the chip's normal border shows through — no JS timer needed to remove the class.
+- Scrolling the chip into view can't happen on mount: Settings still has async content
+  above it settling in afterwards (groups loading, the "Add Button Position" chip that
+  only appears once `useAddButtonSettings` resolves, the mobile slide-tab page
+  transition itself), each of which shifts the chip's position after the component
+  first mounts. `SyncChip` polls the chip's `getBoundingClientRect().top` on animation
+  frames until it holds still for 5 frames in a row (capped at ~2s as a safety net),
+  then calls `scrollIntoView({ block: 'center' })` — scrolling against a mount-time
+  layout landed short and missed the chip entirely on mobile.
+
 ### TopNav backdrop
 
 `TopNav.tsx` wraps its two-pill `<nav>` in a `border border-neutral-300 bg-surface p-2.5

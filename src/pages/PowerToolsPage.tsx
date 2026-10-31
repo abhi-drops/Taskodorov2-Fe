@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
 import { GoogleLogin } from '@react-oauth/google'
 import { Link, useSearchParams } from 'react-router'
@@ -177,7 +177,7 @@ const GOOGLE_CONNECT_CARD = 'flex flex-col gap-3 rounded-card border-[3px] borde
  * as authenticated but this chip still reads as off, and tapping it runs Google
  * Sign-In right here rather than requiring a trip through the Account section.
  */
-function SyncChip() {
+function SyncChip({ highlight = false }: { highlight?: boolean }) {
   const sync = useSync()
   const { isReady, isSubmitting, error, handleNativeSignIn, handleWebCredential } = useGoogleSignIn(null)
   const { isNative } = usePlatform()
@@ -185,6 +185,52 @@ function SyncChip() {
 
   const connecting = sync.status === 'disabled'
   const needsGoogleAuth = connecting || (sync.status === 'error' && sync.failure === 'unauthorized')
+
+  // Deep-linked from `SyncStatusBadge` (`?focus=sync`): scroll the chip into view and
+  // blink a purple outline around it so it's unmissable. `focus-ring-blink` runs its
+  // 4 x 0.5s = 2s animation once on mount and then just stops — no timer needed to
+  // remove it.
+  //
+  // Scrolling can't just happen on mount: this page still has async content above the
+  // chip settling in afterwards (the mobile layout's `GroupsSection` groups fetch, the
+  // "Add Button Position" chip appearing once `useAddButtonSettings` loads, the
+  // slide/fade page-transition animation itself), each of which shifts the chip's
+  // position after mount. So this polls the chip's position on animation frames until
+  // it holds still for a few frames in a row, then scrolls — instead of scrolling
+  // against a layout that's still settling and landing short.
+  const highlightRef = useRef<HTMLDivElement & HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (!highlight) return
+    let cancelled = false
+    let rafId: number
+    let lastTop: number | null = null
+    let stableFrames = 0
+    let framesPolled = 0
+    const MAX_FRAMES = 120 // ~2s at 60fps — a safety cap, not an expected case
+
+    function tick() {
+      if (cancelled) return
+      const el = highlightRef.current
+      const top = el?.getBoundingClientRect().top ?? null
+      stableFrames = top !== null && lastTop !== null && Math.abs(top - lastTop) < 1 ? stableFrames + 1 : 0
+      lastTop = top
+      framesPolled++
+      if (stableFrames >= 5 || framesPolled >= MAX_FRAMES) {
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        return
+      }
+      rafId = requestAnimationFrame(tick)
+    }
+    rafId = requestAnimationFrame(tick)
+
+    return () => {
+      cancelled = true
+      cancelAnimationFrame(rafId)
+    }
+  }, [highlight])
+
+  const highlightClass = highlight ? 'focus-ring-blink' : ''
 
   // Web has no programmatic trigger for Google's popup/One Tap flow — the real
   // "Sign in with Google" button has to be the thing the user taps. Rendering our own
@@ -196,7 +242,7 @@ function SyncChip() {
   // single clickable-chip shape below, same as the already-connected status chip.
   if (needsGoogleAuth && !isNative) {
     return (
-      <div className={GOOGLE_CONNECT_CARD}>
+      <div ref={highlightRef} className={`${GOOGLE_CONNECT_CARD} ${highlightClass}`}>
         <div className="flex items-center gap-3">
           <AnimatedIcon icon={SyncIcon} size={20} className="text-ink" still />
           <div className="flex flex-col">
@@ -274,10 +320,11 @@ function SyncChip() {
   return (
     <div className="flex flex-col gap-2">
       <button
+        ref={highlightRef}
         type="button"
         onClick={handleClick}
         disabled={busy}
-        className={`${CHIP} w-full justify-between text-left disabled:cursor-not-allowed disabled:opacity-50`}
+        className={`${CHIP} w-full justify-between text-left disabled:cursor-not-allowed disabled:opacity-50 ${highlightClass}`}
       >
         <span className="flex items-center gap-3">
           <AnimatedIcon icon={SyncIcon} size={20} className="text-ink" />
@@ -345,9 +392,11 @@ function UpdateChip() {
 function AccountSection({
   auth,
   onResetRequest,
+  focusSync,
 }: {
   auth: Pick<AuthState, 'user' | 'status'> & { logout: () => Promise<void> }
   onResetRequest: () => void
+  focusSync: boolean
 }) {
   return (
     <div className="flex flex-col gap-3">
@@ -367,7 +416,7 @@ function AccountSection({
       {/* No separate Log in/Sign up links here — the Sync With Google card below is
           the one sign-in entry point in Settings, since sync needs Google either way;
           email/password login still works, just isn't offered from this page. */}
-      <SyncChip />
+      <SyncChip highlight={focusSync} />
       <UpdateChip />
 
       <button type="button" onClick={onResetRequest} className={DANGER_CHIP}>
@@ -385,6 +434,8 @@ export default function PowerToolsPage() {
   const [searchParams] = useSearchParams()
   // Anything other than 'account' (including an old `?tab=addons` link) lands on Groups.
   const activeTab = searchParams.get('tab') === 'account' ? 'account' : 'groups'
+  // `SyncStatusBadge` deep-links here with `?focus=sync` to highlight the Sync chip.
+  const focusSync = searchParams.get('focus') === 'sync'
 
   const [groups, setGroups] = useState<Group[]>([])
   const [completedGroupId, setCompletedGroupIdState] = useState<string | null>(null)
@@ -456,7 +507,9 @@ export default function PowerToolsPage() {
       onWipeRequest={() => setConfirmWipe(true)}
     />
   )
-  const accountSection = <AccountSection auth={auth} onResetRequest={() => setConfirmReset(true)} />
+  const accountSection = (
+    <AccountSection auth={auth} onResetRequest={() => setConfirmReset(true)} focusSync={focusSync} />
+  )
 
   return (
     <AppShell>

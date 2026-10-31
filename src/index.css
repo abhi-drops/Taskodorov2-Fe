@@ -56,6 +56,26 @@ body {
   animation: marquee 20s linear infinite;
 }
 
+/* Deep-link highlight: `SyncStatusBadge` on the board links to the Sync With Google
+   chip in Settings with `?focus=sync` so the destination is obvious at a glance.
+   4 blinks x 0.5s = 2s total, then the outline (no `forwards`) just stops animating
+   and the element's normal border/shadow shows through unchanged. */
+@keyframes focus-ring-blink {
+  0%,
+  100% {
+    outline-color: transparent;
+  }
+  50% {
+    outline-color: var(--color-accent-purple);
+  }
+}
+
+.focus-ring-blink {
+  outline: 3px solid transparent;
+  outline-offset: 2px;
+  animation: focus-ring-blink 0.5s ease-in-out 4;
+}
+
 /* ---------------------------------------------------------------------------------
    Page transitions (View Transitions API). `lib/motion/pageTransitions.ts` sets
    `<html data-pt="kind">` before each animated navigation; these rules style that

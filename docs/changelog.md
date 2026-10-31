@@ -4,6 +4,22 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-10-31 — Sync status badge deep-links to a highlighted Sync With Google chip
+
+- **What.** Tapping `SyncStatusBadge` (the small dark circle on the board, left of the
+  header search icon on both platforms) now links to
+  `/settings?tab=account&focus=sync` instead of a bare `?tab=account`. `PowerToolsPage`
+  reads `focus=sync` and scrolls the Sync With Google chip into view, blinking a purple
+  outline (`focus-ring-blink` keyframes, `src/index.css`) around it for 2s (4 blinks at
+  0.5s each) so it's unmissable on a page that also has Groups, Board and Reset rows.
+- Scrolling polls the chip's position on animation frames until it holds still for 5
+  frames in a row before calling `scrollIntoView` — a first pass that scrolled on
+  mount landed short on mobile, since content above the chip (groups loading, the "Add
+  Button Position" chip that only appears once `useAddButtonSettings` resolves, the
+  slide-tab page transition) was still shifting its position after mount.
+- See `docs/style-guide.md` ("Deep-link highlight: `focus-ring-blink`") for the
+  reusable pattern.
+
 ## 2026-10-31 — `.bg-grid` scaled up to 80px cells with thicker lines
 
 - **What.** `.bg-grid` (`src/index.css`) doubled from 40px to 80px cells and the line
