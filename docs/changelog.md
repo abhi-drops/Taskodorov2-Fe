@@ -4,6 +4,20 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-11-02 — Brainstorm template's third group renamed "Doing" → "Done"
+
+- **What.** The built-in Brainstorm template (`src/lib/templates/builtins.ts`) had
+  groups Ideas → Shortlist → Doing → Parked. Renamed the third group to "Done" (key
+  unchanged, still `doing`) to better describe a finished idea rather than one in
+  progress.
+- Also set `completedGroupKey: 'doing'`, previously `null`. "Done" is now a terminal
+  state, so (matching every other built-in's "Done"/"Completed"/"Mastered"/"Bought"
+  group) it's wired as the workspace's Completed group — moving a note there now logs
+  it as Completed in the Diary, which "Doing" never did.
+- See `docs/feat-templates.md`'s "Built-in templates" section — the
+  `builtin_fingerprint` sync mechanism there will auto-update unedited copies of this
+  template on next launch.
+
 ## 2026-11-01 — About section's cross-platform link gets a matching icon per platform
 
 - **What.** The About section's cross-platform link tile (`AboutSection`,

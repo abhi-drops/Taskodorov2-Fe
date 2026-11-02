@@ -117,10 +117,13 @@ const BRAINSTORM: TemplateContent = {
       basic('n3', 'Drag the promising ones to Shortlist', 'green'),
     ]),
     group('shortlist', 'Shortlist'),
-    group('doing', 'Doing'),
+    group('doing', 'Done'),
     group('parked', 'Parked', [basic('n4', 'Ideas that can wait live here', 'coral')]),
   ],
-  completedGroupKey: null,
+  // "Done" is a finished idea now, not one in progress — wire it as the Completed
+  // group like every other built-in's terminal group, so moving a note here logs it
+  // as Completed in the Diary.
+  completedGroupKey: 'doing',
 }
 
 const WEEK_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
