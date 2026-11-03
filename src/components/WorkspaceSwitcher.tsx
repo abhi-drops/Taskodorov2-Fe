@@ -43,6 +43,10 @@ export function WorkspaceSwitcher() {
   const containerRef = useRef<HTMLDivElement>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId)
+  const triggerName = (activeWorkspace?.name ?? 'Workspace').trimEnd()
+  const lastSpace = triggerName.lastIndexOf(' ')
+  const triggerLead = triggerName.slice(0, lastSpace + 1)
+  const triggerLast = triggerName.slice(lastSpace + 1)
   const deleteTarget = workspaces.find((w) => w.id === confirmingDeleteId)
 
   function closeAll() {
@@ -154,7 +158,7 @@ export function WorkspaceSwitcher() {
       <button
         type="button"
         onClick={() => (isOpen ? closeAll() : open())}
-        className={`relative flex items-center gap-1.5 font-display text-2xl font-bold text-ink ${
+        className={`relative block text-left font-display text-2xl font-bold text-ink ${
           // Only needed on desktop, to stay crisp above the dropdown's own overlay
           // (z-40) and panel (z-50) — on mobile the switcher is a full-page Modal
           // (also z-50, via a portal) meant to cover this trigger entirely. Boosting
@@ -163,8 +167,13 @@ export function WorkspaceSwitcher() {
           isOpen && !isMobile ? 'z-[60]' : ''
         }`}
       >
-        {activeWorkspace?.name ?? 'Workspace'}
-        <AnimatedIcon icon={ChevronDownIcon} size={14} />
+        {/* Inline, not a flex row: a long name wraps, and the chevron trails its last word.
+            That word and the chevron share a nowrap span so the chevron never wraps alone. */}
+        {triggerLead}
+        <span className="whitespace-nowrap">
+          {triggerLast}
+          <AnimatedIcon icon={ChevronDownIcon} size={14} className="ml-1.5 align-middle" />
+        </span>
       </button>
 
       {!isMobile && isOpen && (
