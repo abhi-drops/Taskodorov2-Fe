@@ -56,6 +56,67 @@ body {
   animation: marquee 20s linear infinite;
 }
 
+/* Board "Hide Notes After": a hidden note sliding in/out of its group (GroupColumn.tsx).
+   The wrapper collapses its row (grid 1fr <-> 0fr) and cancels the list's `gap-3` with a
+   negative margin so the cards below move smoothly instead of jumping when the note
+   mounts or unmounts. The clip lives only on these animating wrappers, so a settled
+   card keeps its full shadow. */
+@keyframes note-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+    grid-template-rows: 0fr;
+    margin-bottom: -0.75rem;
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    grid-template-rows: 1fr;
+    margin-bottom: 0;
+  }
+}
+
+@keyframes note-hide {
+  from {
+    opacity: 1;
+    transform: none;
+    grid-template-rows: 1fr;
+    margin-bottom: 0;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+    grid-template-rows: 0fr;
+    margin-bottom: -0.75rem;
+  }
+}
+
+.note-reveal,
+.note-hide {
+  display: grid;
+}
+
+.note-reveal > *,
+.note-hide > * {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.note-reveal {
+  animation: note-reveal 280ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+.note-hide {
+  animation: note-hide 240ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .note-reveal,
+  .note-hide {
+    animation: none;
+  }
+}
+
 /* Deep-link highlight: `SyncStatusBadge` on the board links to the Sync With Google
    chip in Settings with `?focus=sync` so the destination is obvious at a glance.
    4 blinks x 0.5s = 2s total, then the outline (no `forwards`) just stops animating

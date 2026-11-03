@@ -9,8 +9,8 @@ from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 - **What.** New per-group setting **Hide Notes After**: `Never` (default) or `After
   checked` plus an amount in hours or days. Once a note in that group is fully checked and
   has stayed so for that long, it leaves the board. A group with hidden notes ends with a
-  **Show hidden (n)** button that brings them back until the user leaves the board (then
-  **Hide n again**). Nothing is deleted: search, the Diary and the editor still see them.
+  slim **n hidden** bar (drawn as a small pile of cards) that brings them back until the user
+  leaves the board (then **n shown · Hide**). Nothing is deleted: search, the Diary and the editor still see them.
   Works on web and mobile, and is also a template group setting.
 - **How.** New `groups.hide_after_*` columns and `notes.completed_at` (stamped when a note
   becomes fully checked, cleared when unchecked; older checked notes fall back to

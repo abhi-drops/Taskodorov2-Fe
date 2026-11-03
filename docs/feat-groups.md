@@ -154,7 +154,7 @@ throughout this app):
   and has been for at least that long (`lib/notes/hiddenNotes.ts`'s `isNoteHidden`).
   Hidden notes are still in the DB — search, the Diary and the editor are unaffected;
   only the board's column/tab leaves them out. At the bottom of a group with hidden notes
-  the board shows **Show hidden (n)** (→ **Hide n again**), which reveals them for that
+  the board shows a slim stacked-cards bar, **n hidden** (→ **n shown · Hide** once open), (hover fans the pile out) which reveals them with a short staggered slide-in, and slides them out on "Hide" (`note-reveal`/`note-hide` in `index.css`, driven by `GroupColumn`; skipped under `prefers-reduced-motion`), for that
   group until the user leaves the board (`useBoard`'s `revealedGroupIds`, deliberately
   not persisted). The clock is `notes.completed_at`, stamped in `updateNote` on the
   unchecked → fully-checked edge and cleared when unchecked; notes checked before it
