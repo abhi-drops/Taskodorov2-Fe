@@ -4,6 +4,18 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-11-03 — Mobile web notice: "Don't show this again" checkbox
+
+- **What.** The "Taskodoro works best in the Android app" dialog now has a **Don't show
+  this again** checkbox. If ticked when the dialog closes (button, X, Escape or a click
+  outside), the choice is saved on this browser and the notice never returns. Unticked, it
+  still comes back on every page load as before.
+- **How.** `components/MobileWebNotice.tsx`, with a new `loadHideMobileWebNotice` /
+  `saveHideMobileWebNotice` pair in `lib/storage/preferences.ts`. The dialog waits for the
+  stored value to load before it can open, so a silenced notice never flashes. Documented in
+  `docs/feat-navigation.md`.
+- Templates AI Guide: not affected.
+
 ## 2026-11-03 — Violet buttons in dialogs get an ink border and shadow
 
 - **What.** The violet primary button in a dialog now carries the chips' `border-[3px]

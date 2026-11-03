@@ -283,9 +283,11 @@ the browser's own back, a browser download, the web Google button. Code outside 
 
 `components/MobileWebNotice.tsx` (mounted in `App.tsx`) shows a centred `Modal` over that
 layout: Taskodoro works best in the Android app, some features may not work well here,
-and a **Continue on web** button. The X, Escape or a click outside also close it. The
-dismissal is not stored, so the notice returns on every page load at phone width (but not
-after a rotation within one load). Tablet widths and up never see it, and nor does the
+and a **Continue on web** button. The X, Escape or a click outside also close it. A
+**Don't show this again** checkbox above the button stores the choice (`loadHideMobileWebNotice`
+/`saveHideMobileWebNotice`, `preferences.ts`), applied when the dialog closes by any route.
+Without it the dismissal is not stored, so the notice returns on every page load at phone
+width (but not after a rotation within one load). Tablet widths and up never see it, and nor does the
 native app. It has no download link yet: there is no store URL to point to.
 
 Per an explicit product decision (not a mockup requirement): web content should be

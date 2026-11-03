@@ -199,6 +199,18 @@ export async function saveFeedbackPromptState(state: FeedbackPromptState): Promi
   await Preferences.set({ key: FEEDBACK_PROMPT_KEY, value: JSON.stringify(state) })
 }
 
+const HIDE_MOBILE_WEB_NOTICE_KEY = 'taskodoro.ui.hideMobileWebNotice'
+
+/** Whether the "works best in the Android app" notice was silenced with its "Don't show this again" checkbox. */
+export async function loadHideMobileWebNotice(): Promise<boolean> {
+  const { value } = await Preferences.get({ key: HIDE_MOBILE_WEB_NOTICE_KEY })
+  return value === 'on'
+}
+
+export async function saveHideMobileWebNotice(hide: boolean): Promise<void> {
+  await Preferences.set({ key: HIDE_MOBILE_WEB_NOTICE_KEY, value: hide ? 'on' : 'off' })
+}
+
 const DEVICE_ID_KEY = 'taskodoro.sync.deviceId'
 
 /**
