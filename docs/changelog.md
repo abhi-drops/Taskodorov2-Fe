@@ -4,6 +4,26 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-11-03 — Group setting: Hide Notes After
+
+- **What.** New per-group setting **Hide Notes After**: `Never` (default) or `After
+  checked` plus an amount in hours or days. Once a note in that group is fully checked and
+  has stayed so for that long, it leaves the board. A group with hidden notes ends with a
+  **Show hidden (n)** button that brings them back until the user leaves the board (then
+  **Hide n again**). Nothing is deleted: search, the Diary and the editor still see them.
+  Works on web and mobile, and is also a template group setting.
+- **How.** New `groups.hide_after_*` columns and `notes.completed_at` (stamped when a note
+  becomes fully checked, cleared when unchecked; older checked notes fall back to
+  `updated_at`), the rule in `lib/notes/hiddenNotes.ts`, board state in `useBoard`,
+  controls in `GroupSettingsFields`. Templates carry the fields (`templateFile.ts` clamps
+  imports; older saved templates default on read). Documented in `docs/feat-groups.md`,
+  `feat-templates.md`, `feat-offline-data-layer.md`.
+- **Sync.** The new fields ride the existing group/note rows. The backend (`Taskodoro-Be`)
+  still has to add them to be stored; until then it ignores them, and the pull-side upserts
+  keep the local values instead of resetting them, so the setting works per device.
+- Templates AI Guide: updated (new group fields, a tip, and the example's last group uses
+  them); the example still imports unchanged through `parseTemplateFile`.
+
 ## 2026-11-03 — Mobile web notice: "Don't show this again" checkbox
 
 - **What.** The "Taskodoro works best in the Android app" dialog now has a **Don't show

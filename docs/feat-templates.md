@@ -19,7 +19,7 @@ Two connected parts:
   `position`, `content`.
 - `TemplateContent`: `groups[]` and `completedGroupKey`.
 - `TemplateGroup`: `key`, `name`, `sortedBy`, `noteColorMode`, `onCheckMoveToKey`,
-  `resetOnMove`, `notes[]`.
+  `resetOnMove`, `hideAfterMode`/`hideAfterAmount`/`hideAfterUnit` (Group Settings' "Hide Notes After"; templates saved before it existed are defaulted to `never`/1/`days` on read in `lib/db/templates.ts`, and an import clamps the amount to 1–999 hours / 1–365 days), `notes[]`.
 - `TemplateNote`: `key`, `type`, `title`, `description`, `color`, `priority`,
   `counterStep`, `counterTarget`, `listItems` (texts only).
 

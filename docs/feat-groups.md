@@ -147,6 +147,26 @@ throughout this app):
   resolves a note's displayed color (`manual` auto-assigns a random swatch at note
   creation, then leaves it user-editable — the old separate `random` mode was folded
   into `manual` rather than kept as a third option).
+- **Hide Notes After** — `Never` (default) / `After checked`. With `After checked`, an
+  amount + `Hours`/`Days` field appears (whole number, 1 up to 999 hours or 365 days,
+  committed on blur; switching unit re-clamps it). A note is **hidden** on the board once
+  it is *fully checked* (`isNoteFullyChecked`, so a list note needs every subtask done)
+  and has been for at least that long (`lib/notes/hiddenNotes.ts`'s `isNoteHidden`).
+  Hidden notes are still in the DB — search, the Diary and the editor are unaffected;
+  only the board's column/tab leaves them out. At the bottom of a group with hidden notes
+  the board shows **Show hidden (n)** (→ **Hide n again**), which reveals them for that
+  group until the user leaves the board (`useBoard`'s `revealedGroupIds`, deliberately
+  not persisted). The clock is `notes.completed_at`, stamped in `updateNote` on the
+  unchecked → fully-checked edge and cleared when unchecked; notes checked before it
+  existed (or pulled from a backend that doesn't send it) fall back to `updated_at`,
+  which edits also bump. `useBoard` re-evaluates every 60s so notes hide while the board
+  is open. Dropping a note into a manual group while some notes are hidden maps the drop
+  index onto the visible list (`moveNote`). Backed by `groups.hide_after_mode` /
+  `hide_after_amount` / `hide_after_unit` (migrated by `ensureColumn`). **Sync:** the
+  fields ride the existing group/note rows; a backend that doesn't know them ignores
+  them, and `upsertGroupFromServer` / `upsertNoteFromServer` `COALESCE` against the local
+  values so a pull never resets the setting or the stamp. Also a template group setting
+  (`feat-templates.md`).
 - **Delete This Group** — `ConfirmDialog` → cascading soft-delete of the group and its
   notes → back to Power Tools.
 

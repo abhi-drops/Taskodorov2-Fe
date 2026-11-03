@@ -36,6 +36,9 @@ CREATE TABLE IF NOT EXISTS groups (
   note_color_mode TEXT NOT NULL DEFAULT 'manual',
   on_check_move_to_group_id TEXT,
   reset_on_move INTEGER NOT NULL DEFAULT 1,
+  hide_after_mode TEXT NOT NULL DEFAULT 'never',
+  hide_after_amount INTEGER NOT NULL DEFAULT 1,
+  hide_after_unit TEXT NOT NULL DEFAULT 'days',
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   deleted_at INTEGER
@@ -53,6 +56,7 @@ CREATE TABLE IF NOT EXISTS notes (
   completed INTEGER NOT NULL DEFAULT 0,
   payload TEXT NOT NULL DEFAULT '{}',
   statuses TEXT NOT NULL DEFAULT '[]',
+  completed_at INTEGER,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   deleted_at INTEGER
@@ -129,6 +133,28 @@ async function migrateSchema(db: SQLiteDBConnection): Promise<void> {
     'reset_on_move',
     'ALTER TABLE groups ADD COLUMN reset_on_move INTEGER NOT NULL DEFAULT 1',
   )
+  // Group Settings' "Hide Notes After": hide a checked note once it has been checked this
+  // long, with `notes.completed_at` as the clock (NULL on notes checked before it was
+  // tracked; the hide rule falls back to `updated_at` for those).
+  await ensureColumn(
+    db,
+    'groups',
+    'hide_after_mode',
+    "ALTER TABLE groups ADD COLUMN hide_after_mode TEXT NOT NULL DEFAULT 'never'",
+  )
+  await ensureColumn(
+    db,
+    'groups',
+    'hide_after_amount',
+    'ALTER TABLE groups ADD COLUMN hide_after_amount INTEGER NOT NULL DEFAULT 1',
+  )
+  await ensureColumn(
+    db,
+    'groups',
+    'hide_after_unit',
+    "ALTER TABLE groups ADD COLUMN hide_after_unit TEXT NOT NULL DEFAULT 'days'",
+  )
+  await ensureColumn(db, 'notes', 'completed_at', 'ALTER TABLE notes ADD COLUMN completed_at INTEGER')
   // 'random' was folded into 'manual' (manual now auto-assigns a random color at
   // creation, then leaves it user-editable) — rewrite any pre-existing rows so
   // NoteColorMode's removal of 'random' doesn't leave stale values in old DBs.

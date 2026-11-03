@@ -2,7 +2,7 @@ import { withDb } from './sqlite'
 import { logEvent, logGroupCreated } from './eventLog'
 import { notifyLocalChange } from './localChange'
 import type { SQLiteDBConnection } from '@capacitor-community/sqlite'
-import type { Group, NoteColorMode, SortedBy } from '../../types/group'
+import type { Group, HideAfterMode, HideAfterUnit, NoteColorMode, SortedBy } from '../../types/group'
 
 interface GroupRow {
   id: string
@@ -13,6 +13,9 @@ interface GroupRow {
   note_color_mode: NoteColorMode
   on_check_move_to_group_id: string | null
   reset_on_move: number
+  hide_after_mode: HideAfterMode
+  hide_after_amount: number
+  hide_after_unit: HideAfterUnit
   created_at: number
   updated_at: number
   deleted_at: number | null
@@ -28,6 +31,9 @@ function rowToGroup(row: GroupRow): Group {
     noteColorMode: row.note_color_mode,
     onCheckMoveToGroupId: row.on_check_move_to_group_id,
     resetOnMove: row.reset_on_move === 1,
+    hideAfterMode: row.hide_after_mode,
+    hideAfterAmount: row.hide_after_amount,
+    hideAfterUnit: row.hide_after_unit,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     deletedAt: row.deleted_at,
@@ -97,6 +103,9 @@ export function createGroup(input: { workspaceId: string; name: string }): Promi
       noteColorMode,
       onCheckMoveToGroupId: null,
       resetOnMove: true,
+      hideAfterMode: 'never',
+      hideAfterAmount: 1,
+      hideAfterUnit: 'days',
       createdAt: now,
       updatedAt: now,
       deletedAt: null,
@@ -107,7 +116,18 @@ export function createGroup(input: { workspaceId: string; name: string }): Promi
 export function updateGroup(
   id: string,
   patch: Partial<
-    Pick<Group, 'name' | 'position' | 'sortedBy' | 'noteColorMode' | 'onCheckMoveToGroupId' | 'resetOnMove'>
+    Pick<
+      Group,
+      | 'name'
+      | 'position'
+      | 'sortedBy'
+      | 'noteColorMode'
+      | 'onCheckMoveToGroupId'
+      | 'resetOnMove'
+      | 'hideAfterMode'
+      | 'hideAfterAmount'
+      | 'hideAfterUnit'
+    >
   >,
 ): Promise<void> {
   return withDb(async (db) => {
@@ -117,6 +137,9 @@ export function updateGroup(
       sortedBy: 'sorted_by',
       noteColorMode: 'note_color_mode',
       onCheckMoveToGroupId: 'on_check_move_to_group_id',
+      hideAfterMode: 'hide_after_mode',
+      hideAfterAmount: 'hide_after_amount',
+      hideAfterUnit: 'hide_after_unit',
     }
 
     const setClauses: string[] = []
@@ -193,12 +216,17 @@ export async function collectDirtyGroups(db: SQLiteDBConnection, limit: number):
   return ((result.values ?? []) as GroupRow[]).map(rowToGroup)
 }
 
-/** Mirror of `rowToGroup`: writes a server-origin row by its own id, `position` verbatim. */
+/**
+ * Mirror of `rowToGroup`: writes a server-origin row by its own id, `position` verbatim.
+ * The hide-after settings are `COALESCE`d against the local row because a backend that
+ * predates them returns groups without those fields — a pull must not reset a setting
+ * this device (or a newer backend) already holds.
+ */
 export async function upsertGroupFromServer(db: SQLiteDBConnection, row: Group): Promise<void> {
   await db.run(
     `INSERT INTO groups
-      (id, workspace_id, name, position, sorted_by, note_color_mode, on_check_move_to_group_id, reset_on_move, created_at, updated_at, deleted_at, dirty)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+      (id, workspace_id, name, position, sorted_by, note_color_mode, on_check_move_to_group_id, reset_on_move, hide_after_mode, hide_after_amount, hide_after_unit, created_at, updated_at, deleted_at, dirty)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, 'never'), COALESCE(?, 1), COALESCE(?, 'days'), ?, ?, ?, 0)
      ON CONFLICT(id) DO UPDATE SET
        workspace_id = excluded.workspace_id,
        name = excluded.name,
@@ -207,6 +235,9 @@ export async function upsertGroupFromServer(db: SQLiteDBConnection, row: Group):
        note_color_mode = excluded.note_color_mode,
        on_check_move_to_group_id = excluded.on_check_move_to_group_id,
        reset_on_move = excluded.reset_on_move,
+       hide_after_mode = COALESCE(?, groups.hide_after_mode),
+       hide_after_amount = COALESCE(?, groups.hide_after_amount),
+       hide_after_unit = COALESCE(?, groups.hide_after_unit),
        created_at = excluded.created_at,
        updated_at = excluded.updated_at,
        deleted_at = excluded.deleted_at,
@@ -220,9 +251,15 @@ export async function upsertGroupFromServer(db: SQLiteDBConnection, row: Group):
       row.noteColorMode,
       row.onCheckMoveToGroupId,
       row.resetOnMove ? 1 : 0,
+      row.hideAfterMode ?? null,
+      row.hideAfterAmount ?? null,
+      row.hideAfterUnit ?? null,
       row.createdAt,
       row.updatedAt,
       row.deletedAt,
+      row.hideAfterMode ?? null,
+      row.hideAfterAmount ?? null,
+      row.hideAfterUnit ?? null,
     ],
   )
 }

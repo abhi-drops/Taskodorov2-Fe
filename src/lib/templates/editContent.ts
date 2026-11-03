@@ -49,6 +49,9 @@ export function addGroup(content: TemplateContent, name: string): TemplateConten
     noteColorMode: 'manual',
     onCheckMoveToKey: null,
     resetOnMove: true,
+    hideAfterMode: 'never',
+    hideAfterAmount: 1,
+    hideAfterUnit: 'days',
     notes: [],
   }
   return { ...content, groups: [...content.groups, group] }

@@ -57,6 +57,9 @@ function group(
     noteColorMode: settings.noteColorMode ?? 'manual',
     onCheckMoveToKey: settings.moveTo ?? null,
     resetOnMove: settings.resetOnMove ?? true,
+    hideAfterMode: 'never',
+    hideAfterAmount: 1,
+    hideAfterUnit: 'days',
     notes,
   }
 }

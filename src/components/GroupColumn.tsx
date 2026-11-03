@@ -27,6 +27,11 @@ interface GroupColumnProps {
    * so this is off there and only the bare note list renders.
    */
   showHeader?: boolean
+  /** Notes this group's "Hide Notes After" rule is hiding right now (see `useBoard`). */
+  hiddenCount: number
+  /** Whether those hidden notes are currently included in `notes`. */
+  showingHidden: boolean
+  onToggleHidden: () => void
 }
 
 function NoteCard({ note, group, onChange }: { note: Note; group: Group; onChange: () => void }) {
@@ -101,29 +106,54 @@ function DraggableNoteCard({ note, group, onChange }: { note: Note; group: Group
   )
 }
 
-function NoteList({ group, notes, onChange }: { group: Group; notes: Note[]; onChange: () => void }) {
-  if (notes.length === 0) {
-    return <p className="px-1 text-sm text-slate-500">No notes yet.</p>
-  }
+interface NoteListProps {
+  group: Group
+  notes: Note[]
+  onChange: () => void
+  hiddenCount: number
+  showingHidden: boolean
+  onToggleHidden: () => void
+}
 
-  if (group.sortedBy !== 'manual') {
-    return (
+function NoteList({ group, notes, onChange, hiddenCount, showingHidden, onToggleHidden }: NoteListProps) {
+  let list
+  if (notes.length === 0) {
+    list = (
+      <p className="px-1 text-sm text-slate-500">{hiddenCount > 0 ? 'All notes hidden.' : 'No notes yet.'}</p>
+    )
+  } else if (group.sortedBy !== 'manual') {
+    list = (
       <div className="flex flex-col gap-3">
         {notes.map((note) => (
           <DraggableNoteCard key={note.id} note={note} group={group} onChange={onChange} />
         ))}
       </div>
     )
+  } else {
+    list = (
+      <SortableContext items={notes.map((n) => noteDragId(n.id))} strategy={verticalListSortingStrategy}>
+        <div className="flex flex-col gap-3">
+          {notes.map((note) => (
+            <SortableNoteCard key={note.id} note={note} group={group} onChange={onChange} />
+          ))}
+        </div>
+      </SortableContext>
+    )
   }
 
   return (
-    <SortableContext items={notes.map((n) => noteDragId(n.id))} strategy={verticalListSortingStrategy}>
-      <div className="flex flex-col gap-3">
-        {notes.map((note) => (
-          <SortableNoteCard key={note.id} note={note} group={group} onChange={onChange} />
-        ))}
-      </div>
-    </SortableContext>
+    <>
+      {list}
+      {hiddenCount > 0 && (
+        <button
+          type="button"
+          onClick={onToggleHidden}
+          className="mt-3 w-full rounded-card border-[3px] border-ink bg-white px-3 py-1.5 text-sm font-medium text-ink shadow-card transition hover:bg-sticky-yellow"
+        >
+          {showingHidden ? `Hide ${hiddenCount} again` : `Show hidden (${hiddenCount})`}
+        </button>
+      )}
+    </>
   )
 }
 
@@ -147,7 +177,26 @@ function GroupChip({ group }: { group: Group }) {
   )
 }
 
-export function GroupColumn({ group, notes, onChange, showHeader = true }: GroupColumnProps) {
+export function GroupColumn({
+  group,
+  notes,
+  onChange,
+  showHeader = true,
+  hiddenCount,
+  showingHidden,
+  onToggleHidden,
+}: GroupColumnProps) {
+  const list = (
+    <NoteList
+      group={group}
+      notes={notes}
+      onChange={onChange}
+      hiddenCount={hiddenCount}
+      showingHidden={showingHidden}
+      onToggleHidden={onToggleHidden}
+    />
+  )
+
   const { setNodeRef, isOver } = useDroppable({
     id: groupDropId(group.id),
     data: { type: 'group', groupId: group.id },
@@ -159,7 +208,7 @@ export function GroupColumn({ group, notes, onChange, showHeader = true }: Group
         ref={setNodeRef}
         className={`flex flex-1 flex-col gap-3 rounded-card transition ${isOver ? 'ring-4 ring-accent-purple' : ''}`}
       >
-        <NoteList group={group} notes={notes} onChange={onChange} />
+        {list}
       </div>
     )
   }
@@ -184,7 +233,7 @@ export function GroupColumn({ group, notes, onChange, showHeader = true }: Group
           isOver ? 'ring-4 ring-accent-purple' : ''
         }`}
       >
-        <NoteList group={group} notes={notes} onChange={onChange} />
+        {list}
       </div>
     </div>
   )

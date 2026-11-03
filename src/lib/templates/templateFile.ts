@@ -1,5 +1,6 @@
 import { SWATCH_OPTIONS, type SwatchColor } from '../../components/ui/swatchColors'
-import type { NoteColorMode, SortedBy } from '../../types/group'
+import { MAX_HIDE_AFTER } from '../notes/hiddenNotes'
+import type { HideAfterMode, HideAfterUnit, NoteColorMode, SortedBy } from '../../types/group'
 import type { NoteType, Priority } from '../../types/note'
 import type { TemplateContent, TemplateGroup, TemplateNote } from '../../types/template'
 
@@ -19,6 +20,8 @@ const MAX_TEXT = 2000
 
 const SORTED_BY: SortedBy[] = ['manual', 'alphabetical', 'date', 'priority']
 const COLOR_MODES: NoteColorMode[] = ['manual', 'priority']
+const HIDE_AFTER_MODES: HideAfterMode[] = ['never', 'checked']
+const HIDE_AFTER_UNITS: HideAfterUnit[] = ['hours', 'days']
 const NOTE_TYPES: NoteType[] = ['basic', 'counter', 'list']
 const PRIORITIES: Priority[] = ['low', 'normal', 'medium', 'high']
 
@@ -104,6 +107,11 @@ export function parseTemplateFile(json: string): { name: string; content: Templa
       .map((note) => parseNote(note, `n${++noteCount}`))
       .filter((note): note is TemplateNote => note !== null)
     const moveTo = link(group.onCheckMoveToKey)
+    const hideAfterUnit = oneOf(group.hideAfterUnit, HIDE_AFTER_UNITS, 'days')
+    const hideAfterAmount =
+      typeof group.hideAfterAmount === 'number' && Number.isFinite(group.hideAfterAmount)
+        ? Math.min(Math.max(Math.round(group.hideAfterAmount), 1), MAX_HIDE_AFTER[hideAfterUnit])
+        : 1
     return {
       key,
       name: text(group.name).trim() || `Group ${i + 1}`,
@@ -111,6 +119,9 @@ export function parseTemplateFile(json: string): { name: string; content: Templa
       noteColorMode: oneOf(group.noteColorMode, COLOR_MODES, 'manual'),
       onCheckMoveToKey: moveTo === key ? null : moveTo,
       resetOnMove: group.resetOnMove !== false,
+      hideAfterMode: oneOf(group.hideAfterMode, HIDE_AFTER_MODES, 'never'),
+      hideAfterAmount,
+      hideAfterUnit,
       notes,
     }
   })

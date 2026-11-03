@@ -10,6 +10,7 @@ import {
   WIPE_MARKER,
 } from './eventLog'
 import { notifyLocalChange } from './localChange'
+import { isNoteFullyChecked } from '../notes/noteChecked'
 import type { Note, NotePayload, NoteStatus, NoteType, Priority } from '../../types/note'
 
 /** The fields the Diary log tracks, read before a write so changes can be diffed. */
@@ -45,6 +46,7 @@ interface NoteRow {
   completed: number
   payload: string
   statuses: string
+  completed_at: number | null
   created_at: number
   updated_at: number
   deleted_at: number | null
@@ -64,6 +66,7 @@ function rowToNote(row: NoteRow): Note {
     completed: row.completed === 1,
     payload: JSON.parse(row.payload) as NotePayload,
     statuses: JSON.parse(row.statuses) as NoteStatus[],
+    completedAt: row.completed_at ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     deletedAt: row.deleted_at,
@@ -184,6 +187,7 @@ export function createNote(input: {
       completed: false,
       payload,
       statuses: [],
+      completedAt: null,
       createdAt: now,
       updatedAt: now,
       deletedAt: null,
@@ -263,6 +267,26 @@ export function updateNote(
     const before = tracksChange ? await readTrackedFields(db, id) : null
 
     const now = Date.now()
+
+    // Group Settings' "Hide Notes After" counts from the moment the note became fully
+    // checked, so stamp it on the unchecked -> checked edge and clear it on the way back.
+    if (before && ['completed', 'payload', 'type'].some((k) => k in patch)) {
+      const beforePayload = JSON.parse(before.payload) as NotePayload
+      const wasChecked = isNoteFullyChecked({
+        type: before.type as NoteType,
+        completed: before.completed === 1,
+        payload: beforePayload,
+      })
+      const isChecked = isNoteFullyChecked({
+        type: patch.type ?? (before.type as NoteType),
+        completed: 'completed' in patch ? !!patch.completed : before.completed === 1,
+        payload: 'payload' in patch ? (patch.payload as NotePayload) : beforePayload,
+      })
+      if (isChecked !== wasChecked) {
+        setClauses.push('completed_at = ?')
+        params.push(isChecked ? now : null)
+      }
+    }
     setClauses.push('updated_at = ?', 'dirty = 1')
     params.push(now)
     params.push(id)
@@ -417,8 +441,8 @@ export async function collectDirtyNotes(db: SQLiteDBConnection, limit: number): 
 export async function upsertNoteFromServer(db: SQLiteDBConnection, row: Note): Promise<void> {
   await db.run(
     `INSERT INTO notes
-      (id, workspace_id, group_id, type, title, description, color, priority, position, completed, payload, statuses, created_at, updated_at, deleted_at, dirty)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+      (id, workspace_id, group_id, type, title, description, color, priority, position, completed, payload, statuses, completed_at, created_at, updated_at, deleted_at, dirty)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
      ON CONFLICT(id) DO UPDATE SET
        workspace_id = excluded.workspace_id,
        group_id = excluded.group_id,
@@ -431,6 +455,10 @@ export async function upsertNoteFromServer(db: SQLiteDBConnection, row: Note): P
        completed = excluded.completed,
        payload = excluded.payload,
        statuses = excluded.statuses,
+       -- A backend that predates completedAt omits it: keep the local stamp for a note
+       -- that is still checked rather than losing when it was checked.
+       completed_at = CASE WHEN excluded.completed = 0 THEN NULL
+                           ELSE COALESCE(excluded.completed_at, notes.completed_at) END,
        created_at = excluded.created_at,
        updated_at = excluded.updated_at,
        deleted_at = excluded.deleted_at,
@@ -448,6 +476,7 @@ export async function upsertNoteFromServer(db: SQLiteDBConnection, row: Note): P
       row.completed ? 1 : 0,
       JSON.stringify(row.payload),
       JSON.stringify(row.statuses),
+      row.completed ? (row.completedAt ?? null) : null,
       row.createdAt,
       row.updatedAt,
       row.deletedAt,

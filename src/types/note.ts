@@ -41,6 +41,9 @@ export interface Note {
   completed: boolean
   payload: NotePayload
   statuses: NoteStatus[]
+  /** When the note last became fully checked; `null` while unchecked (and for notes
+   *  checked before this was tracked, where `updatedAt` stands in). */
+  completedAt: number | null
   createdAt: number
   updatedAt: number
   deletedAt: number | null

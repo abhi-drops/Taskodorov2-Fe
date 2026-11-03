@@ -121,6 +121,9 @@ A file whose `app` or `kind` is wrong, or that has no `content.groups` list, is 
   "noteColorMode": "manual",
   "onCheckMoveToKey": "doing",
   "resetOnMove": true,
+  "hideAfterMode": "never",
+  "hideAfterAmount": 1,
+  "hideAfterUnit": "days",
   "notes": []
 }
 ```
@@ -133,6 +136,9 @@ A file whose `app` or `kind` is wrong, or that has no `content.groups` list, is 
 | `noteColorMode` | `"manual"`: each note keeps its own `color`. `"priority"`: colour comes from the note's `priority` and its `color` is ignored. |
 | `onCheckMoveToKey` | The `key` of the group a note moves to when the user checks it, or `null` to stay put. Must not be the group's own key. |
 | `resetOnMove` | Only matters when `onCheckMoveToKey` is set. `true`: the note arrives unchecked (it was just "moved along"). `false`: it arrives still checked (it is really finished). |
+| `hideAfterMode` | Optional, default `"never"`. `"checked"`: a checked note disappears from the board once it has been checked for `hideAfterAmount` `hideAfterUnit` (it isn't deleted; the group shows a "Show hidden" button to see it again). Sample notes are never pre-checked, so this only matters once the user starts using the board. |
+| `hideAfterAmount` | Optional, default `1`. A whole number of 1 or more (at most 999 hours or 365 days). Only matters when `hideAfterMode` is `"checked"`. |
+| `hideAfterUnit` | Optional, default `"days"`. `"hours"` or `"days"`. Only matters when `hideAfterMode` is `"checked"`. |
 | `notes` | The group's sample notes, top to bottom. May be empty. |
 
 ## A note
@@ -196,6 +202,10 @@ Do not rely on these. Write valid values.
   with `onCheckMoveToKey` and set `completedGroupKey` to the last one. Use
   `"resetOnMove": true` for the in-between steps and `false` on the step that leads into
   the final group, so a finished note stays checked.
+- **Tidy up finished work.** On the last group of a flow (the one `completedGroupKey`
+  points at), `"hideAfterMode": "checked"` with `"hideAfterAmount": 7` and
+  `"hideAfterUnit": "days"` keeps old finished notes off the board without deleting them.
+  Skip it on every other group.
 - **No flow, no chain.** For boards that only sort things (ideas, categories), leave
   `onCheckMoveToKey` and `completedGroupKey` as `null`.
 - **A few sample notes, not a full plan.** Two to five notes in total is enough to show
@@ -332,6 +342,9 @@ When the user pastes an exported template:
         "noteColorMode": "priority",
         "onCheckMoveToKey": null,
         "resetOnMove": true,
+        "hideAfterMode": "checked",
+        "hideAfterAmount": 7,
+        "hideAfterUnit": "days",
         "notes": []
       }
     ],

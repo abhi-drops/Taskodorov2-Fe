@@ -3,6 +3,7 @@ import { useWorkspace } from '../lib/workspace/useWorkspace'
 import { useSync } from '../lib/sync/useSync'
 import { listGroups, reorderGroups as reorderGroupsInDb } from '../lib/db/groups'
 import { listNotesByWorkspace, reorderNotes } from '../lib/db/notes'
+import { isNoteHidden } from '../lib/notes/hiddenNotes'
 import type { Group } from '../types/group'
 import type { Note } from '../types/note'
 
@@ -31,6 +32,9 @@ function sortNotes(notes: Note[], sortedBy: Group['sortedBy']): Note[] {
  */
 let lastActiveGroupId: string | null = null
 
+/** How often the board re-checks which notes have crossed their group's hide threshold. */
+const HIDE_RECHECK_MS = 60_000
+
 export function useBoard() {
   const { activeWorkspaceId } = useWorkspace()
   // A sync pull that wrote something re-runs the load effect below — `useBoard` has
@@ -41,6 +45,16 @@ export function useBoard() {
   /** True once the first load has finished — gates page transitions into the board. */
   const [loaded, setLoaded] = useState(false)
   const [activeGroupId, setActiveGroupIdState] = useState<string | null>(() => lastActiveGroupId)
+  /** Groups whose hidden notes the user asked to see ("Show hidden"). Per visit to the
+   *  board on purpose: it lives in this hook, which unmounts with `HomePage`. */
+  const [revealedGroupIds, setRevealedGroupIds] = useState<Set<string>>(() => new Set())
+  // A note hides by the clock, not by an edit, so the board needs its own tick.
+  const [now, setNow] = useState(() => Date.now())
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), HIDE_RECHECK_MS)
+    return () => clearInterval(id)
+  }, [])
 
   function setActiveGroupId(value: string | null | ((current: string | null) => string | null)) {
     setActiveGroupIdState((current) => {
@@ -80,11 +94,30 @@ export function useBoard() {
     }
   }, [activeWorkspaceId, appliedAt])
 
+  /** The notes the board shows for a group: its hidden ones are left out unless revealed. */
   function notesForGroup(group: Group): Note[] {
+    const revealed = revealedGroupIds.has(group.id)
     return sortNotes(
-      notes.filter((n) => n.groupId === group.id),
+      notes.filter((n) => n.groupId === group.id && (revealed || !isNoteHidden(n, group, now))),
       group.sortedBy,
     )
+  }
+
+  /** How many of a group's notes its "Hide Notes After" rule is hiding right now. */
+  function hiddenCountForGroup(group: Group): number {
+    return notes.filter((n) => n.groupId === group.id && isNoteHidden(n, group, now)).length
+  }
+
+  function isGroupRevealed(group: Group): boolean {
+    return revealedGroupIds.has(group.id)
+  }
+
+  function toggleGroupRevealed(group: Group) {
+    setRevealedGroupIds((current) => {
+      const next = new Set(current)
+      if (!next.delete(group.id)) next.add(group.id)
+      return next
+    })
   }
 
   async function refresh() {
@@ -112,7 +145,12 @@ export function useBoard() {
 
     if (destGroup.sortedBy === 'manual') {
       const ordered = [...destSiblings]
-      ordered.splice(Math.max(0, Math.min(destIndex, ordered.length)), 0, note)
+      // `destIndex` counts the notes on screen, which skip any hidden ones, so find the
+      // note it points at in the full list and drop in front of that.
+      const shown = notesForGroup(destGroup).filter((n) => n.id !== noteId)
+      const anchor = shown[destIndex]
+      const insertAt = anchor ? ordered.findIndex((n) => n.id === anchor.id) : ordered.length
+      ordered.splice(Math.max(0, insertAt), 0, note)
       ordered.forEach((n, i) => updates.push({ id: n.id, groupId: toGroupId, position: i }))
     } else {
       updates.push({ id: noteId, groupId: toGroupId, position: destSiblings.length })
@@ -169,6 +207,9 @@ export function useBoard() {
     activeGroupId,
     setActiveGroupId,
     notesForGroup,
+    hiddenCountForGroup,
+    isGroupRevealed,
+    toggleGroupRevealed,
     refresh,
     moveNote,
     reorderGroups,

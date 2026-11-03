@@ -25,6 +25,9 @@ export default function GroupSettingsPage() {
     updateNoteColorMode,
     updateOnCheckMoveTo,
     updateResetOnMove,
+    updateHideAfterMode,
+    updateHideAfterAmount,
+    updateHideAfterUnit,
     remove,
   } = useGroupSettings(groupId ?? '')
 
@@ -67,11 +70,17 @@ export default function GroupSettingsPage() {
         noteColorMode={group.noteColorMode}
         onCheckMoveTo={group.onCheckMoveToGroupId}
         resetOnMove={group.resetOnMove}
+        hideAfterMode={group.hideAfterMode}
+        hideAfterAmount={group.hideAfterAmount}
+        hideAfterUnit={group.hideAfterUnit}
         siblingGroups={siblingGroups}
         onSortedByChange={updateSortedBy}
         onNoteColorModeChange={updateNoteColorMode}
         onCheckMoveToChange={updateOnCheckMoveTo}
         onResetOnMoveChange={updateResetOnMove}
+        onHideAfterModeChange={updateHideAfterMode}
+        onHideAfterAmountChange={updateHideAfterAmount}
+        onHideAfterUnitChange={updateHideAfterUnit}
       />
 
       <button type="button" onClick={() => setConfirmDelete(true)} className={DANGER_CHIP}>

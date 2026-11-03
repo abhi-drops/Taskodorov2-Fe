@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getGroupById, listGroups, updateGroup, deleteGroup } from '../lib/db/groups'
-import type { Group, NoteColorMode, SortedBy } from '../types/group'
+import { MAX_HIDE_AFTER } from '../lib/notes/hiddenNotes'
+import type { Group, HideAfterMode, HideAfterUnit, NoteColorMode, SortedBy } from '../types/group'
 
 export function useGroupSettings(groupId: string) {
   const [group, setGroup] = useState<Group | null>(null)
@@ -48,6 +49,23 @@ export function useGroupSettings(groupId: string) {
     setGroup((g) => (g ? { ...g, resetOnMove } : g))
   }
 
+  async function updateHideAfterMode(hideAfterMode: HideAfterMode) {
+    await updateGroup(groupId, { hideAfterMode })
+    setGroup((g) => (g ? { ...g, hideAfterMode } : g))
+  }
+
+  async function updateHideAfterAmount(hideAfterAmount: number) {
+    await updateGroup(groupId, { hideAfterAmount })
+    setGroup((g) => (g ? { ...g, hideAfterAmount } : g))
+  }
+
+  /** Switching unit also re-clamps the amount to the new unit's maximum (e.g. 500 hours -> 365 days). */
+  async function updateHideAfterUnit(hideAfterUnit: HideAfterUnit) {
+    const hideAfterAmount = Math.min(group?.hideAfterAmount ?? 1, MAX_HIDE_AFTER[hideAfterUnit])
+    await updateGroup(groupId, { hideAfterUnit, hideAfterAmount })
+    setGroup((g) => (g ? { ...g, hideAfterUnit, hideAfterAmount } : g))
+  }
+
   async function remove() {
     await deleteGroup(groupId)
   }
@@ -61,6 +79,9 @@ export function useGroupSettings(groupId: string) {
     updateNoteColorMode,
     updateOnCheckMoveTo,
     updateResetOnMove,
+    updateHideAfterMode,
+    updateHideAfterAmount,
+    updateHideAfterUnit,
     remove,
   }
 }

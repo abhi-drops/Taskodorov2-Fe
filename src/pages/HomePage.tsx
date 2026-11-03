@@ -90,7 +90,16 @@ export default function HomePage() {
   const board = useBoard()
   useTransitionReady(board.loaded)
   const { dynamic: dynamicAddButton, position: addButtonPosition } = useAddButtonSettings()
-  const { groups, activeGroupId, setActiveGroupId, notesForGroup, refresh } = board
+  const {
+    groups,
+    activeGroupId,
+    setActiveGroupId,
+    notesForGroup,
+    hiddenCountForGroup,
+    isGroupRevealed,
+    toggleGroupRevealed,
+    refresh,
+  } = board
   const { sensors, activeDragItem, handleDragStart, handleDragEnd, handleDragCancel } = useBoardDnd(board, {
     // Mobile only: after dragging a note into a different group via GroupDropTargets,
     // switch the tab strip to that group so the user sees where it landed — on web all
@@ -150,6 +159,9 @@ export default function HomePage() {
                     notes={notesForGroup(activeGroup)}
                     onChange={refresh}
                     showHeader={false}
+                    hiddenCount={hiddenCountForGroup(activeGroup)}
+                    showingHidden={isGroupRevealed(activeGroup)}
+                    onToggleHidden={() => toggleGroupRevealed(activeGroup)}
                   />
                 </div>
               )}
@@ -173,7 +185,14 @@ export default function HomePage() {
               <div className="mt-6 flex flex-1 gap-10 overflow-x-auto">
                 {groups.map((group) => (
                   <div key={group.id} className="w-[22rem] shrink-0 pl-5">
-                    <GroupColumn group={group} notes={notesForGroup(group)} onChange={refresh} />
+                    <GroupColumn
+                      group={group}
+                      notes={notesForGroup(group)}
+                      onChange={refresh}
+                      hiddenCount={hiddenCountForGroup(group)}
+                      showingHidden={isGroupRevealed(group)}
+                      onToggleHidden={() => toggleGroupRevealed(group)}
+                    />
                   </div>
                 ))}
               </div>

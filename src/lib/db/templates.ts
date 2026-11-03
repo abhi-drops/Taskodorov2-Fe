@@ -16,13 +16,26 @@ interface TemplateRow {
   deleted_at: number | null
 }
 
+/** Templates saved (or synced) before "Hide Notes After" existed have no such fields. */
+function withHideAfterDefaults(content: TemplateContent): TemplateContent {
+  return {
+    ...content,
+    groups: content.groups.map((group) => ({
+      ...group,
+      hideAfterMode: group.hideAfterMode ?? 'never',
+      hideAfterAmount: group.hideAfterAmount ?? 1,
+      hideAfterUnit: group.hideAfterUnit ?? 'days',
+    })),
+  }
+}
+
 function rowToTemplate(row: TemplateRow): Template {
   return {
     id: row.id,
     name: row.name,
     builtinId: row.builtin_id,
     position: row.position,
-    content: JSON.parse(row.content) as TemplateContent,
+    content: withHideAfterDefaults(JSON.parse(row.content) as TemplateContent),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     deletedAt: row.deleted_at,

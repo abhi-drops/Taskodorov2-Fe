@@ -17,6 +17,7 @@ import { CHIP, DANGER_CHIP } from './SidebarPanelLayout'
 import { TOOLBAR_BUTTON } from './TemplatesShell'
 import { NewTemplateGroupInput } from './TemplateBoard'
 import { GroupSettingsFields } from './GroupSettingsFields'
+import { MAX_HIDE_AFTER } from '../lib/notes/hiddenNotes'
 import { PRIORITY_COLOR_MAP } from '../lib/notes/resolveNoteColor'
 import type { TemplateContent, TemplateGroup, TemplateNote } from '../types/template'
 
@@ -175,11 +176,19 @@ export function TemplateGroupSettings({ content, group, onPatch, onMove, onAddNo
         noteColorMode={group.noteColorMode}
         onCheckMoveTo={group.onCheckMoveToKey}
         resetOnMove={group.resetOnMove}
+        hideAfterMode={group.hideAfterMode}
+        hideAfterAmount={group.hideAfterAmount}
+        hideAfterUnit={group.hideAfterUnit}
         siblingGroups={siblings}
         onSortedByChange={(sortedBy) => onPatch({ sortedBy })}
         onNoteColorModeChange={(noteColorMode) => onPatch({ noteColorMode })}
         onCheckMoveToChange={(onCheckMoveToKey) => onPatch({ onCheckMoveToKey })}
         onResetOnMoveChange={(resetOnMove) => onPatch({ resetOnMove })}
+        onHideAfterModeChange={(hideAfterMode) => onPatch({ hideAfterMode })}
+        onHideAfterAmountChange={(hideAfterAmount) => onPatch({ hideAfterAmount })}
+        onHideAfterUnitChange={(hideAfterUnit) =>
+          onPatch({ hideAfterUnit, hideAfterAmount: Math.min(group.hideAfterAmount, MAX_HIDE_AFTER[hideAfterUnit]) })
+        }
       />
 
       <button type="button" onClick={onAddNote} className={`${CHIP} font-medium text-ink`}>

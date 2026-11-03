@@ -75,8 +75,11 @@ plain `SELECT *`.
   `reset_on_move` (`INTEGER NOT NULL DEFAULT 1` — whether a note lands unchecked in its
   destination; only meaningful alongside `on_check_move_to_group_id`. The first column
   added via the `migrateSchema()`/`ensureColumn()` idempotent-`ALTER TABLE` pattern
-  described above, rather than only in `CREATE TABLE IF NOT EXISTS`).
-- **`notes`**: `workspace_id`, `group_id`, `type` (`basic|counter|list`), `title`,
+  described above, rather than only in `CREATE TABLE IF NOT EXISTS`),
+  `hide_after_mode` (`never|checked`, default `never`), `hide_after_amount` (default 1),
+  `hide_after_unit` (`hours|days`, default `days`) — Group Settings' "Hide Notes After".
+- **`notes`** (also `completed_at`, nullable: when the note last became fully checked,
+  the clock for "Hide Notes After"): `workspace_id`, `group_id`, `type` (`basic|counter|list`), `title`,
   `description`, `color`, `priority` (`low|normal|medium|high`), `position`,
   `completed` (`INTEGER` 0/1), `payload` (`TEXT`, JSON — type-specific shape, see
   `feat-notes.md`).

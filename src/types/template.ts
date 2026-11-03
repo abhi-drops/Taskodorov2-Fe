@@ -1,5 +1,5 @@
 import type { SwatchColor } from '../components/ui/swatchColors'
-import type { NoteColorMode, SortedBy } from './group'
+import type { HideAfterMode, HideAfterUnit, NoteColorMode, SortedBy } from './group'
 import type { NoteType, Priority } from './note'
 
 /**
@@ -31,6 +31,9 @@ export interface TemplateGroup {
   noteColorMode: NoteColorMode
   onCheckMoveToKey: string | null
   resetOnMove: boolean
+  hideAfterMode: HideAfterMode
+  hideAfterAmount: number
+  hideAfterUnit: HideAfterUnit
   notes: TemplateNote[]
 }
 

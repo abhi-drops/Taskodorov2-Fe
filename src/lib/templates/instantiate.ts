@@ -52,9 +52,23 @@ export async function instantiateTemplate(
     const moveTo = group.onCheckMoveToKey ? (groupIds.get(group.onCheckMoveToKey) ?? null) : null
     await db.run(
       `INSERT INTO groups
-        (id, workspace_id, name, position, sorted_by, note_color_mode, on_check_move_to_group_id, reset_on_move, created_at, updated_at, deleted_at, dirty)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, 1)`,
-      [groupId, workspaceId, group.name, i, group.sortedBy, group.noteColorMode, moveTo, group.resetOnMove ? 1 : 0, now, now],
+        (id, workspace_id, name, position, sorted_by, note_color_mode, on_check_move_to_group_id, reset_on_move, hide_after_mode, hide_after_amount, hide_after_unit, created_at, updated_at, deleted_at, dirty)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, 1)`,
+      [
+        groupId,
+        workspaceId,
+        group.name,
+        i,
+        group.sortedBy,
+        group.noteColorMode,
+        moveTo,
+        group.resetOnMove ? 1 : 0,
+        group.hideAfterMode,
+        group.hideAfterAmount,
+        group.hideAfterUnit,
+        now,
+        now,
+      ],
     )
     await logGroupCreated(db, { id: groupId, workspaceId, createdAt: now })
   }
