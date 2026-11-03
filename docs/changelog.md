@@ -4,6 +4,36 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-11-03 — Violet buttons in dialogs get an ink border and shadow
+
+- **What.** The violet primary button in a dialog now carries the chips' `border-[3px]
+  border-ink shadow-card`. A shadow on its own was too faint to see against violet. Applied
+  to the feedback dialog (Send, Close), New workspace (Create workspace), New template
+  (Create template), the mobile web notice (Continue on web) and the forced-update dialog
+  (Update Now). Secondary white buttons and `ConfirmDialog`'s coral danger button are
+  unchanged.
+- **How.** One shared class string, `DIALOG_PRIMARY_BUTTON`, in
+  `components/ui/dialogStyles.ts`; use it for any new violet dialog button. Documented in
+  `docs/style-guide.md` (`dialogStyles.ts` row).
+- Templates AI Guide: not affected.
+
+## 2026-11-03 — User feedback: Settings button and a one-day-after-install prompt
+
+- **What.** Wired the backend's anonymous `POST /feedback` into the app. A **Send
+  Feedback** chip in Settings → About opens a dialog with a half-star rating (new
+  `components/ui/StarRating.tsx`) and an optional comment. The app also now records its
+  install date/time locally and, once the install is a day old, shows the same dialog as
+  a prompt with **Send**, **Remind me later** (asks again the next day) and a **Don't ask
+  again** checkbox that turns "Remind me later" into **Ok**. Sending feedback from either
+  place also ends the prompting.
+- **Files.** `types/feedback.ts`, `lib/api/feedback.ts`, `lib/feedback/submitFeedback.ts`,
+  `components/FeedbackDialog.tsx`, `components/FeedbackPrompt.tsx` (mounted in
+  `App.tsx`), `lib/storage/preferences.ts` (`installedAt` + prompt state),
+  `components/ui/icons.ts` (`FeedbackIcon`, `StarIcon`), `pages/PowerToolsPage.tsx`.
+- Failed sends show an error and keep the typed text; nothing is queued.
+- Templates AI Guide: not affected (no change to templates or what they describe).
+- See `docs/feat-feedback-from-be.md` §6, `docs/feat-power-tools.md` ("About").
+
 ## 2026-11-02 — Brainstorm template's third group renamed "Doing" → "Done"
 
 - **What.** The built-in Brainstorm template (`src/lib/templates/builtins.ts`) had

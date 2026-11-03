@@ -153,6 +153,52 @@ export async function consumePendingFreshLogin(): Promise<boolean> {
   return value !== null
 }
 
+const INSTALLED_AT_KEY = 'taskodoro.feedback.installedAt'
+
+/**
+ * When this install first ran the app (epoch ms), written once and never changed — the
+ * clock the feedback prompt measures its "after one day" from. A reinstall starts a
+ * fresh clock, which is right: it's a fresh install. Not tied to any account.
+ */
+export async function getOrCreateInstalledAt(): Promise<number> {
+  const { value } = await Preferences.get({ key: INSTALLED_AT_KEY })
+  const parsed = value === null ? NaN : Number(value)
+  if (Number.isFinite(parsed)) return parsed
+  const now = Date.now()
+  await Preferences.set({ key: INSTALLED_AT_KEY, value: String(now) })
+  return now
+}
+
+const FEEDBACK_PROMPT_KEY = 'taskodoro.feedback.prompt'
+
+/**
+ * The feedback prompt's own memory. `dontAskAgain` is final (set by the checkbox, or by
+ * sending feedback). `remindAt` (epoch ms) is set by "Remind me later" and overrides the
+ * default "one day after install" schedule until it passes.
+ */
+export interface FeedbackPromptState {
+  dontAskAgain: boolean
+  remindAt: number | null
+}
+
+export async function loadFeedbackPromptState(): Promise<FeedbackPromptState> {
+  const { value } = await Preferences.get({ key: FEEDBACK_PROMPT_KEY })
+  if (!value) return { dontAskAgain: false, remindAt: null }
+  try {
+    const state = JSON.parse(value) as Partial<FeedbackPromptState>
+    return {
+      dontAskAgain: state.dontAskAgain === true,
+      remindAt: typeof state.remindAt === 'number' ? state.remindAt : null,
+    }
+  } catch {
+    return { dontAskAgain: false, remindAt: null }
+  }
+}
+
+export async function saveFeedbackPromptState(state: FeedbackPromptState): Promise<void> {
+  await Preferences.set({ key: FEEDBACK_PROMPT_KEY, value: JSON.stringify(state) })
+}
+
 const DEVICE_ID_KEY = 'taskodoro.sync.deviceId'
 
 /**

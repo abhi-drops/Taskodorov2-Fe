@@ -1,5 +1,6 @@
 import { useAppUpdate } from '../lib/appUpdate/useAppUpdate'
 import { Modal } from './ui/Modal'
+import { DIALOG_PRIMARY_BUTTON } from './ui/dialogStyles'
 import { AnimatedIcon } from './ui/AnimatedIcon'
 import { CloseIcon, UpdateIcon } from './ui/icons'
 
@@ -29,7 +30,7 @@ export function AppUpdateBanner() {
           {result.releaseNotes && <p className="text-sm text-slate-600">{result.releaseNotes}</p>}
           <a
             href={result.downloadUrl}
-            className="flex items-center justify-center gap-2 rounded-card bg-accent-purple px-4 py-3 font-display text-sm font-bold uppercase text-white hover:opacity-90"
+            className={`flex items-center justify-center gap-2 rounded-card bg-accent-purple px-4 py-3 font-display text-sm font-bold uppercase text-white hover:opacity-90 ${DIALOG_PRIMARY_BUTTON}`}
           >
             <AnimatedIcon icon={UpdateIcon} size={18} />
             Update Now

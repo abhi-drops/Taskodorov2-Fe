@@ -95,7 +95,7 @@ desktop wireframe — see `docs/style-guide.md`'s "Power Tools: row chips + desk
   account" conflict prompt.
 - **About** (own section/tab — mobile: last in the scrolling page; desktop: its own
   sidebar tab, `PowerToolsTab = 'about'`; 2026-10-31) — static app/parent-org identity
-  plus the App Updates chip, laid out as three distinct blocks rather than more `CHIP`
+  plus the App Updates and Send Feedback chips, laid out as distinct blocks rather than more `CHIP`
   rows (a flat list of same-weight rows read as visually flat/boring in review — this
   gives the app's own identity a real hero moment and keeps the two brand logos large):
   1. **`HERO_CARD`** — a fixed 30:70 `grid-cols-[30%_70%]` split (not `flex` +
@@ -127,7 +127,10 @@ desktop wireframe — see `docs/style-guide.md`'s "Power Tools: row chips + desk
      here) also surfaces through `AppUpdateBanner.tsx`, rendered from `App.tsx` next to
      `SyncStrategyDialog`. See `docs/feat-app-update-check-from-be.md`. (Moved here from
      next to Sync With Google — same component and hook, just relocated.)
-  3. A 2-column grid of square **`LINK_TILE`**s:
+  3. A **"Send Feedback"** `CHIP` (`FeedbackIcon`, all platforms) that opens
+     `FeedbackDialog` in `manual` mode (stars, optional comment, Send; no reminder
+     controls). See `docs/feat-feedback-from-be.md` §6.
+  4. A 2-column grid of square **`LINK_TILE`**s:
      - **Cross-platform link** — points at whichever platform you're *not* currently on,
        rather than linking back to the one already in use: on web, "Android Version" →
        `ANDROID_VERSION_URL` (`https://www.mavnt.in/`) with `AndroidIcon`; on native,

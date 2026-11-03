@@ -6,6 +6,11 @@
 export const DIALOG_OVERLAY = 'bg-white/60 backdrop-blur-sm'
 export const DIALOG_SHADOW = 'shadow-[6px_10px_0px_0px_rgba(0,0,0,0.25)]'
 
+/** The violet (primary) action button in a dialog: pass as `className` to `Button`, or
+ * add to an `<a>` styled as one. The chips' ink border plus `shadow-card` — the shadow
+ * alone is too faint to read against violet. Not for the white secondary button. */
+export const DIALOG_PRIMARY_BUTTON = 'border-[3px] border-ink shadow-card'
+
 /** Label above a control inside a dialog: the same look as `Select`'s own label. */
 export const FIELD_LABEL = 'text-sm font-medium text-slate-700'
 

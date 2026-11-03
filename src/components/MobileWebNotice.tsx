@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Button } from './ui/Button'
 import { Modal } from './ui/Modal'
-import { DIALOG_OVERLAY, DIALOG_SHADOW } from './ui/dialogStyles'
+import { DIALOG_OVERLAY, DIALOG_PRIMARY_BUTTON, DIALOG_SHADOW } from './ui/dialogStyles'
 import { useIsPhoneWidth } from '../lib/platform/mobileLayout'
 import { usePlatform } from '../lib/platform/usePlatform'
 
@@ -33,7 +33,7 @@ export function MobileWebNotice() {
           You're using the web version on a small screen. Some features may not work well here.
         </p>
         <p className="text-sm text-slate-600">For the full experience, download the Taskodoro Android app.</p>
-        <Button className="mt-2 w-full" onClick={() => setDismissed(true)}>
+        <Button className={`mt-2 w-full ${DIALOG_PRIMARY_BUTTON}`} onClick={() => setDismissed(true)}>
           Continue on web
         </Button>
       </div>

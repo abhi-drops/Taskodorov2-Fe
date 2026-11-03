@@ -2,7 +2,13 @@ import { Modal } from './ui/Modal'
 import { Button } from './ui/Button'
 import { Select } from './ui/Select'
 import { CheckCircle } from './ui/CheckCircle'
-import { DIALOG_OVERLAY, DIALOG_SHADOW, FIELD_INPUT, FIELD_LABEL } from './ui/dialogStyles'
+import {
+  DIALOG_OVERLAY,
+  DIALOG_PRIMARY_BUTTON,
+  DIALOG_SHADOW,
+  FIELD_INPUT,
+  FIELD_LABEL,
+} from './ui/dialogStyles'
 import { BLANK_SOURCE, useNewTemplate } from '../common_logics/useNewTemplate'
 import { usePlatform } from '../lib/platform/usePlatform'
 import type { Template } from '../types/template'
@@ -127,7 +133,7 @@ export function NewTemplateDialog({ onClose, onCreated }: NewTemplateDialogProps
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" disabled={!canCreate}>
+          <Button type="submit" disabled={!canCreate} className={DIALOG_PRIMARY_BUTTON}>
             Create template
           </Button>
         </div>

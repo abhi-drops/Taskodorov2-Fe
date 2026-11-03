@@ -20,6 +20,7 @@ import { AnimatedIcon } from '../components/ui/AnimatedIcon'
 import {
   AndroidIcon,
   CloseIcon,
+  FeedbackIcon,
   GroupIcon,
   InstagramIcon,
   SettingsIcon,
@@ -44,6 +45,7 @@ import { getCompletedGroupId, setCompletedGroupId } from '../lib/db/workspaces'
 import { Select } from '../components/ui/Select'
 import { resetToDefault } from '../lib/db/reset'
 import { FormError } from '../components/ui/FormError'
+import { FeedbackDialog } from '../components/FeedbackDialog'
 import type { Group } from '../types/group'
 import type { AuthState } from '../lib/auth/authContext'
 
@@ -581,6 +583,7 @@ const APP_VERSION_FALLBACK = '0.1 beta'
 function AboutSection({ showHeading = true }: { showHeading?: boolean }) {
   const { isNative } = usePlatform()
   const { currentVersionName } = useAppUpdate()
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
   const version = currentVersionName ?? APP_VERSION_FALLBACK
   // Cross-link to the other platform's build — on native that's the web app, on web
   // that's the Android app — rather than linking back to the version already in use.
@@ -613,6 +616,18 @@ function AboutSection({ showHeading = true }: { showHeading?: boolean }) {
       </div>
 
       <UpdateChip />
+
+      <button type="button" onClick={() => setFeedbackOpen(true)} className={`${CHIP} w-full justify-between text-left`}>
+        <span className="flex items-center gap-3">
+          <AnimatedIcon icon={FeedbackIcon} size={20} className="text-ink" />
+          <span className="flex flex-col">
+            <span className="font-medium text-ink">Send Feedback</span>
+            <span className="text-sm text-slate-600">Rate Taskodoro or tell us what to improve.</span>
+          </span>
+        </span>
+        <span className="shrink-0 font-display text-sm font-bold uppercase text-ink">Send</span>
+      </button>
+      {feedbackOpen && <FeedbackDialog isOpen mode="manual" onClose={() => setFeedbackOpen(false)} />}
 
       <div className="grid grid-cols-2 gap-3">
         <a href={otherPlatformUrl} target="_blank" rel="noreferrer" className={LINK_TILE}>

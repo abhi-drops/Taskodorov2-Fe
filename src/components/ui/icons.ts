@@ -34,6 +34,7 @@ export {
   LayoutTemplateIcon as TemplatesIcon,
   Loading02Icon as SyncingIcon,
   Menu01Icon as MenuIcon,
+  Message01Icon as FeedbackIcon,
   MinusSignIcon as MinusIcon,
   PauseIcon,
   Pen01Icon as EditIcon,
@@ -42,6 +43,7 @@ export {
   Refresh01Icon as SyncIcon,
   Settings01Icon as SettingsIcon,
   SparklesIcon as AiGuideIcon,
+  StarIcon,
   // Huge has no empty-circle glyph; "undo" is the closest reading of "unchecked".
   UndoIcon as UncheckedIcon,
   Upload01Icon as ImportIcon,

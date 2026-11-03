@@ -4,7 +4,13 @@ import { AnimatedIcon } from './ui/AnimatedIcon'
 import { AiGuideIcon, ChatGptIcon, ChevronDownIcon, ClaudeIcon, GeminiIcon, ImportIcon } from './ui/icons'
 import { AiGuideDialog } from './AiGuideDialog'
 import { FormError } from './ui/FormError'
-import { DIALOG_OVERLAY, DIALOG_SHADOW, FIELD_INPUT, FIELD_LABEL } from './ui/dialogStyles'
+import {
+  DIALOG_OVERLAY,
+  DIALOG_PRIMARY_BUTTON,
+  DIALOG_SHADOW,
+  FIELD_INPUT,
+  FIELD_LABEL,
+} from './ui/dialogStyles'
 import { TemplateThumb } from './TemplateThumb'
 import { useNewWorkspace } from '../common_logics/useNewWorkspace'
 import { usePlatform } from '../lib/platform/usePlatform'
@@ -183,7 +189,7 @@ export function NewWorkspaceDialog({ onClose, onCreated, initialTemplateId }: Ne
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" disabled={!canCreate}>
+          <Button type="submit" disabled={!canCreate} className={DIALOG_PRIMARY_BUTTON}>
             Create workspace
           </Button>
         </div>

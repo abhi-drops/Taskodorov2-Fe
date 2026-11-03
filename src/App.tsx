@@ -12,6 +12,7 @@ import { GOOGLE_CLIENT_ID_WEB, isGoogleWebConfigured } from './lib/google/google
 import { MobileWebNotice } from './components/MobileWebNotice'
 import { SyncStrategyDialog } from './components/SyncStrategyDialog'
 import { AppUpdateBanner } from './components/AppUpdateBanner'
+import { FeedbackPrompt } from './components/FeedbackPrompt'
 
 function App() {
   useTapHaptics()
@@ -25,6 +26,7 @@ function App() {
             <MobileWebNotice />
             <SyncStrategyDialog />
             <AppUpdateBanner />
+            <FeedbackPrompt />
             {/* Web only — native bundles its JS locally, so there's no Vercel-hosted
                 /_vercel/insights endpoint for the Android WebView to report to. */}
             {!isNative() && <Analytics />}
