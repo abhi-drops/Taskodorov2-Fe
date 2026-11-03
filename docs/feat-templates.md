@@ -42,6 +42,12 @@ step with the app" below.
 (`BUILTIN_TEMPLATES`): Default, Shopping list, Brainstorm, Weekly planner (a group per
 day plus Done), Project kanban, Study plan.
 
+Each one's finished group hides checked notes after a while (Group Settings' "Hide Notes
+After", `feat-groups.md`), sized to how fast that board turns over: Default → Completed,
+Shopping list → Bought and Weekly planner → Done all 7 days; Brainstorm → Done
+14 days; Study plan → Mastered 21 days; Project kanban → Done 30 days. Set through
+`group()`'s `hideAfter` option. Only finished groups have it; every other group is `never`.
+
 - `seedBuiltinTemplates` (`seedBuiltins.ts`) runs on every launch and puts the built-in
   rows in step with the constants: it inserts any built-in whose `builtin_id` is
   missing, **replaces one the user hasn't edited when its factory version has changed**,

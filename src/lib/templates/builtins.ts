@@ -1,5 +1,5 @@
 import type { SwatchColor } from '../../components/ui/swatchColors'
-import type { NoteColorMode, SortedBy } from '../../types/group'
+import type { HideAfterUnit, NoteColorMode, SortedBy } from '../../types/group'
 import type { Priority } from '../../types/note'
 import type { TemplateContent, TemplateGroup, TemplateNote } from '../../types/template'
 
@@ -48,6 +48,8 @@ function group(
     resetOnMove?: boolean
     sortedBy?: SortedBy
     noteColorMode?: NoteColorMode
+    /** Hide a note this long after it is checked (Group Settings' "Hide Notes After"). */
+    hideAfter?: { amount: number; unit: HideAfterUnit }
   } = {},
 ): TemplateGroup {
   return {
@@ -57,9 +59,9 @@ function group(
     noteColorMode: settings.noteColorMode ?? 'manual',
     onCheckMoveToKey: settings.moveTo ?? null,
     resetOnMove: settings.resetOnMove ?? true,
-    hideAfterMode: 'never',
-    hideAfterAmount: 1,
-    hideAfterUnit: 'days',
+    hideAfterMode: settings.hideAfter ? 'checked' : 'never',
+    hideAfterAmount: settings.hideAfter?.amount ?? 1,
+    hideAfterUnit: settings.hideAfter?.unit ?? 'days',
     notes,
   }
 }
@@ -87,9 +89,12 @@ export const DEFAULT_TEMPLATE_CONTENT: TemplateContent = {
       { moveTo: 'in-progress' },
     ),
     group('in-progress', 'In Progress', [], { moveTo: 'completed', resetOnMove: false }),
-    group('completed', 'Completed', [
-      basic('n4', 'See Apps → Diary for the full list of changes you\'ve made', 'blue'),
-    ]),
+    group(
+      'completed',
+      'Completed',
+      [basic('n4', 'See Apps → Diary for the full list of changes you\'ve made', 'blue')],
+      { hideAfter: { amount: 7, unit: 'days' } },
+    ),
   ],
   completedGroupKey: 'completed',
 }
@@ -107,7 +112,7 @@ const SHOPPING_LIST: TemplateContent = {
       // Straight to Bought, still checked: there is no step in between.
       { moveTo: 'bought', resetOnMove: false },
     ),
-    group('bought', 'Bought'),
+    group('bought', 'Bought', [], { hideAfter: { amount: 7, unit: 'days' } }),
   ],
   completedGroupKey: 'bought',
 }
@@ -120,7 +125,7 @@ const BRAINSTORM: TemplateContent = {
       basic('n3', 'Drag the promising ones to Shortlist', 'green'),
     ]),
     group('shortlist', 'Shortlist'),
-    group('doing', 'Done'),
+    group('doing', 'Done', [], { hideAfter: { amount: 14, unit: 'days' } }),
     group('parked', 'Parked', [basic('n4', 'Ideas that can wait live here', 'coral')]),
   ],
   // "Done" is a finished idea now, not one in progress — wire it as the Completed
@@ -148,7 +153,7 @@ const WEEKLY_PLANNER: TemplateContent = {
               : []
       return group(key, day, notes, { moveTo: 'done', resetOnMove: false })
     }),
-    group('done', 'Done'),
+    group('done', 'Done', [], { hideAfter: { amount: 7, unit: 'days' } }),
   ],
   completedGroupKey: 'done',
 }
@@ -167,7 +172,7 @@ const PROJECT_KANBAN: TemplateContent = {
     ),
     group('in-progress', 'In progress', [], { moveTo: 'review', noteColorMode: 'priority' }),
     group('review', 'Review', [], { moveTo: 'done', resetOnMove: false, noteColorMode: 'priority' }),
-    group('done', 'Done', [], { noteColorMode: 'priority' }),
+    group('done', 'Done', [], { noteColorMode: 'priority', hideAfter: { amount: 30, unit: 'days' } }),
   ],
   completedGroupKey: 'done',
 }
@@ -187,7 +192,7 @@ const STUDY_PLAN: TemplateContent = {
       moveTo: 'mastered',
       resetOnMove: false,
     }),
-    group('mastered', 'Mastered'),
+    group('mastered', 'Mastered', [], { hideAfter: { amount: 21, unit: 'days' } }),
   ],
   completedGroupKey: 'mastered',
 }

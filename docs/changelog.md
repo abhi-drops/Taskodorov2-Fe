@@ -4,6 +4,18 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-11-03 — Built-in templates use Hide Notes After
+
+- **What.** The finished group of every built-in template now hides checked notes after a
+  while, so a board stays tidy without any setup: Default → Completed, Shopping list → Bought and
+  Weekly planner → Done 7 days each, Brainstorm → Done 14 days, Study plan →
+  Mastered 21 days, Project kanban → Done 30 days. Other groups are unchanged (`never`).
+- **How.** `group()` in `lib/templates/builtins.ts` takes a `hideAfter` option. Installs
+  that haven't edited a built-in pick the new version up on next launch (the factory
+  fingerprint changed); an edited built-in is left alone, and "Reset to Default" applies
+  it. Workspaces that already exist are not touched. Documented in `docs/feat-templates.md`.
+- Templates AI Guide: not affected (it describes the file format, not the built-ins).
+
 ## 2026-11-03 — Group setting: Hide Notes After
 
 - **What.** New per-group setting **Hide Notes After**: `Never` (default) or `After
