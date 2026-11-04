@@ -4,6 +4,19 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-11-05 — Tape backdrop now follows horizontal board scrolling
+
+- **What.** The blurred "peek" behind the scrolled header / mobile tab strip only tracked
+  the window's vertical scroll, so scrolling the board's columns sideways left the blur
+  showing the old column positions. It now mirrors horizontal (and vertical) scrolling of
+  every inner scroll container.
+- **How.** `useBlurredPeek` pairs each scrollable element with its clone when it clones
+  the page (`cloneNode` drops scroll offsets) and copies `scrollLeft`/`scrollTop` over on
+  every captured `scroll` event. The clone is still taken once per activation, so content
+  *changes* (not scrolling) are only picked up on the next re-clone. See
+  `docs/style-guide.md`'s tape-material section.
+- Templates AI Guide: not affected.
+
 ## 2026-11-03 — Built-in templates use Hide Notes After
 
 - **What.** The finished group of every built-in template now hides checked notes after a
