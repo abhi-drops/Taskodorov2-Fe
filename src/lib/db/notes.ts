@@ -403,12 +403,14 @@ export function reorderNotes(updates: { id: string; groupId: string; position: n
       // Drag-and-drop between columns comes through here, not `updateNote`, so this is
       // where a dragged move gets logged for the Diary. Same-column reorders aren't logged.
       const before = await readTrackedFields(db, update.id)
-      await db.run('UPDATE notes SET group_id = ?, position = ?, updated_at = ?, dirty = 1 WHERE id = ?', [
-        update.groupId,
-        update.position,
-        now,
-        update.id,
-      ])
+      // Only touch rows that actually moved. Callers re-index whole columns, and bumping
+      // `updated_at` on an unchanged row would restart the "Hide Notes After" fallback
+      // clock of every old checked note in the column on each drop.
+      await db.run(
+        `UPDATE notes SET group_id = ?, position = ?, updated_at = ?, dirty = 1
+         WHERE id = ? AND (group_id != ? OR position != ?)`,
+        [update.groupId, update.position, now, update.id, update.groupId, update.position],
+      )
       if (before && before.group_id !== update.groupId) {
         await logEvent(db, {
           workspaceId: before.workspace_id,

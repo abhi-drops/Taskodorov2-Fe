@@ -12,6 +12,7 @@ import {
   backfillEventsIfEmpty,
   backfillTrackedStateIfMissing,
 } from './eventLog'
+import { backfillCompletedAt } from './completedAtBackfill'
 import { DEFAULT_TEMPLATE_CONTENT } from '../templates/builtins'
 import { instantiateTemplate } from '../templates/instantiate'
 import { TEMPLATES_SQL, backfillBuiltinFingerprints, seedBuiltinTemplates } from '../templates/seedBuiltins'
@@ -208,6 +209,8 @@ async function initDb(): Promise<SQLiteDBConnection> {
   await backfillEventsIfEmpty(db)
   // Logs from before checked/counter/list were tracked get those fields' starting values.
   await backfillTrackedStateIfMissing(db)
+  // After the Diary backfills, so it can read check times from the log.
+  await backfillCompletedAt(db)
   await seedIfEmpty(db)
   return db
 }
