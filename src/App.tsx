@@ -16,6 +16,7 @@ import { AppUpdateBanner } from './components/AppUpdateBanner'
 import { WebUpdateBanner } from './components/WebUpdateBanner'
 import { WhatsNewDialog } from './components/WhatsNewDialog'
 import { FeedbackPrompt } from './components/FeedbackPrompt'
+import { OnboardingHost } from './components/onboarding/OnboardingHost'
 
 function App() {
   useTapHaptics()
@@ -28,6 +29,7 @@ function App() {
             <WorkspaceProvider>
               <RouterProvider router={router} />
               <MobileWebNotice />
+              <OnboardingHost />
               <SyncStrategyDialog />
               <AppUpdateBanner />
               <WebUpdateBanner />

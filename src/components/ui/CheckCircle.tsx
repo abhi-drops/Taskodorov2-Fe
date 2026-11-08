@@ -16,6 +16,7 @@ export function CheckCircle({ checked, onChange, size = 24, disabled = false, cl
       type="button"
       role="checkbox"
       aria-checked={checked}
+      data-tour="check"
       disabled={disabled}
       onClick={() => onChange?.(!checked)}
       className={`relative inline-flex shrink-0 items-center justify-center disabled:cursor-not-allowed disabled:opacity-50 ${className}`}

@@ -37,6 +37,8 @@ export async function resetToDefault(): Promise<void> {
   await withDb(async (db) => {
     await wipeSyncedData(db)
     await db.run('DELETE FROM templates')
+    // A reset looks like a fresh install, so the intro and every tour show again.
+    await db.run('DELETE FROM user_state')
     await seedBuiltinTemplates(db)
     await seedIfEmpty(db)
   })

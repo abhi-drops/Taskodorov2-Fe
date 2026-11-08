@@ -3,6 +3,7 @@ import { upsertWorkspaceFromServer } from '../db/workspaces'
 import { upsertGroupFromServer } from '../db/groups'
 import { upsertNoteFromServer } from '../db/notes'
 import { upsertTemplateFromServer } from '../db/templates'
+import { upsertUserStateFromServer } from '../db/userState'
 import { upsertActivityEventFromServer, deleteActivityEventFromServer } from '../db/eventLog'
 import type { SyncChanges } from '../../types/sync'
 
@@ -50,6 +51,11 @@ export async function applyPulledChanges(db: SQLiteDBConnection, changes: SyncCh
   }
   for (const id of changes.activityEvents.deletes) {
     await deleteActivityEventFromServer(db, id)
+    wrote = true
+  }
+  // Absent from an older server's response — treat as none.
+  for (const row of changes.userState ?? []) {
+    await upsertUserStateFromServer(db, row)
     wrote = true
   }
 

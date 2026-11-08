@@ -78,13 +78,9 @@ export const DEFAULT_TEMPLATE_CONTENT: TemplateContent = {
       'todo',
       'Todo',
       [
-        basic('n1', 'Click to edit me', 'yellow', { description: 'Edit Title , Note Type & color ' }),
-        basic(
-          'n2',
-          'Plz check me to go "in progress", then check again to go to "complete" or you can also try drag and drop',
-          'coral',
-        ),
-        basic('n3', 'Try "Settings" for advanced behaviour edits', 'green'),
+        basic('n1', 'Tap a note to edit it', 'yellow', { description: 'Change its title, note type and colour.' }),
+        basic('n2', 'Check me to move me along', 'coral'),
+        basic('n3', 'Try dragging me to another group', 'green'),
       ],
       { moveTo: 'in-progress' },
     ),

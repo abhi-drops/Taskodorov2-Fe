@@ -3,6 +3,8 @@ import { FeedbackDialog } from './FeedbackDialog'
 import { useAppForeground } from '../lib/platform/useAppForeground'
 import { useAppUpdate } from '../lib/appUpdate/useAppUpdate'
 import { useWhatsNew } from '../lib/whatsNew/useWhatsNew'
+import { useMobileWebNoticeOpen } from '../lib/platform/mobileWebNoticeState'
+import { useOnboardingPending } from '../lib/onboarding/onboardingState'
 import {
   getOrCreateInstalledAt,
   loadFeedbackPromptState,
@@ -28,6 +30,8 @@ export function FeedbackPrompt() {
   const { result } = useAppUpdate()
   const { pending: whatsNewPending } = useWhatsNew()
   const updateRequired = result?.updateAvailable === true && result.forceUpdate
+  const noticeOpen = useMobileWebNoticeOpen()
+  const onboardingPending = useOnboardingPending()
 
   useEffect(() => {
     let cancelled = false
@@ -56,6 +60,6 @@ export function FeedbackPrompt() {
   // A mandatory update modal has the screen, and so does "What's new" (or its launch
   // check, which may be about to open it); the prompt waits and appears once they're
   // out of the way. Mounted only while open so each ask starts with a blank form.
-  if (!open || updateRequired || whatsNewPending) return null
+  if (!open || updateRequired || whatsNewPending || noticeOpen || onboardingPending) return null
   return <FeedbackDialog isOpen mode="prompt" onClose={handleClose} />
 }

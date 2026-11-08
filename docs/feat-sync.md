@@ -62,7 +62,8 @@ acknowledged it.
 
 - **`collectChanges.ts`** — `collectNextBatch(db)` fills one request's worth of dirty
   rows **by entity type**, not mixed: workspaces, then groups, then notes, then
-  templates, then activity-event upserts, then activity-event deletes, each capped at
+  templates, then activity-event upserts, then activity-event deletes, then onboarding
+  flags (`user_state`, `feat-onboarding-sync-from-be.md`), each capped at
   `PUSH_CHUNK_SIZE` (500, comfortably under the server's 2000-row cap). Phasing by type
   is what satisfies the backend's ownership rule — a `workspaceId` must already belong
   to the account or be new *in the same request*, so a chunk mixing entity types could

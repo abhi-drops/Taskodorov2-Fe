@@ -54,7 +54,7 @@ just scoped to the `production` mode) rather than editing the committed file.
 
 ## Documentation
 
-- **`docs/feat-*.md`** — one file per major feature (auth, offline-data-layer, navigation, workspaces, groups, power-tools (= Settings), apps, diary, templates, notes, search-filter, design-system). This is where feature *behavior and rationale* lives in depth; this file (`CLAUDE.md`) stays a high-level map plus the gotchas sharp enough to bite someone.
+- **`docs/feat-*.md`** — one file per major feature (auth, offline-data-layer, navigation, workspaces, groups, power-tools (= Settings), apps, diary, templates, notes, search-filter, design-system, onboarding). This is where feature *behavior and rationale* lives in depth; this file (`CLAUDE.md`) stays a high-level map plus the gotchas sharp enough to bite someone.
 - **`docs/changelog.md`** — running log of what changed and when, newest entry first.
   **After any meaningful change to this codebase (a new feature, a real bug fix, a
   behavior change — not a typo fix or a pure refactor with no behavior change), add an
@@ -109,6 +109,10 @@ All app data (workspaces/groups/notes) lives in local SQLite (`@capacitor-commun
 ### Workspaces, Groups, Notes
 
 The core data model and UI, in dependency order: a workspace contains groups, a group contains notes (3 types: basic/counter/list). Details, including a few non-obvious things (list notes have no card-level checkmark; a note doesn't get written to the DB until it has a title; the editor saves title/description/status while typing, debounced, and the Diary log coalesces those title/status edits within 3 minutes into one event) worth knowing before touching this code: `docs/feat-workspaces.md`, `docs/feat-groups.md`, `docs/feat-power-tools.md`, `docs/feat-notes.md`, `docs/feat-search-filter.md`.
+
+### Onboarding
+
+First-run intro slides, an interactive board tour, a one-time tour the first time each major feature is opened, and one quiet milestone tip per session. `components/onboarding/OnboardingHost.tsx` (mounted in `App.tsx` as a router sibling, so it reads the route from the exported `router`) decides what runs; tours and tips are data in `lib/onboarding/`. Steps point at elements by `data-tour` attributes, and a step whose element is missing is skipped. Progress flags live in the synced SQLite table `user_state` (`lib/db/userState.ts`), not Preferences. Gotchas worth knowing before touching it: the intro must run before What's new and the feedback prompt (both wait on `useOnboardingPending()`), a feature tour is only marked seen if a step was actually shown, and `ensureUserState` in `initDb` is what stops existing installs from being shown the intro. The default board must keep an unchecked sample note for the tour's check step. The backend half of the flag sync is a contract in `docs/feat-onboarding-sync-from-be.md` (implementation guide: `Taskodoro-Be/docs/feat-onboarding-sync.md`) that is **not deployed yet**: deploy it before releasing this frontend, because an old server silently ignores the flags and the app would mark them synced. Full detail: `docs/feat-onboarding.md`.
 
 ### Design system
 

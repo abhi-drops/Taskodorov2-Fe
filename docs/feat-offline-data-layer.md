@@ -125,6 +125,13 @@ plain `SELECT *`.
   nowhere to live until the next push reports it — parked here, removed once the server
   acknowledges it (`lib/db/eventLog.ts`'s `deleteActivityEvent`/`clearPushedEventDeletions`).
 
+- **`user_state`** (onboarding, 2026-11-08): `{key, value 0/1, updated_at, dirty}`, one row
+  per flag ("intro seen", "Diary tour seen", ...). Created by `ensureUserState`
+  (`lib/db/userStateSchema.ts`) in `initDb`, **before** `seedIfEmpty`: a missing table
+  with existing workspaces means an install that predates onboarding, and its intro and
+  board tour are marked seen. Not wiped by logout or `wipeSyncedData`; `resetToDefault`
+  deletes it. Syncs (last-write-wins). See `feat-onboarding.md`.
+
 `lastSyncedAt`-equivalent: implemented as an opaque server-issued **cursor** (not a
 timestamp — never compared to a local clock or recomputed), one per account, stored in
 Preferences (`taskodoro.sync.state`, `lib/storage/preferences.ts`'s `SyncState`) rather
@@ -147,8 +154,8 @@ Each exports `list*`/`get*ById`/`create*`/`update*`/`delete*`, all funneled thro
 soft-deletes the workspace, then its groups, then all notes in those groups;
 `deleteGroup` soft-deletes the group then its notes. `resetToDefault()`
 (`src/lib/db/reset.ts`), used by Settings' "Reset to Default", is the one exception to
-soft deletes: it really deletes every row of every table (including `activity_events`
-and `templates`), clears Preferences and browser storage, then re-runs the seeds. See
+soft deletes: it really deletes every row of every table (including `activity_events`,
+`templates` and `user_state`), clears Preferences and browser storage, then re-runs the seeds. See
 `feat-power-tools.md`.
 
 Its hard-delete half is split out as `wipeSyncedData(db)` (Phase 3): same tables,

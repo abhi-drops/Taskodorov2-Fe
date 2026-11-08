@@ -15,6 +15,7 @@ import {
 import { backfillCompletedAt } from './completedAtBackfill'
 import { DEFAULT_TEMPLATE_CONTENT } from '../templates/builtins'
 import { instantiateTemplate } from '../templates/instantiate'
+import { ensureUserState } from './userStateSchema'
 import { TEMPLATES_SQL, backfillBuiltinFingerprints, seedBuiltinTemplates } from '../templates/seedBuiltins'
 
 const DB_NAME = 'taskodoro'
@@ -202,6 +203,9 @@ async function initDb(): Promise<SQLiteDBConnection> {
   await db.execute(ACTIVITY_EVENTS_SQL)
   await db.execute(SYNC_DELETED_EVENTS_SQL)
   await db.execute(TEMPLATES_SQL)
+  // Before seedIfEmpty: tells an install that predates onboarding (workspaces, no table
+  // yet) apart from a fresh one, which must still see the intro.
+  await ensureUserState(db)
   await migrateSchema(db)
   await seedBuiltinTemplates(db)
   // Before seeding: an upgrading install backfills its existing data, while a fresh

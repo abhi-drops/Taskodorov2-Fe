@@ -4,6 +4,7 @@ import { collectDirtyGroups } from '../db/groups'
 import { collectDirtyNotes } from '../db/notes'
 import { collectDirtyTemplates } from '../db/templates'
 import { collectDirtyActivityEvents, collectDeletedActivityEventIds } from '../db/eventLog'
+import { collectDirtyUserState } from '../db/userState'
 import { PUSH_CHUNK_SIZE } from '../../types/sync'
 import type { SyncChanges } from '../../types/sync'
 
@@ -24,6 +25,7 @@ export interface PushReceipt {
   templates: { id: string; updatedAt: number }[]
   activityEvents: { id: string; createdAt: number }[]
   activityEventDeletes: string[]
+  userState: { key: string; updatedAt: number }[]
 }
 
 export interface PushBatch {
@@ -32,7 +34,7 @@ export interface PushBatch {
 }
 
 function emptyReceipt(): PushReceipt {
-  return { workspaces: [], groups: [], notes: [], templates: [], activityEvents: [], activityEventDeletes: [] }
+  return { workspaces: [], groups: [], notes: [], templates: [], activityEvents: [], activityEventDeletes: [], userState: [] }
 }
 
 /**
@@ -103,6 +105,16 @@ export async function collectNextBatch(db: SQLiteDBConnection): Promise<PushBatc
     return { changes, receipt }
   }
 
+  // Last, and the only phase with no ownership dependency: flags are scoped to the account.
+  const userState = await collectDirtyUserState(db, PUSH_CHUNK_SIZE)
+  if (userState.length > 0) {
+    const changes = emptyChanges()
+    changes.userState = userState
+    const receipt = emptyReceipt()
+    receipt.userState = userState.map((s) => ({ key: s.key, updatedAt: s.updatedAt }))
+    return { changes, receipt }
+  }
+
   return null
 }
 
@@ -122,4 +134,5 @@ export async function markEverythingDirty(db: SQLiteDBConnection): Promise<void>
   await db.run('UPDATE notes SET dirty = 1')
   await db.run('UPDATE templates SET dirty = 1 WHERE builtin_id IS NULL')
   await db.run('UPDATE activity_events SET dirty = 1')
+  await db.run('UPDATE user_state SET dirty = 1')
 }

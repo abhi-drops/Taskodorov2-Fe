@@ -4,6 +4,7 @@ import { clearGroupDirty } from '../db/groups'
 import { clearNoteDirty } from '../db/notes'
 import { clearTemplateDirty } from '../db/templates'
 import { clearActivityEventDirty, clearPushedEventDeletions } from '../db/eventLog'
+import { clearUserStateDirty } from '../db/userState'
 import { wipeSyncedData } from '../db/reset'
 import { collectNextBatch, emptySyncChanges, markEverythingDirty } from './collectChanges'
 import { applyPulledChanges } from './applyChanges'
@@ -47,6 +48,7 @@ async function clearReceipt(batch: PushBatch): Promise<void> {
     await clearTemplateDirty(db, batch.receipt.templates)
     await clearActivityEventDirty(db, batch.receipt.activityEvents)
     await clearPushedEventDeletions(db, batch.receipt.activityEventDeletes)
+    await clearUserStateDirty(db, batch.receipt.userState)
   })
 }
 

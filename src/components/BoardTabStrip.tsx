@@ -63,6 +63,7 @@ function BoardTab({
       {...listeners}
       role="tab"
       aria-selected={isActive}
+      data-tour={isActive ? 'active-group-tab' : undefined}
       className={`shrink-0 rounded-card px-3.5 py-1.5 text-sm font-medium transition ${
         // `ink`, the one dark token the whole app uses now (style-guide.md) —
         // `nav-dark` was retired 2026-10-25, it read as near-black everywhere it hid.

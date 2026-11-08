@@ -65,6 +65,9 @@ Shopping list → Bought and Weekly planner → Done all 7 days; Brainstorm → 
   user's edited copy, so a factory reset really is factory. That reset also empties
   the `templates` table and re-seeds the built-ins: the user's own templates are deleted
   and edited built-ins go back to factory (`feat-power-tools.md`).
+  Its Todo notes are kept short because the onboarding tour does the explaining
+  (`feat-onboarding.md`); the tour's "check a note" step needs at least one unchecked note
+  on this board.
 
 ### Keeping built-ins in step with the app
 

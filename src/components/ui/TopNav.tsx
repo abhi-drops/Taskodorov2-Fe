@@ -16,6 +16,7 @@ export function TopNav({ className = '' }: TopNavProps) {
     <div
       className={`inline-flex border border-neutral-300 bg-surface p-2.5 shadow-card ${className}`}
       style={{ viewTransitionName: 'top-nav' }}
+      data-tour="nav"
     >
       <nav className="inline-flex overflow-hidden">
         <NavLink

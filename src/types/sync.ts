@@ -33,6 +33,13 @@ export interface ActivityEventRow {
   createdAt: number
 }
 
+/** One onboarding flag (`lib/db/userState.ts`); per account, last-write-wins by `updatedAt`. */
+export interface UserStateRow {
+  key: string
+  value: boolean
+  updatedAt: number
+}
+
 export type SyncStrategy = 'keep_local' | 'use_account'
 
 export interface SyncChanges {
@@ -45,6 +52,9 @@ export interface SyncChanges {
     upserts: ActivityEventRow[]
     deletes: string[]
   }
+  /** Onboarding flags (`docs/feat-onboarding-sync-from-be.md`). Optional on the wire: only
+   *  sent when something is dirty, and an older server's response won't carry it. */
+  userState?: UserStateRow[]
 }
 
 export interface SyncRequest {

@@ -308,18 +308,20 @@ export default function NoteEditorPage() {
 
         <div className={`flex flex-col gap-6 ${COLUMN_SCROLL}`}>
           <div className="mx-auto flex w-full flex-col gap-6 lg:max-w-xs">
-            <Select
-              label="Note Type"
-              value={form.type}
-              onChange={form.handleTypeChange}
-              options={[
-                { value: 'basic', label: 'Task' },
-                { value: 'counter', label: 'Counter' },
-                { value: 'list', label: 'Checklist' },
-              ]}
-            />
+            <div data-tour="note-type">
+              <Select
+                label="Note Type"
+                value={form.type}
+                onChange={form.handleTypeChange}
+                options={[
+                  { value: 'basic', label: 'Task' },
+                  { value: 'counter', label: 'Counter' },
+                  { value: 'list', label: 'Checklist' },
+                ]}
+              />
+            </div>
 
-            <div className="flex flex-col gap-1.5 text-left">
+            <div data-tour="note-color" className="flex flex-col gap-1.5 text-left">
               <span className="text-sm font-medium text-slate-700">Color</span>
               <SwatchPicker value={displayColor} onChange={form.handleColorChange} disabled={colorPickerDisabled} />
               {form.group?.noteColorMode === 'priority' && (

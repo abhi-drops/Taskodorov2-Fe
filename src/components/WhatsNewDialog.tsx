@@ -1,6 +1,7 @@
 import { useAppUpdate } from '../lib/appUpdate/useAppUpdate'
 import { useMobileWebNoticeOpen } from '../lib/platform/mobileWebNoticeState'
 import { useWhatsNew } from '../lib/whatsNew/useWhatsNew'
+import { useOnboardingPending } from '../lib/onboarding/onboardingState'
 import { Button } from './ui/Button'
 import { Modal } from './ui/Modal'
 import { DIALOG_OVERLAY, DIALOG_PRIMARY_BUTTON, DIALOG_SHADOW } from './ui/dialogStyles'
@@ -11,16 +12,18 @@ import { ReleaseNotesList } from './ReleaseNotesList'
  * backdrop, "Got it") goes through `close()`, which is when the seen version is recorded.
  *
  * Waits its turn rather than stacking: a mandatory update modal always wins, and so does
- * the web "works best in the Android app" notice. While waiting it stays unrendered (not
+ * the web "works best in the Android app" notice, then the first-run onboarding
+ * (`useOnboardingPending`: intro slides and board tour). While waiting it stays unrendered (not
  * closed), so nothing is recorded as seen. The feedback prompt waits on this one instead.
  */
 export function WhatsNewDialog() {
   const { dialog, close } = useWhatsNew()
   const { result } = useAppUpdate()
   const noticeOpen = useMobileWebNoticeOpen()
+  const onboardingPending = useOnboardingPending()
   const updateRequired = result?.updateAvailable === true && result.forceUpdate
 
-  if (!dialog || updateRequired || noticeOpen) return null
+  if (!dialog || updateRequired || noticeOpen || onboardingPending) return null
 
   return (
     <Modal

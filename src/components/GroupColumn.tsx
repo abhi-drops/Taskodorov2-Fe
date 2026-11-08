@@ -351,6 +351,7 @@ export function GroupColumn({
           viewTransition
           className="flex h-8 w-8 items-center justify-center rounded-card border-[3px] border-ink bg-accent-purple shadow-card"
           aria-label={`Add note to ${group.name}`}
+          data-tour="add-note"
         >
           <AnimatedIcon icon={PlusIcon} size={16} className="text-white [&_svg]:stroke-[2.5]" />
         </Link>

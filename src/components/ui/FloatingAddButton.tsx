@@ -47,6 +47,7 @@ export function FloatingAddButton({ to, position = 'medium', dynamic = false, cl
       viewTransition
       aria-label="Add note"
       data-haptic="medium"
+      data-tour="add-note"
       style={{ top: `calc(${POSITION_CENTER_PCT[position]}% - 50px)` }}
       className={`fixed right-0 z-40 block h-[100px] w-[34px] [filter:drop-shadow(1px_3px_0_rgba(0,0,0,0.2))] ${className}`}
     >

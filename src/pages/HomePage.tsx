@@ -21,6 +21,7 @@ import { useBlurredPeek } from '../lib/layout/useBlurredPeek'
 import { useIsHeaderBackdropSuppressed } from '../lib/layout/headerBackdropSuppression'
 import { useBoardDnd, groupChipDragId } from '../common_logics/useBoardDnd'
 import { resolveNoteColor } from '../lib/notes/resolveNoteColor'
+import { onShowGroupRequest } from '../lib/onboarding/boardFocus'
 import searchIcon from '../assets/search.png'
 
 /**
@@ -106,6 +107,12 @@ export default function HomePage() {
     // columns are visible at once, so there's no "active" column to update.
     onNoteMovedToGroup: isMobile ? setActiveGroupId : undefined,
   })
+  // Mobile only: the onboarding tour switches tab to where a note it had the user check
+  // ended up (see `lib/onboarding/boardFocus.ts`).
+  useEffect(() => {
+    if (!isMobile) return
+    return onShowGroupRequest(setActiveGroupId)
+  }, [isMobile, setActiveGroupId])
   const activeGroup = groups.find((g) => g.id === activeGroupId)
   const notesRef = useRef<HTMLDivElement>(null)
 

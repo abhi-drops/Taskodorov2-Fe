@@ -1,6 +1,7 @@
 import { listNotesByGroup, updateNote } from '../db/notes'
 import type { Group } from '../../types/group'
 import { isNoteFullyChecked } from './noteChecked'
+import { emitNoteChecked } from '../onboarding/noteCheckEvents'
 import type { ListPayload, Note } from '../../types/note'
 
 export { isNoteFullyChecked }
@@ -52,7 +53,10 @@ export async function applyOnCheckMove(
 ): Promise<OnCheckMoveResult | null> {
   if (wasChecked || !isChecked) return null
   const destGroupId = currentGroup.onCheckMoveToGroupId
-  if (!destGroupId || destGroupId === currentGroup.id) return null
+  if (!destGroupId || destGroupId === currentGroup.id) {
+    emitNoteChecked({ noteId: note.id, movedToGroupId: null })
+    return null
+  }
 
   const reset = currentGroup.resetOnMove
   const destSiblings = await listNotesByGroup(destGroupId)
@@ -61,5 +65,6 @@ export async function applyOnCheckMove(
     position: destSiblings.length,
     ...(reset ? buildResetPatch(note) : {}),
   })
+  emitNoteChecked({ noteId: note.id, movedToGroupId: destGroupId })
   return { destGroupId, reset }
 }

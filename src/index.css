@@ -117,6 +117,29 @@ body {
   }
 }
 
+/* Onboarding callouts and tips (`components/onboarding/*`): a short rise-and-fade in, the
+   same ease-out as the page motion. No overshoot: it is not a small element. */
+@keyframes onboarding-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.onboarding-rise {
+  animation: onboarding-rise 220ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-rise {
+    animation: none;
+  }
+}
+
 /* Deep-link highlight: `SyncStatusBadge` on the board links to the Sync With Google
    chip in Settings with `?focus=sync` so the destination is obvious at a glance.
    4 blinks x 0.5s = 2s total, then the outline (no `forwards`) just stops animating

@@ -57,12 +57,14 @@ export function GroupSettingsFields({
         ]}
       />
 
-      <Select
-        label="On Check Move To"
-        value={onCheckMoveTo ?? 'none'}
-        onChange={(value) => onCheckMoveToChange(value === 'none' ? null : value)}
-        options={[{ value: 'none', label: 'None' }, ...siblingGroups.map((sg) => ({ value: sg.id, label: sg.name }))]}
-      />
+      <div data-tour="group-on-check">
+        <Select
+          label="On Check Move To"
+          value={onCheckMoveTo ?? 'none'}
+          onChange={(value) => onCheckMoveToChange(value === 'none' ? null : value)}
+          options={[{ value: 'none', label: 'None' }, ...siblingGroups.map((sg) => ({ value: sg.id, label: sg.name }))]}
+        />
+      </div>
 
       {onCheckMoveTo && (
         <Select
@@ -86,15 +88,17 @@ export function GroupSettingsFields({
         ]}
       />
 
-      <Select
-        label="Hide Notes After"
-        value={hideAfterMode}
-        onChange={onHideAfterModeChange}
-        options={[
-          { value: 'never', label: 'Never' },
-          { value: 'checked', label: 'After checked' },
-        ]}
-      />
+      <div data-tour="group-hide-after">
+        <Select
+          label="Hide Notes After"
+          value={hideAfterMode}
+          onChange={onHideAfterModeChange}
+          options={[
+            { value: 'never', label: 'Never' },
+            { value: 'checked', label: 'After checked' },
+          ]}
+        />
+      </div>
 
       {hideAfterMode === 'checked' && (
         <div className="flex items-end gap-3">

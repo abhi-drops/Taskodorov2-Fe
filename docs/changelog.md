@@ -4,6 +4,56 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-11-08 — First-run onboarding: intro slides, board tour, feature tours, tips
+
+- **What.** New users now get a one-minute introduction instead of landing on a bare
+  board: four animated intro slides, then an interactive spotlight tour of the first board
+  (including a real "check a note" step that explains why the note moved), a one-time mini
+  tour the first time they open the note editor, Settings, group settings, Diary, Templates
+  or Search, and at most one quiet milestone tip per session (after a first move, 3 moves,
+  8 notes, 12 notes). Everything is skippable. Settings → About gets **Replay Intro** and
+  **Reset Tips**. Existing installs are not shown the intro (their feature tours still run on
+  first visit). The default board's three Todo sample notes were shortened, since the tour
+  now explains them.
+- **How.** `OnboardingHost` runs it, ordered after the update modal and the mobile-web
+  notice and before What's new and the feedback prompt (both now wait on
+  `useOnboardingPending()`; the feedback prompt also now waits for the mobile-web notice).
+  A custom spotlight (no new dependency, hard edges per the style guide) points at
+  `data-tour` anchors; `applyOnCheckMove` emits a check event for the tour. Slides are a
+  lazy chunk, so `motion` stays out of the main bundle. Progress flags are rows in a new
+  SQLite table `user_state` that syncs with the Google account (last-write-wins), a new
+  last phase in `collectNextBatch`. `ensureUserState` in `initDb` marks installs that predate
+  the table as already onboarded.
+- **Follow-up fixes (same day).** The first slide said "Jot things down", which reads as
+  jargon: now "Write down what you need to do...". The slides' notes now use the board's
+  real card markup (task, counter and checklist cards). On mobile, after the tour's "check
+  a note" step the board now switches to the group the note moved to and the next step
+  highlights that tab and says the tour switched it. Also fixed the check step sometimes
+  never advancing: its listener re-subscribed on an unrelated re-render and cancelled the
+  pending advance.
+- **Interactive slides (same day).** All four intro slides are now things to touch: drag
+  and check the notes, check a note and watch it move through Todo, Doing, Done, work the
+  counter and checklist, and flip a demo sync switch. Each has a caption saying what to try.
+- **Slides decluttered (same day).** The violet "try it" caption under each slide is gone.
+  Each slide is now an illustration, a title and one short line that changes as you play, with
+  a pulsing ring on the first thing to tap. Slide 3's cards are slightly tighter, slide 4's
+  devices lost their heavy frames, and the page behind no longer scrolls under the slides.
+- **Diary slide (same day).** The intro has a fifth slide for the Diary, different per layout
+  because the real Diary is: desktop replays a day with the Diary's own timeline scrubber;
+  mobile, which has no replay, shows three days you tap through (dots and a short change list
+  in the Diary's colours, with no count tiles). Dragging the timeline used to also swipe to the next slide;
+  swiping now only starts from parts of a slide not marked `data-no-swipe`.
+- **Readable slide text (same day).** The slide title and line now sit on a solid light panel
+  (the board's column look); the grid lines were running through the letters.
+- **Backend not done.** The sync of flags needs a `userState` array in `POST /sync`
+  (`docs/feat-onboarding-sync-from-be.md`); **deploy it before releasing this frontend**: an
+  older server ignores the new key without an error, and the app would then mark those flags
+  as synced and never retry them. The backend's implementation guide is
+  `Taskodoro-Be/docs/feat-onboarding-sync.md`. Browser-tested on desktop and the mobile layout, but
+  not on a device or against a real backend. Details: `docs/feat-onboarding.md`.
+- Templates AI Guide: not affected (the file format is unchanged; only the built-in default
+  board's sample note text changed).
+
 ## 2026-11-08 — Release notes: update alert, "What's new" and web update banner
 
 - **What.** Release notes (markdown, from the backend's new `notes` / `/app/release-notes`)

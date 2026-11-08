@@ -24,6 +24,8 @@ import {
   FeedbackIcon,
   GroupIcon,
   InstagramIcon,
+  PlayIcon,
+  ResetIcon,
   SettingsIcon,
   SyncIcon,
   TrashIcon,
@@ -48,6 +50,10 @@ import { Select } from '../components/ui/Select'
 import { resetToDefault } from '../lib/db/reset'
 import { FormError } from '../components/ui/FormError'
 import { FeedbackDialog } from '../components/FeedbackDialog'
+import { clearFlags } from '../lib/onboarding/flags'
+import { ALL_TOUR_FLAG_KEYS } from '../lib/onboarding/tours'
+import { ALL_TIP_FLAG_KEYS } from '../lib/onboarding/tips'
+import { INTRO_SEEN_KEY, BOARD_TOUR_SEEN_KEY } from '../lib/db/userStateSchema'
 import type { Group } from '../types/group'
 import type { AuthState } from '../lib/auth/authContext'
 
@@ -236,6 +242,7 @@ function GroupsSection({
           <Link
             to={`/settings/groups/${group.id}`}
             aria-label={`${group.name} settings`}
+            data-tour="group-gear"
             className="shrink-0 text-ink hover:opacity-70"
           >
             <AnimatedIcon icon={SettingsIcon} size={18} />
@@ -456,6 +463,7 @@ function SyncChip({ highlight = false }: { highlight?: boolean }) {
     <div className="flex flex-col gap-2">
       <button
         ref={highlightRef}
+       
         type="button"
         onClick={handleClick}
         disabled={busy}
@@ -556,6 +564,51 @@ function WhatsNewChip() {
   )
 }
 
+/** Both platforms: puts the first-run intro and board tour back (it starts at once), or
+ * clears every first-visit tour and milestone tip so they show again. Both write synced
+ * flags (`docs/feat-onboarding.md`). */
+function OnboardingChips() {
+  const [tipsReset, setTipsReset] = useState(false)
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => clearFlags([INTRO_SEEN_KEY, BOARD_TOUR_SEEN_KEY])}
+        className={`${CHIP} w-full justify-between text-left`}
+      >
+        <span className="flex items-center gap-3">
+          <AnimatedIcon icon={PlayIcon} size={20} className="text-ink" />
+          <span className="flex flex-col">
+            <span className="font-medium text-ink">Replay Intro</span>
+            <span className="text-sm text-slate-600">Watch the welcome slides and board tour again.</span>
+          </span>
+        </span>
+        <span className="shrink-0 font-display text-sm font-bold uppercase text-ink">Play</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          clearFlags([...ALL_TOUR_FLAG_KEYS, ...ALL_TIP_FLAG_KEYS])
+          setTipsReset(true)
+        }}
+        className={`${CHIP} w-full justify-between text-left`}
+      >
+        <span className="flex items-center gap-3">
+          <AnimatedIcon icon={ResetIcon} size={20} className="text-ink" />
+          <span className="flex flex-col">
+            <span className="font-medium text-ink">Reset Tips</span>
+            <span className="text-sm text-slate-600">
+              {tipsReset ? 'Done. Tips show again as you explore.' : 'Show the first-visit tips for each feature again.'}
+            </span>
+          </span>
+        </span>
+        <span className="shrink-0 font-display text-sm font-bold uppercase text-ink">Reset</span>
+      </button>
+    </>
+  )
+}
+
 function AccountSection({
   auth,
   onResetRequest,
@@ -652,6 +705,8 @@ function AboutSection({ showHeading = true }: { showHeading?: boolean }) {
       <UpdateChip />
 
       <WhatsNewChip />
+
+      <OnboardingChips />
 
       <button type="button" onClick={() => setFeedbackOpen(true)} className={`${CHIP} w-full justify-between text-left`}>
         <span className="flex items-center gap-3">
