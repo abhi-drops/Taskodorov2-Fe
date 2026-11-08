@@ -4,6 +4,17 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-11-09 — Version bump to 0.2 beta
+
+- **What.** Release version bumped for the next production release: Android `versionCode`
+  2 → 3 and `versionName` "0.1 beta" → "0.2 beta" (`android/app/build.gradle`), web
+  `versionCode` 1 → 2 and `version` "0.2 beta" (`web-version.json`). Covers dark mode,
+  onboarding, Hide Notes After, What's new / release notes, the Settings About section,
+  the feedback prompt and the sticky-header/grid restyle. The backend's
+  `releases/<version>.md` must carry `android.versionCode: 3` and `web.versionCode: 2`
+  (checklist in `docs/feat-release-notes-from-be.md` §8), published last.
+- Templates AI Guide: not affected.
+
 ## 2026-11-08 — Dark mode
 
 - **What.** A dark theme, from the Penpot dark design: charcoal canvas with faint light grid
