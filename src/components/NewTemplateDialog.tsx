@@ -79,22 +79,22 @@ export function NewTemplateDialog({ onClose, onCreated }: NewTemplateDialogProps
           ]}
         />
 
-        {isLoadingSource && <p className="text-sm text-slate-500">Loading…</p>}
+        {isLoadingSource && <p className="text-sm text-muted">Loading…</p>}
 
         {source && (
           <div className="flex flex-col gap-3">
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-body">
               All {source.groups.length} groups and their settings are copied. Tick the notes to keep as sample notes.
             </p>
 
             {source.notes.length === 0 ? (
-              <p className="text-sm text-slate-500">This workspace has no notes.</p>
+              <p className="text-sm text-muted">This workspace has no notes.</p>
             ) : (
               <>
                 <button
                   type="button"
                   onClick={toggleAll}
-                  className="self-start font-display text-sm font-bold uppercase text-ink hover:opacity-70"
+                  className="self-start font-display text-sm font-bold uppercase text-fg hover:opacity-70"
                 >
                   {allSelected ? 'Clear all' : 'Select all'}
                 </button>

@@ -107,7 +107,7 @@ export function NewWorkspaceDialog({ onClose, onCreated, initialTemplateId }: Ne
             Start from
           </span>
           {status === 'loading' ? (
-            <p className="text-sm text-slate-500">Loading…</p>
+            <p className="text-sm text-muted">Loading…</p>
           ) : (
             <div role="radiogroup" aria-labelledby="new-workspace-template" className={`grid grid-cols-3 ${isMobile ? 'gap-2' : 'gap-4'}`}>
               {visibleTemplates.map((template) => {
@@ -145,7 +145,7 @@ export function NewWorkspaceDialog({ onClose, onCreated, initialTemplateId }: Ne
                 }`}
               >
                 <span
-                  className={`flex items-center justify-center border border-neutral-300 bg-surface text-ink ${
+                  className={`flex items-center justify-center border border-neutral-300 bg-slate-100 text-ink ${
                     isMobile ? 'h-12 gap-2' : 'h-32 gap-5'
                   }`}
                 >
@@ -166,7 +166,7 @@ export function NewWorkspaceDialog({ onClose, onCreated, initialTemplateId }: Ne
                 type="button"
                 onClick={toggleShowAll}
                 aria-expanded={showAll}
-                className="flex items-center gap-1.5 font-display text-sm font-bold uppercase text-ink hover:opacity-70"
+                className="flex items-center gap-1.5 font-display text-sm font-bold uppercase text-fg hover:opacity-70"
               >
                 {showAll ? 'Fewer templates' : 'More templates'}
                 <AnimatedIcon icon={ChevronDownIcon} size={14} className={showAll ? 'rotate-180' : ''} />
@@ -176,7 +176,7 @@ export function NewWorkspaceDialog({ onClose, onCreated, initialTemplateId }: Ne
             <button
               type="button"
               onClick={handleImport}
-              className="flex items-center gap-1.5 font-display text-sm font-bold uppercase text-ink hover:opacity-70"
+              className="flex items-center gap-1.5 font-display text-sm font-bold uppercase text-fg hover:opacity-70"
             >
               <AnimatedIcon icon={ImportIcon} size={14} />
               Import template

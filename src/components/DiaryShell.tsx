@@ -34,7 +34,7 @@ export function DiaryShell({ wide = false, children }: { wide?: boolean; childre
       headerStart={<WorkspaceSwitcher />}
       headerEnd={
         <Link to="/search" viewTransition aria-label="Search" className="group">
-          <Icon src={searchIcon} alt="" size={20} className="transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110 group-active:scale-95 motion-reduce:transition-none" />
+          <Icon src={searchIcon} alt="" size={20} className="theme-invert transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110 group-active:scale-95 motion-reduce:transition-none" />
         </Link>
       }
     >
@@ -60,7 +60,7 @@ export function DiaryHeader({ detailsToggle = false, children }: { detailsToggle
   return (
     <div className="flex items-center gap-3">
       {!isMobile && <SidebarToggle storageKey={APPS_PANEL_KEY} label="apps list" />}
-      <div className="flex shrink-0 items-center gap-2 text-ink">
+      <div className="flex shrink-0 items-center gap-2 text-fg">
         <AnimatedIcon icon={DiaryIcon} size={20} />
         <h1 className="font-display text-lg font-bold">Diary</h1>
       </div>

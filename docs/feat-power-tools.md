@@ -19,8 +19,8 @@ desktop wireframe — see `docs/style-guide.md`'s "Power Tools: row chips + desk
 2-panel drill-down" section for the full visual system (chip rows, `DANGER_CHIP`,
 `GroupIcon`). Structurally the two platforms now genuinely diverge:
 
-- **Mobile** — `/settings` is one scrolling page (Groups → Board → Account → About, in
-  that order) and `/settings/groups/:id` is a separate full-page screen, matching the
+- **Mobile** — `/settings` is one scrolling page (Groups → Board → Appearance → Account →
+  About, in that order) and `/settings/groups/:id` is a separate full-page screen, matching the
   two distinct mobile mockups. A `StickySettingsTabs` quick-nav strip (2026-10-31,
   `PowerToolsPage.tsx`) is `position: fixed` (not `sticky` — unlike `HomePage`'s strip,
   which already sits in flow right at the top of the board, Settings' Groups section
@@ -38,8 +38,8 @@ desktop wireframe — see `docs/style-guide.md`'s "Power Tools: row chips + desk
   line just below the strip, pinned to the last section once scrolled to the bottom of
   the page since a short last section can't always cross that line on its
   own).
-- **Desktop** — a persistent left sidebar (`components/PowerToolsSidebar.tsx`, 3 tabs:
-  Groups / Account & Sync / About, selected via `?tab=` on `/settings`, default
+- **Desktop** — a persistent left sidebar (`components/PowerToolsSidebar.tsx`, 4 tabs:
+  Groups / Appearance / Account & Sync / About, selected via `?tab=` on `/settings`, default
   `groups`) with a right panel whose content depends on the active tab. Opening a
   specific group's settings **is still a real navigation** to
   `/settings/groups/:id` (kept as a separate route on purpose — browser
@@ -76,6 +76,9 @@ desktop wireframe — see `docs/style-guide.md`'s "Power Tools: row chips + desk
   only" hint: `useAddButtonSettings` returns `dynamic: false` and
   `dynamicAvailable: false` whenever `isNative` is false, without touching the stored
   value. The position picker works as usual.
+- **Appearance** (both platforms; `AppearanceSection` in `PowerToolsPage.tsx`) — a System /
+  Light / Dark `Tabs` picker in a chip (mobile nav label "Theme"; desktop sidebar tab
+  `?tab=appearance`). Device-local, not synced. See `feat-theming.md`.
 - **Account** — built before the rest of this page existed (Phase 2.2, as the
   guest-first routing rework's login/signup entry point): shows email + Log out when
   authenticated, Log in/Sign up links otherwise (`useAuth()`, same auth system as

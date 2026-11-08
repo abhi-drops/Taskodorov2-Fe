@@ -7,7 +7,7 @@ import { SidePanel } from './ui/SidePanel'
 export const CHIP = 'flex items-center gap-3 rounded-card border-[3px] border-ink bg-white px-4 py-3 shadow-card'
 /** The destructive-action chip (Delete, Reset): the same chip shape in coral. */
 export const DANGER_CHIP =
-  'flex w-full items-center justify-center gap-2 rounded-card border-[3px] border-ink bg-sticky-coral px-4 py-3 font-medium text-ink shadow-card transition hover:opacity-90'
+  'flex w-full items-center justify-center gap-2 rounded-card border-[3px] border-ink bg-sticky-coral px-4 py-3 font-medium text-ink dark:text-black shadow-card transition hover:opacity-90'
 
 export interface SidebarItem {
   id: string
@@ -19,7 +19,7 @@ export interface SidebarItem {
 }
 
 const ACTIVE_ITEM = 'rounded-card border-[3px] border-ink bg-white px-3 py-2 text-sm font-medium text-ink shadow-card'
-const INACTIVE_ITEM = 'rounded-card px-3 py-2 text-sm text-slate-600 hover:text-ink'
+const INACTIVE_ITEM = 'rounded-card px-3 py-2 text-sm text-body hover:text-fg'
 
 function SidebarItemContent({ item }: { item: SidebarItem }) {
   const ItemIcon = item.icon
@@ -34,7 +34,7 @@ function SidebarItemContent({ item }: { item: SidebarItem }) {
 /**
  * Desktop-only 2-panel shell shared by Settings (`PowerToolsDesktopLayout`) and Apps
  * (`AppsDesktopLayout`): a left rail of items plus the selected item's content, each on
- * its own backdrop card — `border-neutral-300 bg-surface shadow-card`, the same "light
+ * its own backdrop card — `border-edge bg-panel shadow-card`, the same "light
  * panel behind the content" treatment `GroupColumn`'s note-list backdrop and `TopNav`'s
  * pill backdrop use on the board. Mobile never renders this; see the `isMobile` branch
  * in each page.
@@ -60,7 +60,7 @@ export function SidebarPanelLayout({
     <nav className={`flex shrink-0 flex-col gap-1 pt-1 ${sidePanel ? 'w-full' : 'w-44'}`}>
       {items.map((item) =>
         item.disabled || !item.to ? (
-          <span key={item.id} aria-disabled="true" className={`${INACTIVE_ITEM} cursor-default opacity-50 hover:text-slate-600`}>
+          <span key={item.id} aria-disabled="true" className={`${INACTIVE_ITEM} cursor-default opacity-50 hover:text-body`}>
             <SidebarItemContent item={item} />
           </span>
         ) : (
@@ -78,7 +78,7 @@ export function SidebarPanelLayout({
   const rail = (
     <nav
       aria-label={sidePanel?.label}
-      className="flex h-full flex-col items-center gap-2 border border-neutral-300 bg-surface py-3 shadow-card"
+      className="flex h-full flex-col items-center gap-2 border border-edge bg-panel py-3 shadow-card"
     >
       {items.map((item) => {
         const ItemIcon = item.icon
@@ -96,7 +96,7 @@ export function SidebarPanelLayout({
               aria-disabled="true"
               aria-label={item.label}
               title={item.label}
-              className={`${box} text-slate-600 opacity-50`}
+              className={`${box} text-body opacity-50`}
             >
               {glyph}
             </span>
@@ -110,7 +110,7 @@ export function SidebarPanelLayout({
             aria-label={item.label}
             aria-current={active ? 'page' : undefined}
             title={item.label}
-            className={`${box} ${active ? 'border-[3px] border-ink bg-white text-ink shadow-card' : 'text-slate-600 hover:text-ink'}`}
+            className={`${box} ${active ? 'border-[3px] border-ink bg-white text-ink shadow-card' : 'text-body hover:text-fg'}`}
           >
             {glyph}
           </Link>
@@ -131,15 +131,15 @@ export function SidebarPanelLayout({
           defaultWidth={210}
           minWidth={160}
           maxWidth={360}
-          panelClassName="border border-neutral-300 bg-surface p-4 shadow-card"
+          panelClassName="border border-edge bg-panel p-4 shadow-card"
           rail={rail}
         >
           {nav}
         </SidePanel>
       ) : (
-        <div className="border border-neutral-300 bg-surface p-4 shadow-card">{nav}</div>
+        <div className="border border-edge bg-panel p-4 shadow-card">{nav}</div>
       )}
-      <div className="min-w-0 flex-1 border border-neutral-300 bg-surface p-6 shadow-card">{children}</div>
+      <div className="min-w-0 flex-1 border border-edge bg-panel p-6 shadow-card">{children}</div>
     </div>
   )
 }

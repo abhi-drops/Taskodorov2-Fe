@@ -7,7 +7,7 @@ import type { RefObject } from 'react'
  * four layers, bottom to top:
  * 1. `peekRef` (`useBlurredPeek`): the actual, manually-blurred page content behind
  *    the bar (`filter: blur()`, not `backdrop-filter` — see that hook's docs).
- * 2. A translucent `bg-white/45` wash over the blurred peek, so text/icons in the bar
+ * 2. A translucent `paper`-coloured (white in light, #383838 in dark) wash over the blurred peek, so text/icons in the bar
  *    stay legible against it without hiding the blur entirely.
  * 3. `feTurbulence` grain (`tape-grain`, `mix-blend-overlay`): the slightly fibrous/
  *    bubbled texture of tape's adhesive side, generated inline (no image asset,
@@ -47,8 +47,8 @@ export function TapeBackdrop({
         style={{ filter: `blur(${blurPx}px)` }}
       />
       <div
-        className="absolute inset-0 border-b border-neutral-300/80"
-        style={{ backgroundColor: `rgba(255, 255, 255, ${washOpacity})` }}
+        className="absolute inset-0 border-b border-edge"
+        style={{ backgroundColor: `color-mix(in srgb, var(--color-paper) ${washOpacity * 100}%, transparent)` }}
       />
       <svg className="absolute inset-0 h-full w-full mix-blend-overlay opacity-[0.16]" aria-hidden>
         <filter id="tape-grain" colorInterpolationFilters="sRGB">
@@ -58,13 +58,13 @@ export function TapeBackdrop({
         <rect width="100%" height="100%" filter="url(#tape-grain)" />
       </svg>
       <div
-        className="absolute inset-0 mix-blend-screen"
+        className="absolute inset-0 mix-blend-screen dark:opacity-25"
         style={{
           background:
             'linear-gradient(115deg, transparent 15%, rgba(255,255,255,0.4) 32%, rgba(255,255,255,0.05) 42%, transparent 55%, rgba(255,255,255,0.22) 72%, transparent 85%)',
         }}
       />
-      <div className="absolute inset-x-0 top-0 h-px bg-white/80" />
+      <div className="absolute inset-x-0 top-0 h-px bg-white/80 dark:bg-white/15" />
     </div>
   )
 }

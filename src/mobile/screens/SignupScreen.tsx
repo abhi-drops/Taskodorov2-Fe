@@ -60,7 +60,7 @@ export function SignupScreen() {
           Sign up
         </Button>
         <GoogleSignInButton />
-        <p className="text-center text-sm text-slate-500">
+        <p className="text-center text-sm text-muted">
           Already have an account?{' '}
           <Link to="/login" className="font-medium text-accent-purple">
             Log in

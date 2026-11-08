@@ -83,7 +83,7 @@ export function Modal({
   // same property on one element have no guaranteed winner.
   const panelShapeClasses = isFullPage
     ? 'h-full w-full'
-    : `rounded-card border-[3px] border-ink ${panelClassName ?? 'shadow-lg'} ${
+    : `rounded-card border-[3px] border-line ${panelClassName ?? 'shadow-lg'} ${
         isLarge ? 'h-[90vh] w-full md:w-[60vw]' : 'max-h-[85vh] w-full max-w-sm'
       }`
 
@@ -95,7 +95,7 @@ export function Modal({
       onClick={dismissible ? onClose : undefined}
     >
       <div
-        className={`flex flex-col gap-4 bg-white p-6 ${panelShapeClasses}`}
+        className={`flex flex-col gap-4 bg-paper p-6 ${panelShapeClasses}`}
         // Full page: keep the title and close button clear of the status bar and the
         // content clear of the gesture bar.
         style={
@@ -110,15 +110,15 @@ export function Modal({
       >
         {(title || dismissible) && (
           <div className="flex items-center justify-between gap-4">
-            {title && <h2 className="font-display text-lg font-bold text-ink">{title}</h2>}
+            {title && <h2 className="font-display text-lg font-bold text-fg">{title}</h2>}
             {dismissible && (
               <button
                 type="button"
                 onClick={onClose}
                 aria-label="Close"
-                className="ml-auto flex h-8 w-8 items-center justify-center rounded-full hover:bg-slate-100"
+                className="ml-auto flex h-8 w-8 items-center justify-center rounded-full hover:bg-hairline"
               >
-                <AnimatedIcon icon={CloseIcon} size={18} className="text-ink" />
+                <AnimatedIcon icon={CloseIcon} size={18} className="text-fg" />
               </button>
             )}
           </div>

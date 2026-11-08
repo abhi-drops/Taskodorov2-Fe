@@ -4,6 +4,25 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f4f5f7" />
+    <script>
+      // Sets the theme before first paint so a dark-mode user never sees a flash of
+      // light. Mirrors src/lib/theme/themeStorage.ts (same key, same values, default
+      // 'light'); ThemeProvider takes over once React loads.
+      (function () {
+        var theme = 'light'
+        try {
+          var pref = localStorage.getItem('taskodoro.theme')
+          if (pref === 'dark') theme = 'dark'
+          else if (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) theme = 'dark'
+        } catch (e) {}
+        document.documentElement.setAttribute('data-theme', theme)
+        if (theme === 'dark') {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#28282b')
+        }
+      })()
+    </script>
     <title>Taskodoro</title>
   </head>
   <body>

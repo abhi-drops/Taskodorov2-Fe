@@ -27,7 +27,7 @@ export function TemplateNoteList({
   onSelectNote: (noteKey: string) => void
 }) {
   const asGroup = previewGroup(group, position)
-  if (group.notes.length === 0) return <p className="px-1 text-sm text-slate-500">No sample notes.</p>
+  if (group.notes.length === 0) return <p className="px-1 text-sm text-muted">No sample notes.</p>
   return (
     <>
       {group.notes.map((templateNote, i) => {
@@ -39,7 +39,7 @@ export function TemplateNoteList({
           <div
             key={note.id}
             onClick={(e) => e.stopPropagation()}
-            className={selectedNoteKey === note.id ? 'ring-2 ring-accent-purple ring-offset-2' : ''}
+            className={selectedNoteKey === note.id ? 'ring-2 ring-accent-purple ring-offset-2 ring-offset-panel' : ''}
           >
             {note.type === 'counter' ? (
               <CounterNoteCard {...props} />
@@ -149,7 +149,7 @@ export function TemplateBoard({
                 <AnimatedIcon icon={PlusIcon} size={16} className="text-white [&_svg]:stroke-[2.5]" />
               </button>
             </div>
-            <div className="relative -ml-4 -mt-4 flex min-h-20 flex-col gap-3 border border-neutral-300 bg-surface p-4 pt-7 shadow-card">
+            <div className="relative -ml-4 -mt-4 flex min-h-20 flex-col gap-3 border border-edge bg-panel p-4 pt-7 shadow-card">
               <TemplateNoteList group={group} position={i} selectedNoteKey={selectedNoteKey} onSelectNote={onSelectNote} />
             </div>
           </div>

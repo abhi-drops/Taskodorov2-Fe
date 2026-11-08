@@ -9,7 +9,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 const VARIANT_CLASSES: Record<NonNullable<ButtonProps['variant']>, string> = {
   primary: 'bg-accent-purple text-white hover:opacity-90',
   secondary: 'bg-white text-slate-900 border border-slate-200 hover:bg-slate-50',
-  ghost: 'bg-transparent text-slate-700 hover:bg-slate-100',
+  ghost: 'bg-transparent text-body hover:bg-hairline',
   danger: 'bg-sticky-coral text-white hover:opacity-90',
 }
 

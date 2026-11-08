@@ -1,11 +1,13 @@
 import { GoogleLogin } from '@react-oauth/google'
 import { useGoogleSignIn } from '../../common_logics/useGoogleSignIn'
 import { usePlatform } from '../../lib/platform/usePlatform'
+import { useTheme } from '../../lib/theme/themeContext'
 import { Button } from './Button'
 import { FormError } from './FormError'
 
 export function GoogleSignInButton() {
   const { isNative } = usePlatform()
+  const { resolved } = useTheme()
   const { isReady, isSubmitting, error, handleNativeSignIn, handleWebCredential } = useGoogleSignIn()
 
   if (!isReady) {
@@ -30,6 +32,8 @@ export function GoogleSignInButton() {
   return (
     <div className="flex flex-col gap-2">
       <GoogleLogin
+        // Lives on the login/signup card, which is dark in dark mode.
+        theme={resolved === 'dark' ? 'filled_black' : 'outline'}
         onSuccess={(credential) => {
           if (credential.credential) handleWebCredential(credential.credential)
         }}

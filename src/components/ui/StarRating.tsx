@@ -61,11 +61,11 @@ export function StarRating({ value, onChange, disabled = false, className = '' }
             className="relative shrink-0 disabled:cursor-not-allowed"
             style={{ width: STAR_SIZE, height: STAR_SIZE }}
           >
-            <span className="absolute inset-0 flex items-center justify-center text-slate-300">
+            <span className="absolute inset-0 flex items-center justify-center text-hairline">
               <AnimatedIcon icon={StarIcon} size={STAR_SIZE} still />
             </span>
             <span
-              className="absolute inset-y-0 left-0 overflow-hidden text-ink [&_svg]:fill-sticky-yellow"
+              className="absolute inset-y-0 left-0 overflow-hidden text-fg [&_svg]:fill-sticky-yellow"
               style={{ width: `${fill * 100}%` }}
             >
               <span className="flex items-center justify-center" style={{ width: STAR_SIZE, height: STAR_SIZE }}>

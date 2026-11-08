@@ -52,7 +52,7 @@ export function SyncStrategyDialog() {
         panelClassName={DIALOG_SHADOW}
       >
         <div className="flex flex-col gap-4">
-          <p className="text-slate-700">
+          <p className="text-body">
             Your account already has data on another device. Choose what this device should keep — the other side
             is replaced.
           </p>

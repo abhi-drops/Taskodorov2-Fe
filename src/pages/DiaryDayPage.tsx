@@ -30,7 +30,7 @@ function DayStepper({ day }: { day: Date }) {
         type="button"
         onClick={() => navigate('/apps/diary', { viewTransition: true })}
         aria-label="Back to the month calendar"
-        className="min-w-16 font-display text-sm font-bold uppercase text-ink hover:underline"
+        className="min-w-16 font-display text-sm font-bold uppercase text-fg hover:underline"
       >
         {isToday(day) ? 'Today' : format(day, 'MMM d')}
       </button>
@@ -87,8 +87,8 @@ export default function DiaryDayPage() {
             <DiaryCounts counts={replay.counts} />
             {/* Same light backdrop card as the board's group columns and the desktop day
                 sidebar, so the list reads as one panel instead of floating on the grid. */}
-            <section className="flex flex-col gap-3 border border-neutral-300 bg-surface p-4 shadow-card">
-              <h2 className="font-display text-sm font-bold text-ink">Changes</h2>
+            <section className="flex flex-col gap-3 border border-edge bg-panel p-4 shadow-card">
+              <h2 className="font-display text-sm font-bold text-fg">Changes</h2>
               <DiaryFeedList
                 feed={replay.feed}
                 onSelect={(entry) => {
@@ -124,7 +124,7 @@ export default function DiaryDayPage() {
         )}
         {diary.currentFrame && (
           // Frame 0 is the board before any of the day's changes, not a real event time.
-          <span className="w-16 shrink-0 text-right font-display text-xs text-slate-600">
+          <span className="w-16 shrink-0 text-right font-display text-xs text-body">
             {diary.frame === 0 ? 'Start' : formatTimeOfDay(diary.currentFrame.time)}
           </span>
         )}
@@ -138,7 +138,7 @@ export default function DiaryDayPage() {
         <div
           ref={boardRef}
           style={{ height: fillHeight }}
-          className="min-w-0 flex-1 border border-neutral-300 bg-white"
+          className="min-w-0 flex-1 border border-edge bg-white dark:bg-surface"
         >
           {replay && diary.currentFrame && (
             <DiaryReplayBoard
@@ -162,17 +162,17 @@ export default function DiaryDayPage() {
           openRequest={diary.selectedNoteId}
           // Same measured height as the board, so both end at the same line.
           maxHeight={fillHeight}
-          panelClassName="flex flex-col gap-4 border border-neutral-300 bg-surface p-4 shadow-card"
+          panelClassName="flex flex-col gap-4 border border-edge bg-panel p-4 shadow-card"
         >
           {replay && diary.selectedNoteId ? (
             <>
               <div className="flex items-start justify-between gap-2">
-                <h2 className="min-w-0 break-words font-display text-sm font-bold text-ink">{selectedTitle}</h2>
+                <h2 className="min-w-0 break-words font-display text-sm font-bold text-fg">{selectedTitle}</h2>
                 <button
                   type="button"
                   aria-label="Close note details"
                   onClick={() => diary.setSelectedNoteId(null)}
-                  className="shrink-0 text-ink hover:opacity-70"
+                  className="shrink-0 text-fg hover:opacity-70"
                 >
                   <AnimatedIcon icon={CloseIcon} size={16} />
                 </button>
@@ -199,7 +199,7 @@ export default function DiaryDayPage() {
           ) : (
             replay && (
               <>
-                <h2 className="font-display text-sm font-bold text-ink">This day</h2>
+                <h2 className="font-display text-sm font-bold text-fg">This day</h2>
                 <DiaryCounts counts={replay.counts} />
                 <DiaryFeedList feed={replay.feed} frame={diary.frame} onSelect={(entry) => diary.scrubTo(entry.frame)} />
               </>

@@ -50,18 +50,18 @@ export function AiGuideDialog({
     >
       {/* p-1: room for the chips' offset shadows inside Modal's scroll box. */}
       <div className="flex flex-col gap-5 p-1 text-left">
-        <div className="flex items-center gap-3 text-ink">
+        <div className="flex items-center gap-3 text-fg">
           <AnimatedIcon icon={ChatGptIcon} size={24} still />
           <AnimatedIcon icon={ClaudeIcon} size={24} still />
           <AnimatedIcon icon={GeminiIcon} size={24} still />
-          <span className="text-sm text-slate-600">ChatGPT, Claude, Gemini or any other AI assistant</span>
+          <span className="text-sm text-body">ChatGPT, Claude, Gemini or any other AI assistant</span>
         </div>
 
         <ol className="flex flex-col gap-4">
           <li className="flex gap-3">
             <span className={step}>1</span>
             <div className="flex min-w-0 flex-1 flex-col gap-2">
-              <p className="text-sm text-ink">
+              <p className="text-sm text-fg">
                 Download the AI Guide. It teaches an assistant how to write a board for Taskodoro.
               </p>
               <button type="button" onClick={onDownload} className={`${CHIP} font-medium text-ink hover:bg-slate-50`}>
@@ -72,7 +72,7 @@ export function AiGuideDialog({
           </li>
           <li className="flex gap-3">
             <span className={step}>2</span>
-            <p className="min-w-0 flex-1 text-sm text-ink">
+            <p className="min-w-0 flex-1 text-sm text-fg">
               Give the guide to your assistant (attach the file or paste its text) and describe the board you want,
               for example "a board for planning a wedding". To change a template you already have, export it and
               give the assistant that file too.
@@ -80,7 +80,7 @@ export function AiGuideDialog({
           </li>
           <li className="flex gap-3">
             <span className={step}>3</span>
-            <p className="min-w-0 flex-1 text-sm text-ink">
+            <p className="min-w-0 flex-1 text-sm text-fg">
               Answer its questions, then download the file it gives you (its name ends in{' '}
               <span className="font-bold">.json</span>).
             </p>
@@ -88,7 +88,7 @@ export function AiGuideDialog({
           <li className="flex gap-3">
             <span className={step}>4</span>
             <div className="flex min-w-0 flex-1 flex-col gap-2">
-              <p className="text-sm text-ink">{importDescription}</p>
+              <p className="text-sm text-fg">{importDescription}</p>
               <button
                 type="button"
                 onClick={onImport}

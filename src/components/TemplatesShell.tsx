@@ -32,7 +32,7 @@ export function TemplatesShell({ wide = false, children }: { wide?: boolean; chi
       headerStart={<WorkspaceSwitcher />}
       headerEnd={
         <Link to="/search" viewTransition aria-label="Search" className="group">
-          <Icon src={searchIcon} alt="" size={20} className="transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110 group-active:scale-95 motion-reduce:transition-none" />
+          <Icon src={searchIcon} alt="" size={20} className="theme-invert transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110 group-active:scale-95 motion-reduce:transition-none" />
         </Link>
       }
     >

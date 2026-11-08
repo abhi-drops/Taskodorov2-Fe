@@ -78,7 +78,7 @@ function BoardWithSettings({
     // No flex gap: the settings SidePanel owns it, so it closes when collapsed.
     <div className="flex items-start">
       {/* Measured height: fills the rest of the screen; the board scrolls inside. */}
-      <div ref={boardRef} style={{ height: fillHeight }} className="min-w-0 flex-1 border border-neutral-300 bg-white">
+      <div ref={boardRef} style={{ height: fillHeight }} className="min-w-0 flex-1 border border-edge bg-white dark:bg-surface">
         {board}
       </div>
 
@@ -92,7 +92,7 @@ function BoardWithSettings({
         openRequest={openRequest}
         // Same measured height as the board, so both end at the same line.
         maxHeight={fillHeight}
-        panelClassName="flex flex-col gap-4 border border-neutral-300 bg-surface p-4 shadow-card"
+        panelClassName="flex flex-col gap-4 border border-edge bg-panel p-4 shadow-card"
       >
         {children}
       </SidePanel>
@@ -115,7 +115,7 @@ export default function TemplateEditorPage() {
   if (status === 'loading') {
     return (
       <TemplatesShell>
-        <p className="text-center text-slate-500">Loading…</p>
+        <p className="text-center text-muted">Loading…</p>
       </TemplatesShell>
     )
   }
@@ -123,7 +123,7 @@ export default function TemplateEditorPage() {
   if (!template) {
     return (
       <TemplatesShell>
-        <p className="text-center text-slate-500">This template no longer exists.</p>
+        <p className="text-center text-muted">This template no longer exists.</p>
       </TemplatesShell>
     )
   }
@@ -276,7 +276,7 @@ export default function TemplateEditorPage() {
             if (e.key === 'Enter') e.currentTarget.blur()
           }}
           aria-label="Template name"
-          className="min-w-0 flex-1 basis-40 bg-transparent font-display text-lg font-bold text-ink outline-none"
+          className="min-w-0 flex-1 basis-40 bg-transparent font-display text-lg font-bold text-fg outline-none"
         />
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <button type="button" onClick={handleExport} className={`${TOOLBAR_BUTTON} bg-white hover:bg-slate-50`}>

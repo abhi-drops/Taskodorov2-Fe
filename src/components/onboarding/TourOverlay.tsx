@@ -25,7 +25,7 @@ interface Box {
   h: number
 }
 
-const DIM = 'pointer-events-auto fixed bg-ink/60'
+const DIM = 'pointer-events-auto fixed bg-ink/60 dark:bg-black/60'
 
 function resolve<T>(value: T | ((ctx: TourContext) => T), ctx: TourContext): T {
   return typeof value === 'function' ? (value as (ctx: TourContext) => T)(ctx) : value
@@ -282,19 +282,19 @@ function TourStepLayer({ step, index, total, movedTo, onAdvance, onShown, onChec
           role="dialog"
           aria-live="polite"
           aria-label={resolve(step.title, ctx)}
-          className="onboarding-rise pointer-events-auto flex w-full max-w-[20rem] flex-col gap-3 rounded-card border-[3px] border-ink bg-white p-4 shadow-[6px_10px_0px_0px_rgba(0,0,0,0.25)]"
+          className="onboarding-rise pointer-events-auto flex w-full max-w-[20rem] flex-col gap-3 rounded-card border-[3px] border-line bg-paper p-4 shadow-pop"
         >
           <div className="flex flex-col gap-1">
-            <h2 className="font-display text-lg font-bold text-ink">{resolve(step.title, ctx)}</h2>
-            <p className="text-sm text-ink/80">{resolve(step.body, ctx)}</p>
+            <h2 className="font-display text-lg font-bold text-fg">{resolve(step.title, ctx)}</h2>
+            <p className="text-sm text-fg/80">{resolve(step.body, ctx)}</p>
           </div>
           <div className="flex items-center justify-between gap-3">
-            <button type="button" onClick={onFinish} className="text-sm font-medium text-ink/60 hover:text-ink">
+            <button type="button" onClick={onFinish} className="text-sm font-medium text-fg/60 hover:text-fg">
               Skip
             </button>
             <div className="flex items-center gap-3">
               {total > 1 && (
-                <span className="text-xs font-medium text-ink/50">
+                <span className="text-xs font-medium text-fg/50">
                   {index + 1} / {total}
                 </span>
               )}

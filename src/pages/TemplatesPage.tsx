@@ -14,7 +14,7 @@ import { countNotes } from '../lib/templates/editContent'
 import type { Template } from '../types/template'
 
 function SectionHeading({ children }: { children: string }) {
-  return <h2 className="text-sm font-medium text-slate-600">{children}</h2>
+  return <h2 className="text-sm font-medium text-body">{children}</h2>
 }
 
 function plural(count: number, word: string) {
@@ -94,7 +94,7 @@ export default function TemplatesPage() {
   return (
     <TemplatesShell>
       <TemplatesToolbar>
-        <div className="flex shrink-0 items-center gap-2 text-ink">
+        <div className="flex shrink-0 items-center gap-2 text-fg">
           <AnimatedIcon icon={TemplatesIcon} size={20} />
           <h1 className="font-display text-lg font-bold">Templates</h1>
         </div>
@@ -115,13 +115,13 @@ export default function TemplatesPage() {
         </div>
       </TemplatesToolbar>
 
-      <p className="text-slate-600">Boards you can start a new workspace from: groups, their settings and a few sample notes.</p>
+      <p className="text-body">Boards you can start a new workspace from: groups, their settings and a few sample notes.</p>
 
       {/* While the AI dialog is open it shows the error itself. */}
       <FormError message={isAiOpen ? null : error} />
 
       {status === 'loading' ? (
-        <p className="text-center text-slate-500">Loading…</p>
+        <p className="text-center text-muted">Loading…</p>
       ) : (
         <div className="flex flex-col gap-8">
           <div className="flex flex-col gap-3">
@@ -132,7 +132,7 @@ export default function TemplatesPage() {
           <div className="flex flex-col gap-3">
             <SectionHeading>Yours</SectionHeading>
             {userTemplates.length === 0 ? (
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-muted">
                 None yet. Save one of your workspaces as a template, import a template file, or download the AI
                 Guide and have an AI assistant write one for you.
               </p>

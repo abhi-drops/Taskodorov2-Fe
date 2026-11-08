@@ -54,7 +54,7 @@ just scoped to the `production` mode) rather than editing the committed file.
 
 ## Documentation
 
-- **`docs/feat-*.md`** — one file per major feature (auth, offline-data-layer, navigation, workspaces, groups, power-tools (= Settings), apps, diary, templates, notes, search-filter, design-system, onboarding). This is where feature *behavior and rationale* lives in depth; this file (`CLAUDE.md`) stays a high-level map plus the gotchas sharp enough to bite someone.
+- **`docs/feat-*.md`** — one file per major feature (auth, offline-data-layer, navigation, workspaces, groups, power-tools (= Settings), apps, diary, templates, notes, search-filter, design-system, onboarding, theming). This is where feature *behavior and rationale* lives in depth; this file (`CLAUDE.md`) stays a high-level map plus the gotchas sharp enough to bite someone.
 - **`docs/changelog.md`** — running log of what changed and when, newest entry first.
   **After any meaningful change to this codebase (a new feature, a real bug fix, a
   behavior change — not a typo fix or a pure refactor with no behavior change), add an
@@ -118,6 +118,7 @@ First-run intro slides, an interactive board tour, a one-time tour the first tim
 
 Self-hosted fonts (never a Google Fonts CDN link — this is an offline-first app), the grid background, and the shared `components/ui/*` primitive set. `docs/style-guide.md`.
 
+- **Dark mode** (`docs/feat-theming.md`): semantic tokens in `src/index.css` re-pointed under `<html data-theme="dark">`, chosen in Settings → Appearance (and a desktop Home toggle), stored in synchronous `localStorage` and applied pre-paint by an inline script in `index.html`. **Don't use raw `bg-white` / `text-ink` / `text-slate-*` / `border-neutral-300` on a canvas or panel surface** — use `bg-panel border-edge`, `bg-paper`, `bg-field`, `text-fg` / `text-body` / `text-muted`, `border-line` / `border-hairline`. Raw classes stay only on "light islands" (chips, note cards, sticky-coloured buttons and what's inside them), which look the same in both themes.
 - **Icons** come from one library, `@animateicons/react` (Huge family, pinned exactly). Add icons in `components/ui/icons.ts` and render them with `components/ui/AnimatedIcon.tsx`, never as text characters, inline SVGs or direct library imports. Exceptions: the note checkbox (`CheckCircle`) and the search icon are still PNGs; `AndroidIcon`/`WebVersionIcon` (Settings' About section, cross-platform link) pull `SmartphoneIcon`/`LaptopIcon` from `@animateicons/react/lucide` instead of Huge, which has neither a smartphone-device nor a laptop/monitor glyph — still re-exported from `icons.ts` under app-level names like everything else, just from the other family bundled in the same package.
 - **Dropdowns** go through `components/ui/Select.tsx`: a styled Radix Select on web, a native `<select>` on mobile (`isMobile`). It takes an `options` array, not `<option>` children.
 

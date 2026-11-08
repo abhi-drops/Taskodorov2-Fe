@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { getLatestStatus } from '../../lib/notes/noteStatus'
-import { SWATCH_TEXT_CLASSES, type SwatchColor } from './swatchColors'
+import { SWATCH_STATUS_BG_CLASSES, SWATCH_STATUS_TEXT_CLASSES, type SwatchColor } from './swatchColors'
 import type { NoteStatus } from '../../types/note'
 
 interface NoteStatusStripProps {
@@ -14,14 +14,15 @@ interface NoteStatusStripProps {
  * pure CSS, so short text can stay static/right-aligned instead of always animating —
  * measuring the animated/duplicated markup directly would always read as overflowing.
  * Text is tinted to the note's own swatch color (not a fixed gray) so the strip visually
- * ties back to the card it's attached to.
+ * ties back to the card it's attached to. In the dark theme it flips to a pale tint of that
+ * color with gray text (see `swatchColors.ts`).
  */
 export function NoteStatusStrip({ statuses, color }: NoteStatusStripProps) {
   const latest = getLatestStatus(statuses)
   const containerRef = useRef<HTMLDivElement>(null)
   const measureRef = useRef<HTMLSpanElement>(null)
   const [overflowing, setOverflowing] = useState(false)
-  const textColorClass = SWATCH_TEXT_CLASSES[color]
+  const textColorClass = SWATCH_STATUS_TEXT_CLASSES[color]
 
   useLayoutEffect(() => {
     const container = containerRef.current
@@ -33,7 +34,7 @@ export function NoteStatusStrip({ statuses, color }: NoteStatusStripProps) {
   if (!latest) return null
 
   return (
-    <div ref={containerRef} className="relative w-full overflow-hidden bg-ink px-3 py-1.5">
+    <div ref={containerRef} className={`relative w-full overflow-hidden px-3 py-1.5 ${SWATCH_STATUS_BG_CLASSES[color]}`}>
       <span ref={measureRef} className="invisible absolute whitespace-nowrap text-sm">
         {latest.text}
       </span>

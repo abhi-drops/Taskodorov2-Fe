@@ -4,6 +4,31 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-11-08 — Dark mode
+
+- **What.** A dark theme, from the Penpot dark design: charcoal canvas with faint light grid
+  lines, `#383838` panels, vivid sticky colours (`#ffd906 #ff3351 #3e97ff #9eff56`), white
+  title and search icon, with chips and note cards staying light. **Settings → Appearance**
+  (both platforms) picks System / Light / Dark; a sun/moon button next to the search icon on
+  desktop Home flips it. New installs start Light. Android's status bar and splash are not
+  themed yet (see `docs/feat-theming.md`).
+- **How.** Semantic tokens (`surface`, `panel`, `paper`, `field`, `fg`, `body`, `muted`,
+  `edge`, `line`, `hairline`, `solid`, `grid-line`, `shadow-pop`) in `src/index.css`,
+  overridden under `<html data-theme="dark">`; the ~60 files that used raw `bg-white` /
+  `text-slate-*` / `border-neutral-300` on surfaces moved onto them, while chips and cards
+  keep the light look ("light island" rule in `feat-theming.md`). `ThemeProvider` +
+  `useTheme()` (`lib/theme/`), choice in synchronous `localStorage` and applied pre-paint by
+  an inline script in `index.html` (no flash); not synced. The ink-coloured `search.png`
+  turns white in dark. Docs: new `docs/feat-theming.md`, updated `style-guide.md` and
+  `feat-power-tools.md`.
+- **Follow-up (same day).** Checklist item text in the note editor was white in dark (it
+  inherited the page colour): now `text-ink`. In dark, note-status strips (card footer, the
+  editor's Status block, the Diary's status entries) are a white strip tinted with a pale shade
+  of the note's colour with grey text (`SWATCH_STATUS_*` maps in `swatchColors.ts`); light is
+  unchanged.
+- **Templates AI Guide:** not affected (note colours are stored as names; the file format is
+  unchanged), so `aiGuide.md` was not edited.
+
 ## 2026-11-08 — First-run onboarding: intro slides, board tour, feature tours, tips
 
 - **What.** New users now get a one-minute introduction instead of landing on a bare

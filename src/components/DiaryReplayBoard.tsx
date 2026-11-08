@@ -62,7 +62,7 @@ export function DiaryReplayBoard({
   if (frame.groupIds.length === 0) {
     return (
       <div className={className}>
-        <p className="px-1 py-10 text-center text-sm text-slate-500">No groups existed on this day yet.</p>
+        <p className="px-1 py-10 text-center text-sm text-muted">No groups existed on this day yet.</p>
       </div>
     )
   }
@@ -88,7 +88,7 @@ export function DiaryReplayBoard({
                   <h3 className="relative z-10 inline-flex self-start rounded-card border-[3px] border-ink bg-slate-300 px-3 py-1 font-display text-sm font-medium text-ink shadow-card">
                     {group.name}
                   </h3>
-                  <div className="relative -ml-4 -mt-4 flex min-h-20 flex-col gap-3 border border-neutral-300 bg-surface p-4 pt-7 shadow-card">
+                  <div className="relative -ml-4 -mt-4 flex min-h-20 flex-col gap-3 border border-edge bg-panel p-4 pt-7 shadow-card">
                     <AnimatePresence initial={false} mode="popLayout" custom={alive}>
                       {notes.map((note) => (
                         <motion.div
@@ -100,13 +100,13 @@ export function DiaryReplayBoard({
                           initial="enter"
                           animate="present"
                           exit="exit"
-                          className={selectedNoteId === note.id ? 'ring-2 ring-accent-purple ring-offset-2' : ''}
+                          className={selectedNoteId === note.id ? 'ring-2 ring-accent-purple ring-offset-2 ring-offset-panel' : ''}
                         >
                           <ReplayCard note={note} group={group} onSelect={() => onSelectNote(note.id)} />
                         </motion.div>
                       ))}
                     </AnimatePresence>
-                    {notes.length === 0 && <p className="px-1 text-sm text-slate-500">No notes.</p>}
+                    {notes.length === 0 && <p className="px-1 text-sm text-muted">No notes.</p>}
                   </div>
                 </motion.div>
               )

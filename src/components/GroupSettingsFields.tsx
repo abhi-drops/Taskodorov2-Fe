@@ -102,7 +102,7 @@ export function GroupSettingsFields({
 
       {hideAfterMode === 'checked' && (
         <div className="flex items-end gap-3">
-          <label className="flex min-w-0 flex-1 flex-col gap-1.5 text-left text-sm font-medium text-slate-700">
+          <label className="flex min-w-0 flex-1 flex-col gap-1.5 text-left text-sm font-medium text-body">
             Hide after
             {/* Uncontrolled and committed on blur, like the other typed fields: saving
                 per keystroke would write (and sync) every intermediate number. `key`

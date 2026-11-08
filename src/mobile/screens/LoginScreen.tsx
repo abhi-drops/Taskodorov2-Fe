@@ -43,7 +43,7 @@ export function LoginScreen() {
           Log in
         </Button>
         <GoogleSignInButton />
-        <p className="text-center text-sm text-slate-500">
+        <p className="text-center text-sm text-muted">
           Don't have an account?{' '}
           <Link to="/signup" className="font-medium text-accent-purple">
             Sign up

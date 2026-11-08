@@ -79,14 +79,14 @@ function renderInline(text: string): ReactNode[] {
     if (!part) return null
     if (part.length > 2 && part.startsWith('`') && part.endsWith('`')) {
       return (
-        <code key={i} className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[0.85em]">
+        <code key={i} className="rounded bg-hairline px-1 py-0.5 font-mono text-[0.85em]">
           {part.slice(1, -1)}
         </code>
       )
     }
     if (part.length > 4 && part.startsWith('**') && part.endsWith('**')) {
       return (
-        <strong key={i} className="font-bold text-ink">
+        <strong key={i} className="font-bold text-fg">
           {renderInline(part.slice(2, -2))}
         </strong>
       )
@@ -108,14 +108,14 @@ function renderInline(text: string): ReactNode[] {
 }
 
 const HEADING_CLASSES = {
-  1: 'mt-3 font-display text-base font-bold text-ink first:mt-0',
-  2: 'mt-3 font-display text-base font-bold text-ink first:mt-0',
-  3: 'mt-2 font-display text-sm font-bold text-ink first:mt-0',
+  1: 'mt-3 font-display text-base font-bold text-fg first:mt-0',
+  2: 'mt-3 font-display text-base font-bold text-fg first:mt-0',
+  3: 'mt-2 font-display text-sm font-bold text-fg first:mt-0',
 } as const
 
 export function Markdown({ source, className = '' }: { source: string; className?: string }) {
   return (
-    <div className={`flex flex-col gap-2 text-sm text-slate-700 ${className}`}>
+    <div className={`flex flex-col gap-2 text-sm text-body ${className}`}>
       {parseBlocks(source).map((block, i) => {
         switch (block.type) {
           case 'heading': {

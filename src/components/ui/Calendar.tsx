@@ -65,7 +65,7 @@ export function Calendar({ month, onMonthChange, onDayClick, renderDay, classNam
   return (
     <div className={`flex flex-col gap-3 ${className}`}>
       <div className="flex items-center justify-between gap-3">
-        <h2 className="font-display text-lg font-bold text-ink">{format(month, 'MMMM yyyy')}</h2>
+        <h2 className="font-display text-lg font-bold text-fg">{format(month, 'MMMM yyyy')}</h2>
         <div className="flex items-center gap-2">
           <NavButton label="Previous month" onClick={() => onMonthChange(addMonths(month, -1))}>
             <AnimatedIcon icon={ChevronLeftIcon} size={16} />
@@ -92,7 +92,7 @@ export function Calendar({ month, onMonthChange, onDayClick, renderDay, classNam
             month: 'w-full',
             month_grid: 'w-full table-fixed border-separate border-spacing-1',
             weekdays: '',
-            weekday: 'pb-1 text-center text-xs font-medium text-slate-600',
+            weekday: 'pb-1 text-center text-xs font-medium text-body',
             week: '',
             day: 'h-full p-0 align-top',
             day_button: '',

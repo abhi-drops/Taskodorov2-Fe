@@ -76,14 +76,14 @@ helper — plain `Intl.DateTimeFormat`, no library).
 
 Unlike the adjacent list-items/counter-config blocks (which use the note's own swatch
 color as their background, per "Create/edit" below), the Status block's own background
-is always `bg-ink` — the same dark token `NoteStatusStrip` uses on the board — with all
+is `bg-ink` in the light theme (and a white strip tinted with a pale shade of the note's colour in the dark theme, via `SWATCH_STATUS_BG_CLASSES`) — the same treatment `NoteStatusStrip` uses on the board — with all
 of its text, timestamps, and the add (`AddSquareIcon`)/remove (`CloseIcon`) icons tinted to the note's
-swatch color (`SWATCH_TEXT_CLASSES`) and `font-semibold`, so the block visually pairs
+swatch color in light, grey in dark (`SWATCH_STATUS_TEXT_CLASSES`) and `font-semibold`, so the block visually pairs
 with the board strip rather than blending into the preview card like the other
 type-specific config blocks do. The "New status" input's placeholder uses a matching
-`SWATCH_PLACEHOLDER_TEXT_CLASSES` map (kept as its own set of full literal
+`SWATCH_STATUS_PLACEHOLDER_CLASSES` map (kept as its own set of full literal
 `placeholder:text-sticky-*/60` strings in `swatchColors.ts`, not built by concatenating
-a variant prefix onto `SWATCH_TEXT_CLASSES` at the call site — Tailwind's content
+a variant prefix onto `SWATCH_STATUS_TEXT_CLASSES` at the call site — Tailwind's content
 scanner needs the complete class string to appear literally in some scanned file to
 generate its CSS, and a runtime-only template-literal concatenation wouldn't). The add
 button has no border of its own: it is just the `AddSquareIcon` (whose square outline
@@ -110,10 +110,11 @@ as the last child of all three `*NoteCard.tsx` components (and, since `SearchPag
 reuses those same cards, search results too) — a full-width `bg-ink` footer strip
 showing only the note's latest status, or nothing at all if the note has none. The
 status text itself is `font-semibold` and tinted to the note's own resolved swatch
-color (`SWATCH_TEXT_CLASSES` in `swatchColors.ts`, the `text-sticky-*` counterpart to
-the existing `bg-`/tint variants) rather than a fixed gray, so the strip reads as
-belonging to its card even though the strip's own background is always the same dark
-`ink`. Short text sits static and right-aligned (`truncate`); text that overflows one line
+color (`SWATCH_STATUS_TEXT_CLASSES` in `swatchColors.ts`) rather than a fixed gray, so the
+strip reads as belonging to its card even though the strip's own background is the same dark
+`ink` in the light theme. In the dark theme the strip is white tinted with a pale shade of the
+note's colour (`SWATCH_STATUS_BG_CLASSES`) with grey text, since an `ink` strip would vanish
+on the dark panel. Short text sits static and right-aligned (`truncate`); text that overflows one line
 auto-scrolls instead (`.animate-marquee` in `src/index.css`) — overflow is measured in
 JS against a hidden, undoubled copy of the text (measuring the animated/duplicated
 markup directly would always read as overflowing), so short statuses never animate

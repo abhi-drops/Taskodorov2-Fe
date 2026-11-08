@@ -26,7 +26,7 @@ export function BackLink() {
       type="button"
       aria-label="Back"
       onClick={goBack}
-      className="fixed left-6 top-6 z-40 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-white text-ink shadow-card hover:opacity-90"
+      className="fixed left-6 top-6 z-40 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-line bg-white text-ink shadow-card hover:opacity-90 dark:bg-paper dark:text-fg"
     >
       <AnimatedIcon icon={ChevronLeftIcon} size={18} />
     </button>

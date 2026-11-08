@@ -61,20 +61,20 @@ export default function SearchPage() {
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               placeholder="search ...."
-              className="w-full rounded-card border border-slate-200 bg-white px-3.5 py-2.5 pr-10 text-slate-900 outline-none focus:ring-2 focus:ring-accent-purple"
+              className="w-full rounded-card border border-hairline bg-field px-3.5 py-2.5 pr-10 text-slate-900 dark:text-fg outline-none focus:ring-2 focus:ring-accent-purple"
             />
             <Icon
               src={searchIcon}
               alt=""
               size={18}
-              className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2"
+              className="theme-invert pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2"
             />
           </div>
 
           <button
             type="button"
             onClick={() => setFiltersExpanded(!filtersExpanded)}
-            className="flex items-center gap-1.5 self-start text-sm font-medium text-slate-700"
+            className="flex items-center gap-1.5 self-start text-sm font-medium text-body"
           >
             Filter
             <AnimatedIcon
@@ -85,9 +85,9 @@ export default function SearchPage() {
           </button>
 
           {filtersExpanded && (
-            <div className="flex flex-col gap-4 rounded-card bg-white p-4 shadow-card">
+            <div className="flex flex-col gap-4 rounded-card bg-paper p-4 shadow-card">
               <div>
-                <p className="mb-2 text-sm font-medium text-slate-700">Status</p>
+                <p className="mb-2 text-sm font-medium text-body">Status</p>
                 <div className="flex flex-wrap gap-2">
                   {STATUS_OPTIONS.map((option) => (
                     <button
@@ -103,7 +103,7 @@ export default function SearchPage() {
               </div>
 
               <div>
-                <p className="mb-2 text-sm font-medium text-slate-700">Priority</p>
+                <p className="mb-2 text-sm font-medium text-body">Priority</p>
                 <div className="flex flex-wrap gap-2">
                   {PRIORITY_OPTIONS.map((option) => (
                     <button
@@ -119,7 +119,7 @@ export default function SearchPage() {
               </div>
 
               <div>
-                <p className="mb-2 text-sm font-medium text-slate-700">Color</p>
+                <p className="mb-2 text-sm font-medium text-body">Color</p>
                 <div className="flex items-center gap-3">
                   {SWATCH_OPTIONS.map((color) => (
                     <button
@@ -128,7 +128,7 @@ export default function SearchPage() {
                       aria-label={color}
                       onClick={() => toggleColor(color)}
                       className={`h-8 w-8 rounded-full transition ${SWATCH_CLASSES[color]} ${
-                        colorFilter.has(color) ? 'ring-2 ring-ink ring-offset-2' : ''
+                        colorFilter.has(color) ? 'ring-2 ring-ink ring-offset-2 ring-offset-paper' : ''
                       }`}
                     />
                   ))}
@@ -141,7 +141,7 @@ export default function SearchPage() {
         </div>
 
         <div className="flex flex-col gap-3 md:block md:columns-2 lg:columns-3 lg:gap-4">
-          {results.length === 0 && <p className="text-sm text-slate-500">No notes match.</p>}
+          {results.length === 0 && <p className="text-sm text-muted">No notes match.</p>}
           {results.map((note) => {
             const group = groupsById.get(note.groupId)
             if (!group) return null

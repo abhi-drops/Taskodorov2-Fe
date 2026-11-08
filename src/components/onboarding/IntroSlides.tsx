@@ -36,9 +36,9 @@ function SlideFrame({ title, body, children }: { title: string; body: string; ch
       <div className="flex min-h-56 w-full items-center justify-center">{children}</div>
       {/* A solid panel, the same light card as the board's columns: text over the grid
           paper had lines running through the letters. */}
-      <div className="flex w-full flex-col gap-2 border border-neutral-300 bg-surface px-5 py-4 shadow-card">
-        <h1 className="font-display text-2xl font-bold text-ink">{title}</h1>
-        <p aria-live="polite" className="min-h-12 text-base text-ink/80">
+      <div className="flex w-full flex-col gap-2 border border-edge bg-panel px-5 py-4 shadow-card">
+        <h1 className="font-display text-2xl font-bold text-fg">{title}</h1>
+        <p aria-live="polite" className="min-h-12 text-base text-fg/80">
           {body}
         </p>
       </div>
@@ -161,7 +161,7 @@ function DemoColumn({ name, children }: { name: string; children?: ReactNode }) 
       <span className="rounded-card border-[3px] border-ink bg-slate-300 px-2.5 py-0.5 font-display text-xs font-medium text-ink shadow-card">
         {name}
       </span>
-      <div className="flex h-24 w-full flex-col gap-1.5 overflow-hidden border border-neutral-300 bg-surface p-1.5 shadow-card">
+      <div className="flex h-24 w-full flex-col gap-1.5 overflow-hidden border border-edge bg-panel p-1.5 shadow-card">
         {children}
       </div>
     </div>
@@ -511,7 +511,7 @@ function DiarySummary() {
                 {!touched && i === 0 && (
                   <motion.span
                     aria-hidden="true"
-                    className="pointer-events-none absolute -inset-1 rounded-card border-2 border-ink"
+                    className="pointer-events-none absolute -inset-1 rounded-card border-2 border-line"
                     animate={{ opacity: [0.7, 0], scale: [1, 1.15] }}
                     transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut' }}
                   />
@@ -545,10 +545,10 @@ function DiarySummary() {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.22, ease: EASE }}
-          className="flex h-[6.75rem] flex-col gap-2 overflow-hidden border border-neutral-300 bg-surface p-3 shadow-card"
+          className="flex h-[6.75rem] flex-col gap-2 overflow-hidden border border-edge bg-panel p-3 shadow-card"
         >
           {day.changes.map((c) => (
-            <li key={c.chip + c.text} className="flex items-center gap-2 text-xs text-ink">
+            <li key={c.chip + c.text} className="flex items-center gap-2 text-xs text-fg">
               <span
                 className={`inline-flex shrink-0 rounded-card border-2 border-ink px-1.5 font-display text-[10px] font-bold uppercase leading-4 ${DIARY_TONES[c.tone]}`}
               >
@@ -630,7 +630,7 @@ function StaysOnDevice() {
           <motion.div
             animate={{ rotate: sync ? 360 : 0 }}
             transition={sync ? { duration: 2.5, ease: 'linear', repeat: Infinity } : { duration: 0.2 }}
-            className={sync ? 'text-ink' : 'text-ink/25'}
+            className={sync ? 'text-fg' : 'text-fg/25'}
           >
             <AnimatedIcon icon={SyncIcon} size={22} still />
           </motion.div>
@@ -655,7 +655,7 @@ function StaysOnDevice() {
                 ) : (
                   <motion.div
                     key="empty"
-                    className="h-full w-full rounded-card border-2 border-dashed border-ink/30"
+                    className="h-full w-full rounded-card border-2 border-dashed border-line/30"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -671,7 +671,7 @@ function StaysOnDevice() {
           {!touched && (
             <motion.span
               aria-hidden="true"
-              className="pointer-events-none absolute -inset-1 rounded-card border-2 border-ink"
+              className="pointer-events-none absolute -inset-1 rounded-card border-2 border-line"
               animate={{ opacity: [0.7, 0], scale: [1, 1.12] }}
               transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut' }}
             />
@@ -765,7 +765,7 @@ export default function IntroSlides({ onDone }: { onDone: () => void }) {
         }}
       >
         <div className="flex justify-end px-6">
-          <button type="button" onClick={onDone} className="text-sm font-medium text-ink/60 hover:text-ink">
+          <button type="button" onClick={onDone} className="text-sm font-medium text-fg/60 hover:text-fg">
             Skip
           </button>
         </div>
@@ -803,7 +803,7 @@ export default function IntroSlides({ onDone }: { onDone: () => void }) {
             {SLIDES.map((_, i) => (
               <span
                 key={i}
-                className={`h-2.5 w-2.5 border-2 border-ink ${i === index ? 'bg-accent-purple' : 'bg-white'}`}
+                className={`h-2.5 w-2.5 border-2 border-line ${i === index ? 'bg-accent-purple' : 'bg-white'}`}
               />
             ))}
           </div>

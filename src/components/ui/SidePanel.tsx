@@ -204,8 +204,8 @@ export function SidePanel({
                 }`}
               >
                 <span
-                  className={`h-full w-[3px] transition-colors group-hover:bg-ink/40 group-focus-visible:bg-accent-purple ${
-                    dragging ? 'bg-ink/60' : 'bg-transparent'
+                  className={`h-full w-[3px] transition-colors group-hover:bg-fg/40 group-focus-visible:bg-accent-purple ${
+                    dragging ? 'bg-fg/60' : 'bg-transparent'
                   }`}
                 />
               </div>

@@ -22,7 +22,7 @@ export function ReleaseNotesList({ notes }: { notes: ReleaseNote[] }) {
             type="button"
             onClick={() => setShowEarlier((v) => !v)}
             aria-expanded={showEarlier}
-            className="self-start text-sm font-medium text-ink underline"
+            className="self-start text-sm font-medium text-fg underline"
           >
             {showEarlier ? 'Hide earlier versions' : `Show earlier versions (${earlier.length})`}
           </button>
@@ -36,7 +36,7 @@ export function ReleaseNotesList({ notes }: { notes: ReleaseNote[] }) {
 function NoteBlock({ note }: { note: ReleaseNote }) {
   return (
     <section className="flex flex-col gap-2">
-      <h3 className="font-display text-base font-bold text-ink">v{note.version}</h3>
+      <h3 className="font-display text-base font-bold text-fg">v{note.version}</h3>
       <Markdown source={note.notesMd} />
     </section>
   )

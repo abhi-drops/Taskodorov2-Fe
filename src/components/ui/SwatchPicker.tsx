@@ -29,7 +29,7 @@ export function SwatchPicker({ value, onChange, disabled = false, className = ''
             disabled={disabled}
             onClick={() => onChange(color)}
             className={`h-8 w-8 rounded-full transition ${SWATCH_CLASSES[color]} ${
-              isSelected ? 'ring-2 ring-ink ring-offset-2' : ''
+              isSelected ? 'ring-2 ring-fg ring-offset-2 ring-offset-paper' : ''
             }`}
           />
         )

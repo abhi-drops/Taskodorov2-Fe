@@ -56,7 +56,7 @@ export function FeedbackDialog({ isOpen, mode, onClose }: FeedbackDialogProps) {
     >
       {sent ? (
         <div className="flex flex-col gap-4 text-center">
-          <p className="text-slate-700">Your feedback was sent. It really helps.</p>
+          <p className="text-body">Your feedback was sent. It really helps.</p>
           <Button onClick={() => onClose(true)} className={DIALOG_PRIMARY_BUTTON}>
             Close
           </Button>
@@ -64,7 +64,7 @@ export function FeedbackDialog({ isOpen, mode, onClose }: FeedbackDialogProps) {
       ) : (
         <div className="flex flex-col gap-4">
           {isPrompt && (
-            <p className="text-slate-700">You've been using Taskodoro for a day. How's it going?</p>
+            <p className="text-body">You've been using Taskodoro for a day. How's it going?</p>
           )}
 
           <StarRating value={rating} onChange={setRating} disabled={sending} />
@@ -88,7 +88,7 @@ export function FeedbackDialog({ isOpen, mode, onClose }: FeedbackDialogProps) {
           <FormError message={error} />
 
           {isPrompt && (
-            <label className="flex items-center gap-2 text-sm text-slate-700">
+            <label className="flex items-center gap-2 text-sm text-body">
               <input
                 type="checkbox"
                 checked={dontAskAgain}

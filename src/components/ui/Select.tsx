@@ -47,7 +47,7 @@ export function Select<T extends string>({
   if (isMobile) {
     return (
       <div className={`flex flex-col gap-1.5 text-left ${className}`}>
-        <label htmlFor={labelId} className="text-sm font-medium text-slate-700">
+        <label htmlFor={labelId} className="text-sm font-medium text-body">
           {label}
         </label>
         <div className="relative">
@@ -78,7 +78,7 @@ export function Select<T extends string>({
 
   return (
     <div className={`flex flex-col gap-1.5 text-left ${className}`}>
-      <span id={labelId} className="text-sm font-medium text-slate-700">
+      <span id={labelId} className="text-sm font-medium text-body">
         {label}
       </span>
       <RadixSelect.Root value={value} onValueChange={(next) => onChange(next as T)} disabled={disabled}>

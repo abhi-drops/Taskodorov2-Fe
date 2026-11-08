@@ -10,13 +10,13 @@ export function TextField({ label, error, id, className = '', ...rest }: TextFie
 
   return (
     <div className="flex flex-col gap-1.5 text-left">
-      <label htmlFor={inputId} className="text-sm font-medium text-slate-700">
+      <label htmlFor={inputId} className="text-sm font-medium text-body">
         {label}
       </label>
       <input
         id={inputId}
-        className={`rounded-card border px-3.5 py-2.5 text-slate-900 outline-none focus:ring-2 focus:ring-accent-purple ${
-          error ? 'border-sticky-coral' : 'border-slate-200'
+        className={`rounded-card border bg-field px-3.5 py-2.5 text-slate-900 outline-none dark:text-fg focus:ring-2 focus:ring-accent-purple ${
+          error ? 'border-sticky-coral' : 'border-hairline'
         } ${className}`}
         {...rest}
       />

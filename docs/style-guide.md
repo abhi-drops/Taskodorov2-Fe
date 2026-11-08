@@ -118,6 +118,23 @@ Note-card text is `text-black` (pure black, matches the reference exactly) — t
 deliberate exception to `ink` being the app's single dark color, kept because it
 matches the Penpot reference pixel-for-pixel.
 
+### Dark theme (added 2026-11-08)
+
+The app has a dark theme; the full token table, the "light island" rule and the known gaps
+are in `docs/feat-theming.md`. Style-guide consequences:
+
+- **Don't reach for raw palette classes on a surface.** The thin backdrop border is now
+  `border-edge` (it was `border-neutral-300`), backdrop cards are `bg-panel` (was
+  `bg-surface`), dialogs/panels are `bg-paper` (was `bg-white`), canvas text is `text-fg`,
+  secondary text `text-body` / `text-muted` (were `text-slate-600/700` and `text-slate-500`).
+  Raw `bg-white` / `text-ink` / `border-ink` / `text-slate-*` stay only on light islands
+  (chips, note cards, sticky-coloured buttons) and what's inside them.
+- **In dark the sticky colours are the vivid Penpot values** (`#ffd906 #ff3351 #3e97ff
+  #9eff56`); the values above are the light theme. Note text stays `text-black`.
+- The `.bg-grid` line colour is the `--color-grid-line` token, no longer `ink` at 12%.
+  (The cell size is 80px, 4 columns on phones; the older "40px" figures in this doc are stale.)
+- `shadow-[6px_10px_0px_0px_rgba(0,0,0,0.25)]` is now the `shadow-pop` token.
+
 ### Group column: backdrop card + overlapping chip
 
 `src/components/GroupColumn.tsx` (not `components/ui/` — see below) renders each board

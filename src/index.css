@@ -14,8 +14,68 @@
   --font-sans: 'Google Sans Flex Variable', sans-serif;
 }
 
+/* Semantic theme tokens. Light values are exactly what the raw palette classes they
+   replace used to be; `:root[data-theme='dark']` below re-points them. `static` so every
+   one is always emitted — the dark block redefines them, and `grid-line` is only read
+   from plain CSS.
+   - `surface` = the canvas, `panel` = backdrop cards sitting on it, `paper` = dialogs and
+     settings panels, `field` = inputs.
+   - `fg` / `body` / `muted` = text on surfaces. Chips, note cards and sticky buttons are
+     "light islands" and keep `ink` / `bg-white` in both themes (see docs/feat-theming.md).
+   - `edge` = soft border of backdrop cards, `line` = ink-coloured border of panels and
+     dialogs, `hairline` = thin dividers, tracks and subtle fills.
+   - `solid` / `on-solid` = the dark fill + its text (nav middle segment, toast; tabs keep `ink`, they are light-island chips). */
+@theme static {
+  --color-panel: #f4f5f7;
+  --color-paper: #ffffff;
+  --color-field: #ffffff;
+  --color-fg: #3c3c3c;
+  --color-body: #475569;
+  --color-muted: #64748b;
+  --color-edge: #d4d4d4;
+  --color-line: #3c3c3c;
+  --color-hairline: #e2e8f0;
+  --color-solid: #3c3c3c;
+  --color-on-solid: #ffffff;
+  --color-grid-line: color-mix(in srgb, #3c3c3c 12%, transparent);
+  --shadow-pop: 6px 10px 0px 0px rgba(0, 0, 0, 0.25);
+}
+
+/* Dark theme, from the Penpot dark reference: charcoal canvas with faint light grid
+   lines, #383838 panels with a #c2c2c2 edge, and the four sticky colours at the vivid
+   Penpot values. Set on <html> by ThemeProvider (and pre-paint by the script in
+   index.html) — on <html>, not a wrapper, so Radix portals are themed too. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-sticky-yellow: #ffd906;
+  --color-sticky-coral: #ff3351;
+  --color-sticky-blue: #3e97ff;
+  --color-sticky-green: #9eff56;
+  --color-surface: #28282b;
+  --color-panel: #383838;
+  --color-paper: #383838;
+  --color-field: #2b2b2e;
+  --color-fg: #f7f7f7;
+  --color-body: #d0d0d4;
+  --color-muted: #9a9aa0;
+  --color-edge: rgba(194, 194, 194, 0.8);
+  --color-line: #c2c2c2;
+  --color-hairline: #4a4a4e;
+  --color-solid: #f7f7f7;
+  --color-on-solid: #3c3c3c;
+  --color-grid-line: rgba(255, 255, 255, 0.07);
+  --shadow-pop: 6px 10px 0px 0px rgba(0, 0, 0, 0.5);
+}
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* Assets with the ink colour baked in (search.png) go white on the dark canvas. */
+:root[data-theme='dark'] .theme-invert {
+  filter: brightness(0) invert(1);
+}
+
 body {
-  @apply bg-surface text-slate-900 antialiased font-sans;
+  @apply bg-surface text-slate-900 dark:text-fg antialiased font-sans;
   margin: 0;
 }
 
@@ -210,7 +270,7 @@ html[data-pt='sheet-in']::view-transition-old(root) {
 html[data-pt='sheet-in']::view-transition-new(root) {
   animation: pt-sheet-enter var(--pt-sheet) var(--pt-ease) both;
   box-shadow:
-    -3px 0 0 0 var(--color-ink),
+    -3px 0 0 0 var(--color-line),
     -6px 0 0 0 rgb(0 0 0 / 0.15);
 }
 
@@ -221,7 +281,7 @@ html[data-pt='sheet-out']::view-transition-old(root) {
   z-index: 1;
   animation: pt-sheet-exit var(--pt-sheet-back) var(--pt-ease) both;
   box-shadow:
-    -3px 0 0 0 var(--color-ink),
+    -3px 0 0 0 var(--color-line),
     -6px 0 0 0 rgb(0 0 0 / 0.15);
 }
 html[data-pt='sheet-out']::view-transition-new(root) {
@@ -370,8 +430,8 @@ html[data-pt='note-close']::view-transition-new(root) {
      repeats identically no matter how tall the page grows, on desktop or mobile. */
   background-color: var(--color-surface);
   background-image:
-    linear-gradient(to right, color-mix(in srgb, var(--color-ink) 12%, transparent) 2px, transparent 2px),
-    linear-gradient(to bottom, color-mix(in srgb, var(--color-ink) 12%, transparent) 2px, transparent 2px);
+    linear-gradient(to right, var(--color-grid-line) 2px, transparent 2px),
+    linear-gradient(to bottom, var(--color-grid-line) 2px, transparent 2px);
   background-size: 80px 80px;
   /* x offset keeps a vertical line under the shared `p-6` (24px) left edge that page
      headings (e.g. the workspace name) and content start at, so the pattern reads as

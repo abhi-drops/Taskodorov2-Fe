@@ -58,11 +58,11 @@ export function MobileWebNotice() {
       panelClassName={DIALOG_SHADOW}
     >
       <div className="flex flex-col gap-3 text-left">
-        <p className="text-slate-700">
+        <p className="text-body">
           You're using the web version on a small screen. Some features may not work well here.
         </p>
-        <p className="text-sm text-slate-600">For the full experience, download the Taskodoro Android app.</p>
-        <label className="flex items-center gap-2 text-sm text-slate-700">
+        <p className="text-sm text-body">For the full experience, download the Taskodoro Android app.</p>
+        <label className="flex items-center gap-2 text-sm text-body">
           <input
             type="checkbox"
             checked={dontShowAgain}

@@ -23,6 +23,7 @@ import { useBoardDnd, groupChipDragId } from '../common_logics/useBoardDnd'
 import { resolveNoteColor } from '../lib/notes/resolveNoteColor'
 import { onShowGroupRequest } from '../lib/onboarding/boardFocus'
 import searchIcon from '../assets/search.png'
+import { ThemeToggle } from '../components/ThemeToggle'
 
 /**
  * Mobile only: pins whichever of `BoardTabStrip`/`GroupDropTargets` is passed as
@@ -118,13 +119,21 @@ export default function HomePage() {
 
   const workspaceSwitcher = <WorkspaceSwitcher />
   const searchLink = (
-    <Link to="/search" viewTransition aria-label="Search" className="group">
-      <Icon src={searchIcon} alt="" size={20} className="transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110 group-active:scale-95 motion-reduce:transition-none" />
+    <Link
+      to="/search"
+      viewTransition
+      aria-label="Search"
+      className="group flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink"
+    >
+      {/* The PNG is ink-coloured, so it is inverted to white to show on the ink circle. */}
+      <Icon src={searchIcon} alt="" size={15} className="[filter:brightness(0)_invert(1)] transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110 group-active:scale-95 motion-reduce:transition-none" />
     </Link>
   )
   const headerEnd = (
     <div className="flex items-center gap-3">
       <SyncStatusBadge />
+      {/* Desktop only: on mobile the theme lives in Settings. */}
+      {!isMobile && <ThemeToggle />}
       {searchLink}
     </div>
   )
@@ -143,7 +152,7 @@ export default function HomePage() {
 
       {groups.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
-          <p className="text-slate-600">No groups yet — add one from Settings.</p>
+          <p className="text-body">No groups yet — add one from Settings.</p>
           <Link to="/settings" className="font-medium text-accent-purple">
             Go to Settings
           </Link>

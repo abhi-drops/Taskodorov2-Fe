@@ -26,7 +26,7 @@ export function UpdateNotesModal({
   return (
     <Modal isOpen onClose={onClose} title={title} dismissible={dismissible}>
       <div className="flex flex-col gap-4">
-        <p className="text-slate-700">{message}</p>
+        <p className="text-body">{message}</p>
         {notes.length > 0 && (
           <div className="max-h-[40vh] overflow-y-auto">
             <ReleaseNotesList notes={notes} />

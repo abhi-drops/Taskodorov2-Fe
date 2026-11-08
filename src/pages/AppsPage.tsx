@@ -22,8 +22,8 @@ export default function AppsPage() {
     <AppShell>
       <div className="mx-auto flex w-full max-w-sm flex-1 flex-col gap-8">
         <div className="text-center">
-          <h1 className="font-display text-2xl font-bold text-ink">Apps</h1>
-          <p className="text-slate-600">Extra tools on top of your board.</p>
+          <h1 className="font-display text-2xl font-bold text-fg">Apps</h1>
+          <p className="text-body">Extra tools on top of your board.</p>
         </div>
         <div className="flex flex-col gap-3">
           {APPS.map((app) => {

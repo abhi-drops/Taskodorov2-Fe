@@ -16,21 +16,28 @@ export const SWATCH_TINT_CLASSES: Record<SwatchColor, string> = {
   green: 'bg-sticky-green/15',
 }
 
-export const SWATCH_TEXT_CLASSES: Record<SwatchColor, string> = {
-  yellow: 'text-sticky-yellow',
-  coral: 'text-sticky-coral',
-  blue: 'text-sticky-blue',
-  green: 'text-sticky-green',
+// Note-status strips (the footer on a card, the editor's Status block, the Diary's status
+// entries). Light theme: the dark `ink` strip with the note's own colour as text. Dark
+// theme: a white strip tinted with a pale shade of the note's colour and grey text (an
+// ink strip would vanish on the dark panel). Full literal class strings, one map per
+// property, so Tailwind's scanner finds them.
+export const SWATCH_STATUS_BG_CLASSES: Record<SwatchColor, string> = {
+  yellow: 'bg-ink dark:bg-[color-mix(in_srgb,var(--color-sticky-yellow)_22%,white)]',
+  coral: 'bg-ink dark:bg-[color-mix(in_srgb,var(--color-sticky-coral)_22%,white)]',
+  blue: 'bg-ink dark:bg-[color-mix(in_srgb,var(--color-sticky-blue)_22%,white)]',
+  green: 'bg-ink dark:bg-[color-mix(in_srgb,var(--color-sticky-green)_22%,white)]',
 }
 
-// Placeholder-variant counterpart to SWATCH_TEXT_CLASSES — kept as its own map of full
-// literal class strings (not built via string concatenation at the call site) so
-// Tailwind's content scanner can actually find and generate these `placeholder:`
-// combos; a runtime-only `` `placeholder:${SWATCH_TEXT_CLASSES[c]}` `` string would
-// never appear in source text for the scanner to pick up.
-export const SWATCH_PLACEHOLDER_TEXT_CLASSES: Record<SwatchColor, string> = {
-  yellow: 'placeholder:text-sticky-yellow/60',
-  coral: 'placeholder:text-sticky-coral/60',
-  blue: 'placeholder:text-sticky-blue/60',
-  green: 'placeholder:text-sticky-green/60',
+export const SWATCH_STATUS_TEXT_CLASSES: Record<SwatchColor, string> = {
+  yellow: 'text-sticky-yellow dark:text-slate-600',
+  coral: 'text-sticky-coral dark:text-slate-600',
+  blue: 'text-sticky-blue dark:text-slate-600',
+  green: 'text-sticky-green dark:text-slate-600',
+}
+
+export const SWATCH_STATUS_PLACEHOLDER_CLASSES: Record<SwatchColor, string> = {
+  yellow: 'placeholder:text-sticky-yellow/60 dark:placeholder:text-slate-400',
+  coral: 'placeholder:text-sticky-coral/60 dark:placeholder:text-slate-400',
+  blue: 'placeholder:text-sticky-blue/60 dark:placeholder:text-slate-400',
+  green: 'placeholder:text-sticky-green/60 dark:placeholder:text-slate-400',
 }

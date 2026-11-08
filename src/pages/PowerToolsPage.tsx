@@ -56,9 +56,11 @@ import { ALL_TIP_FLAG_KEYS } from '../lib/onboarding/tips'
 import { INTRO_SEEN_KEY, BOARD_TOUR_SEEN_KEY } from '../lib/db/userStateSchema'
 import type { Group } from '../types/group'
 import type { AuthState } from '../lib/auth/authContext'
+import { useTheme } from '../lib/theme/themeContext'
+import type { ThemePreference } from '../lib/theme/themeStorage'
 
 function SectionHeading({ children }: { children: string }) {
-  return <h2 className="text-sm font-medium text-slate-600">{children}</h2>
+  return <h2 className="text-sm font-medium text-body">{children}</h2>
 }
 
 // Desktop already shows the active tab in the sidebar, so the per-section
@@ -66,6 +68,7 @@ function SectionHeading({ children }: { children: string }) {
 // (where all sections show at once) needs it to tell sections apart.
 const TAB_SUBTITLES: Record<PowerToolsTab, string> = {
   groups: 'Groups and workspace data.',
+  appearance: 'Light or dark theme.',
   account: 'Account, sync & reset.',
   about: 'App info, updates & links.',
 }
@@ -75,11 +78,12 @@ const ADD_BUTTON_POSITION_LABELS: Record<AddButtonPosition, string> = { high: 'H
 /** Mobile-only quick nav between Settings' stacked sections — all four are always on
  * screen at once (unlike the board's tabs, which switch which group is shown), so
  * selecting one here just scrolls to it rather than changing what's rendered. */
-type SettingsSection = 'groups' | 'board' | 'account' | 'about'
+type SettingsSection = 'groups' | 'board' | 'appearance' | 'account' | 'about'
 
 const SETTINGS_NAV_TABS: { id: SettingsSection; label: string }[] = [
   { id: 'groups', label: 'Groups' },
   { id: 'board', label: 'Board' },
+  { id: 'appearance', label: 'Theme' },
   { id: 'account', label: 'Account' },
   { id: 'about', label: 'About' },
 ]
@@ -211,6 +215,27 @@ function BoardSection() {
   )
 }
 
+const THEME_OPTIONS: { label: string; value: ThemePreference }[] = [
+  { label: 'System', value: 'system' },
+  { label: 'Light', value: 'light' },
+  { label: 'Dark', value: 'dark' },
+]
+
+/** Theme picker, on both platforms. Device-local, never synced. See `docs/feat-theming.md`. */
+function AppearanceSection({ showHeading }: { showHeading: boolean }) {
+  const { preference, setPreference } = useTheme()
+
+  return (
+    <div className="flex flex-col gap-3">
+      {showHeading && <SectionHeading>Appearance</SectionHeading>}
+      <div className={`${CHIP} flex-col items-stretch gap-2`}>
+        <span className="font-medium text-ink">Theme</span>
+        <Tabs options={THEME_OPTIONS} value={preference} onChange={(value) => setPreference(value as ThemePreference)} />
+      </div>
+    </div>
+  )
+}
+
 function GroupsSection({
   groups,
   name,
@@ -285,7 +310,7 @@ function GroupsSection({
           onChange={(value) => onCompletedGroupChange(value === 'none' ? null : value)}
           options={[{ value: 'none', label: 'None' }, ...groups.map((group) => ({ value: group.id, label: group.name }))]}
         />
-        <p className="px-1 text-xs text-slate-600">
+        <p className="px-1 text-xs text-body">
           Notes moved into this group count as Completed in the Diary.
         </p>
       </div>
@@ -296,7 +321,7 @@ function GroupsSection({
           <AnimatedIcon icon={TrashIcon} size={16} />
           Wipe All Notes
         </button>
-        <p className="px-1 text-xs text-slate-600">
+        <p className="px-1 text-xs text-body">
           Removes every note in this workspace. Its groups and Diary history are kept.
         </p>
       </div>
@@ -759,9 +784,16 @@ export default function PowerToolsPage() {
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId)
   const { isMobile } = usePlatform()
   const [searchParams] = useSearchParams()
-  // Anything other than 'account'/'about' (including an old `?tab=addons` link) lands on Groups.
+  // Anything other than 'account'/'about'/'appearance' (including an old `?tab=addons` link) lands on Groups.
   const tabParam = searchParams.get('tab')
-  const activeTab: PowerToolsTab = tabParam === 'account' ? 'account' : tabParam === 'about' ? 'about' : 'groups'
+  const activeTab: PowerToolsTab =
+    tabParam === 'account'
+      ? 'account'
+      : tabParam === 'about'
+        ? 'about'
+        : tabParam === 'appearance'
+          ? 'appearance'
+          : 'groups'
   // `SyncStatusBadge` deep-links here with `?focus=sync` to highlight the Sync chip.
   const focusSync = searchParams.get('focus') === 'sync'
 
@@ -827,6 +859,7 @@ export default function PowerToolsPage() {
   // observation targets and as `scrollIntoView` destinations for its tabs.
   const groupsSectionRef = useRef<HTMLDivElement>(null)
   const boardSectionRef = useRef<HTMLDivElement>(null)
+  const appearanceSectionRef = useRef<HTMLDivElement>(null)
   const accountSectionRef = useRef<HTMLDivElement>(null)
   const aboutSectionRef = useRef<HTMLDivElement>(null)
   const settingsSectionsRef = useRef<HTMLDivElement>(null)
@@ -844,6 +877,7 @@ export default function PowerToolsPage() {
     const sectionRefs: [SettingsSection, RefObject<HTMLDivElement | null>][] = [
       ['groups', groupsSectionRef],
       ['board', boardSectionRef],
+      ['appearance', appearanceSectionRef],
       ['account', accountSectionRef],
       ['about', aboutSectionRef],
     ]
@@ -886,6 +920,7 @@ export default function PowerToolsPage() {
   const sectionRefById: Record<SettingsSection, RefObject<HTMLDivElement | null>> = {
     groups: groupsSectionRef,
     board: boardSectionRef,
+    appearance: appearanceSectionRef,
     account: accountSectionRef,
     about: aboutSectionRef,
   }
@@ -923,8 +958,8 @@ export default function PowerToolsPage() {
       {isMobile ? (
         <div className="mx-auto flex w-full max-w-sm flex-1 flex-col gap-8">
           <div className="text-center">
-            <h1 className="font-display text-2xl font-bold text-ink">Settings</h1>
-            <p className="text-slate-600">Groups, account & sync.</p>
+            <h1 className="font-display text-2xl font-bold text-fg">Settings</h1>
+            <p className="text-body">Groups, account & sync.</p>
           </div>
           <StickySettingsTabs
             groupsRef={groupsSectionRef}
@@ -939,6 +974,9 @@ export default function PowerToolsPage() {
             <div ref={boardSectionRef} className={SCROLL_OFFSET_CLASS}>
               <BoardSection />
             </div>
+            <div ref={appearanceSectionRef} className={SCROLL_OFFSET_CLASS}>
+              <AppearanceSection showHeading />
+            </div>
             <div ref={accountSectionRef} className={SCROLL_OFFSET_CLASS}>
               {accountSection}
             </div>
@@ -951,10 +989,11 @@ export default function PowerToolsPage() {
         <PowerToolsDesktopLayout activeTab={activeTab}>
           <div className="flex flex-col gap-6">
             <div>
-              <h1 className="font-display text-2xl font-bold text-ink">Settings</h1>
-              <p className="text-slate-600">{TAB_SUBTITLES[activeTab]}</p>
+              <h1 className="font-display text-2xl font-bold text-fg">Settings</h1>
+              <p className="text-body">{TAB_SUBTITLES[activeTab]}</p>
             </div>
             {activeTab === 'account' && accountSection}
+            {activeTab === 'appearance' && <AppearanceSection showHeading={false} />}
             {activeTab === 'about' && aboutSection}
             {activeTab === 'groups' && groupsSection}
           </div>

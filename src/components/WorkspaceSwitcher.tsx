@@ -13,8 +13,8 @@ const CHIP = 'flex items-center gap-3 rounded-card border-[3px] border-ink bg-wh
 /** A frosted white dim (not the default dark `Modal` overlay) plus a deeper offset
  * shadow than the app's usual `shadow-card` — this switcher is meant to feel like it
  * lifts further off the page than an ordinary chip, on both platforms. */
-const SWITCHER_OVERLAY = 'bg-white/60 backdrop-blur-sm'
-const SWITCHER_SHADOW = 'shadow-[6px_10px_0px_0px_rgba(0,0,0,0.25)]'
+const SWITCHER_OVERLAY = 'bg-surface/60 backdrop-blur-sm'
+const SWITCHER_SHADOW = 'shadow-pop'
 
 export function WorkspaceSwitcher() {
   const { isMobile } = usePlatform()
@@ -158,7 +158,7 @@ export function WorkspaceSwitcher() {
       <button
         type="button"
         onClick={() => (isOpen ? closeAll() : open())}
-        className={`relative block text-left font-display text-2xl font-bold text-ink ${
+        className={`relative block text-left font-display text-2xl font-bold text-fg ${
           // Only needed on desktop, to stay crisp above the dropdown's own overlay
           // (z-40) and panel (z-50) — on mobile the switcher is a full-page Modal
           // (also z-50, via a portal) meant to cover this trigger entirely. Boosting
@@ -180,7 +180,7 @@ export function WorkspaceSwitcher() {
         <>
           <div className={`fixed inset-0 z-40 ${SWITCHER_OVERLAY}`} onClick={closeAll} />
           <div
-            className={`absolute left-0 top-full z-50 mt-2 w-80 border border-neutral-300 bg-surface p-4 text-left ${SWITCHER_SHADOW}`}
+            className={`absolute left-0 top-full z-50 mt-2 w-80 border border-edge bg-panel p-4 text-left ${SWITCHER_SHADOW}`}
           >
             {renderList()}
           </div>

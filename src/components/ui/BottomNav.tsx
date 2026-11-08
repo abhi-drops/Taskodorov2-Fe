@@ -38,7 +38,7 @@ export function BottomNav() {
         to="/settings"
         viewTransition
         aria-label="Settings"
-        className="flex flex-1 items-center justify-center bg-ink py-3 text-sticky-yellow"
+        className="flex flex-1 items-center justify-center bg-solid py-3 text-sticky-yellow dark:text-ink"
       >
         <AnimatedIcon icon={SettingsIcon} size={22} />
       </NavLink>

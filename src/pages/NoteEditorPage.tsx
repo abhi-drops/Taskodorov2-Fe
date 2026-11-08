@@ -9,8 +9,9 @@ import { SwatchPicker } from '../components/ui/SwatchPicker'
 import {
   SWATCH_CLASSES,
   SWATCH_TINT_CLASSES,
-  SWATCH_TEXT_CLASSES,
-  SWATCH_PLACEHOLDER_TEXT_CLASSES,
+  SWATCH_STATUS_BG_CLASSES,
+  SWATCH_STATUS_TEXT_CLASSES,
+  SWATCH_STATUS_PLACEHOLDER_CLASSES,
 } from '../components/ui/swatchColors'
 import { resolveNoteColor } from '../lib/notes/resolveNoteColor'
 import { sortStatusesNewestFirst, formatStatusTimestamp } from '../lib/notes/noteStatus'
@@ -93,7 +94,7 @@ export default function NoteEditorPage() {
   if (form.status === 'loading') {
     return (
       <AppShell>
-        <p className="text-center text-slate-500">Loading…</p>
+        <p className="text-center text-muted">Loading…</p>
       </AppShell>
     )
   }
@@ -102,8 +103,8 @@ export default function NoteEditorPage() {
     ? resolveNoteColor({ color: form.color, priority: form.priority }, form.group)
     : (form.color ?? 'yellow')
   const colorClass = SWATCH_CLASSES[displayColor]
-  const statusTextColorClass = SWATCH_TEXT_CLASSES[displayColor]
-  const statusPlaceholderClass = SWATCH_PLACEHOLDER_TEXT_CLASSES[displayColor]
+  const statusTextColorClass = SWATCH_STATUS_TEXT_CLASSES[displayColor]
+  const statusPlaceholderClass = SWATCH_STATUS_PLACEHOLDER_CLASSES[displayColor]
   const colorPickerDisabled = form.group?.noteColorMode !== 'manual'
 
   return (
@@ -143,7 +144,7 @@ export default function NoteEditorPage() {
 
           {form.type === 'list' && (
             <div className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-slate-700">Items</span>
+              <span className="text-sm font-medium text-body">Items</span>
               <div className={`flex flex-col gap-4 rounded-card py-3 pr-4 shadow-card ${colorClass}`}>
                 {(form.payload as ListPayload).items.map((item) => (
                   <div key={item.id} className="flex items-start gap-2">
@@ -164,7 +165,7 @@ export default function NoteEditorPage() {
                       }}
                       onBlur={() => form.handleItemTextBlur(item.id)}
                       rows={1}
-                      className={`flex-1 resize-none overflow-hidden break-words bg-transparent text-sm outline-none ${item.completed ? 'line-through opacity-60' : ''}`}
+                      className={`flex-1 resize-none overflow-hidden break-words bg-transparent text-sm text-ink outline-none ${item.completed ? 'line-through opacity-60' : ''}`}
                     />
                     <button
                       type="button"
@@ -238,11 +239,11 @@ export default function NoteEditorPage() {
 
           {!form.isNew && (
             <div className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-slate-700">Status</span>
+              <span className="text-sm font-medium text-body">Status</span>
               {/* Right padding and the 22px button boxes below match the title card's
                   `p-5` + 22px checkbox, so the checkbox, remove and add icons share one
                   vertical centre line. `h-5` centres each icon on its row's first text line. */}
-              <div className="flex flex-col gap-4 rounded-card bg-ink py-3 pr-5 shadow-card">
+              <div className={`flex flex-col gap-4 rounded-card py-3 pr-5 shadow-card ${SWATCH_STATUS_BG_CLASSES[displayColor]}`}>
                 {sortStatusesNewestFirst(form.statuses).map((s) => (
                   <div key={s.id} className="flex items-start gap-2">
                     <div className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -322,11 +323,11 @@ export default function NoteEditorPage() {
             </div>
 
             <div data-tour="note-color" className="flex flex-col gap-1.5 text-left">
-              <span className="text-sm font-medium text-slate-700">Color</span>
+              <span className="text-sm font-medium text-body">Color</span>
               <SwatchPicker value={displayColor} onChange={form.handleColorChange} disabled={colorPickerDisabled} />
               {form.group?.noteColorMode === 'priority' && (
                 <p
-                  className={`mt-2.5 rounded-card border-2 border-ink px-3.5 py-2.5 text-sm text-ink ${SWATCH_TINT_CLASSES[displayColor]}`}
+                  className={`mt-2.5 rounded-card border-2 border-line px-3.5 py-2.5 text-sm text-fg ${SWATCH_TINT_CLASSES[displayColor]}`}
                 >
                   Color is set by priority for this group.
                 </p>

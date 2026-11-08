@@ -39,7 +39,7 @@ export function WhatsNewDialog() {
             <ReleaseNotesList notes={dialog.notes} />
           </div>
         ) : (
-          <p className="text-sm text-slate-600">No release notes yet.</p>
+          <p className="text-sm text-body">No release notes yet.</p>
         )}
         <Button className={`w-full ${DIALOG_PRIMARY_BUTTON}`} onClick={close}>
           Got it

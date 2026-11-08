@@ -61,19 +61,19 @@ export function Scrubber({
         aria-label={label}
         className="relative flex h-7 min-w-0 flex-1 touch-none select-none items-center data-[disabled]:opacity-40"
       >
-        <Slider.Track className="relative h-1.5 grow bg-ink">
+        <Slider.Track className="relative h-1.5 grow bg-line">
           {max > 0 && max <= MAX_TICKS && (
             <div className="pointer-events-none absolute inset-x-0 -top-1.5 h-[18px]" aria-hidden="true">
               {Array.from({ length: max + 1 }, (_, i) => (
                 <span
                   key={i}
-                  className="absolute top-0 h-full w-px -translate-x-1/2 bg-ink/40"
+                  className="absolute top-0 h-full w-px -translate-x-1/2 bg-line/40"
                   style={{ left: `${(i / max) * 100}%` }}
                 />
               ))}
             </div>
           )}
-          <Slider.Range className="absolute h-full bg-ink" />
+          <Slider.Range className="absolute h-full bg-line" />
         </Slider.Track>
         <Slider.Thumb className="block h-5 w-5 cursor-grab rounded-full border-2 border-ink bg-sticky-yellow shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-purple active:cursor-grabbing" />
       </Slider.Root>

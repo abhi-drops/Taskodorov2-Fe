@@ -12,7 +12,7 @@ import {
   TrashIcon,
   UncheckedIcon,
 } from './ui/icons'
-import { SWATCH_CLASSES, SWATCH_TEXT_CLASSES, type SwatchColor } from './ui/swatchColors'
+import { SWATCH_CLASSES, SWATCH_STATUS_BG_CLASSES, SWATCH_STATUS_TEXT_CLASSES, type SwatchColor } from './ui/swatchColors'
 import {
   formatTimeOfDay,
   type DayCountsDetailed,
@@ -49,9 +49,9 @@ const COUNT_TILES: { key: keyof DayCountsDetailed; label: string; tone: string }
   { key: 'colorChanges', label: 'Color changes', tone: YELLOW },
   { key: 'statuses', label: 'Statuses', tone: STATUS },
   { key: 'statusEdits', label: 'Status edits', tone: STATUS },
-  { key: 'statusDeletes', label: 'Statuses deleted', tone: 'bg-sticky-coral text-ink' },
-  { key: 'deleted', label: 'Deleted', tone: 'bg-sticky-coral text-ink' },
-  { key: 'wiped', label: 'Wipes', tone: 'bg-sticky-coral text-ink' },
+  { key: 'statusDeletes', label: 'Statuses deleted', tone: 'bg-sticky-coral text-ink dark:text-black' },
+  { key: 'deleted', label: 'Deleted', tone: 'bg-sticky-coral text-ink dark:text-black' },
+  { key: 'wiped', label: 'Wipes', tone: 'bg-sticky-coral text-ink dark:text-black' },
 ]
 
 /** Per-action counts as small square tiles. Zero tiles are hidden; Completed only shows when set up. */
@@ -85,9 +85,9 @@ const KIND_CHIP: Record<FeedKind, { label: string; tone: string; icon?: Animated
   color: { label: 'Color', tone: YELLOW },
   status: { label: 'Status', tone: STATUS },
   status_edited: { label: 'Status', tone: STATUS, icon: EditIcon },
-  status_deleted: { label: 'Status deleted', tone: 'bg-sticky-coral text-ink' },
-  deleted: { label: 'Deleted', tone: 'bg-sticky-coral text-ink' },
-  wiped: { label: 'Wiped', tone: 'bg-sticky-coral text-ink', icon: TrashIcon },
+  status_deleted: { label: 'Status deleted', tone: 'bg-sticky-coral text-ink dark:text-black' },
+  deleted: { label: 'Deleted', tone: 'bg-sticky-coral text-ink dark:text-black' },
+  wiped: { label: 'Wiped', tone: 'bg-sticky-coral text-ink dark:text-black', icon: TrashIcon },
 }
 
 const isSwatch = (color: string | null | undefined): color is SwatchColor => !!color && color in SWATCH_CLASSES
@@ -219,8 +219,10 @@ function EntryDetail({ entry }: { entry: FeedEntry }) {
       // An edit shows old → new; a deletion shows the removed text struck through.
       return (
         <div
-          className={`break-words bg-ink px-2 py-1 text-xs font-medium ${
-            isSwatch(entry.color) ? SWATCH_TEXT_CLASSES[entry.color] : 'text-white'
+          className={`break-words px-2 py-1 text-xs font-medium ${
+            isSwatch(entry.color)
+              ? `${SWATCH_STATUS_BG_CLASSES[entry.color]} ${SWATCH_STATUS_TEXT_CLASSES[entry.color]}`
+              : 'bg-ink text-white'
           }`}
         >
           {entry.kind === 'status_edited' && (
@@ -313,7 +315,7 @@ interface DiaryFeedListProps {
  * name.
  */
 export function DiaryFeedList({ feed, frame, onSelect, empty = 'Nothing happened on this day.' }: DiaryFeedListProps) {
-  if (feed.length === 0) return <p className="text-sm text-slate-500">{empty}</p>
+  if (feed.length === 0) return <p className="text-sm text-muted">{empty}</p>
   return (
     <ol className="flex flex-col gap-2">
       {feed.map((entry) => {

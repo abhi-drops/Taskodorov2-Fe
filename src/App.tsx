@@ -2,6 +2,7 @@ import { Analytics } from '@vercel/analytics/react'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import { RouterProvider } from 'react-router'
 import { router } from './router/routes'
+import { ThemeProvider } from './lib/theme/ThemeProvider'
 import { AuthProvider } from './lib/auth/AuthContext'
 import { SyncProvider } from './lib/sync/SyncContext'
 import { WorkspaceProvider } from './lib/workspace/WorkspaceContext'
@@ -45,6 +46,8 @@ function App() {
     </AppUpdateProvider>
   )
 
+  const themed = <ThemeProvider>{tree}</ThemeProvider>
+
   // One app-level provider instead of one per call site (Login/Signup's
   // GoogleSignInButton, Settings' SyncChip) — each separate <GoogleOAuthProvider>
   // re-ran google.accounts.id.initialize() on its own mount, which GIS logs as
@@ -55,9 +58,9 @@ function App() {
   // Google's GSI script into the Android WebView at all; `GoogleSignInButton.tsx`'s
   // native branch already doesn't render `<GoogleLogin>`, this just matches that.
   return !isNative() && isGoogleWebConfigured() ? (
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID_WEB}>{tree}</GoogleOAuthProvider>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID_WEB}>{themed}</GoogleOAuthProvider>
   ) : (
-    tree
+    themed
   )
 }
 

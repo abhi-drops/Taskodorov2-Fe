@@ -6,7 +6,7 @@ interface SpinnerProps {
 export function Spinner({ size = 24, fullScreen = false }: SpinnerProps) {
   const spinner = (
     <div
-      className="animate-spin rounded-full border-2 border-slate-200 border-t-accent-purple"
+      className="animate-spin rounded-full border-2 border-hairline border-t-accent-purple"
       style={{ width: size, height: size }}
     />
   )

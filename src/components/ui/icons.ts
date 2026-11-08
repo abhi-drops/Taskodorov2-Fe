@@ -37,6 +37,7 @@ export {
   Megaphone01Icon as WhatsNewIcon,
   Message01Icon as FeedbackIcon,
   MinusSignIcon as MinusIcon,
+  Moon01Icon as MoonIcon,
   PauseIcon,
   Pen01Icon as EditIcon,
   PlayIcon,
@@ -45,6 +46,7 @@ export {
   Settings01Icon as SettingsIcon,
   SparklesIcon as AiGuideIcon,
   StarIcon,
+  Sun01Icon as SunIcon,
   // Huge has no empty-circle glyph; "undo" is the closest reading of "unchecked".
   UndoIcon as UncheckedIcon,
   Upload01Icon as ImportIcon,

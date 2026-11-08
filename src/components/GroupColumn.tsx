@@ -159,7 +159,7 @@ function NoteList({
   let list
   if (notes.length === 0) {
     list = (
-      <p className="px-1 text-sm text-slate-500">{hiddenCount > 0 ? 'All notes hidden.' : 'No notes yet.'}</p>
+      <p className="px-1 text-sm text-muted">{hiddenCount > 0 ? 'All notes hidden.' : 'No notes yet.'}</p>
     )
   } else if (group.sortedBy !== 'manual') {
     list = (
@@ -359,7 +359,7 @@ export function GroupColumn({
 
       <div
         ref={setNodeRef}
-        className={`-mt-7 -ml-4 border border-neutral-300 bg-surface p-4 pt-8 shadow-card transition ${
+        className={`-mt-7 -ml-4 border border-edge bg-panel p-4 pt-8 shadow-card transition ${
           isOver ? 'ring-4 ring-accent-purple' : ''
         }`}
       >

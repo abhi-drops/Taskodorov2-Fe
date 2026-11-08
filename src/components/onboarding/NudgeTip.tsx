@@ -13,13 +13,13 @@ export function NudgeTip({ tip, onAccept, onDismiss }: { tip: Tip; onAccept: () 
   return (
     <div
       role="status"
-      className={`onboarding-rise fixed z-[60] flex flex-col gap-3 rounded-card border-[3px] border-ink bg-white p-4 shadow-[6px_10px_0px_0px_rgba(0,0,0,0.25)] ${
+      className={`onboarding-rise fixed z-[60] flex flex-col gap-3 rounded-card border-[3px] border-line bg-paper p-4 shadow-pop ${
         isMobile ? 'inset-x-3 bottom-28' : 'bottom-20 right-6 w-80'
       }`}
     >
-      <p className="text-sm font-medium text-ink">{tip.message}</p>
+      <p className="text-sm font-medium text-fg">{tip.message}</p>
       <div className="flex items-center justify-between gap-3">
-        <button type="button" onClick={onDismiss} className="text-sm font-medium text-ink/60 hover:text-ink">
+        <button type="button" onClick={onDismiss} className="text-sm font-medium text-fg/60 hover:text-fg">
           Not now
         </button>
         <Button onClick={onAccept} className={`px-4 py-1.5 text-sm ${DIALOG_PRIMARY_BUTTON}`}>

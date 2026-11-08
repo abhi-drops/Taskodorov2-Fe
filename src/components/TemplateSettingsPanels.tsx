@@ -34,7 +34,7 @@ import type { TemplateContent, TemplateGroup, TemplateNote } from '../types/temp
  */
 
 function SectionHeading({ children }: { children: string }) {
-  return <h2 className="text-sm font-medium text-slate-600">{children}</h2>
+  return <h2 className="text-sm font-medium text-body">{children}</h2>
 }
 
 /** Grows a textarea to fit its text (the note editor's title and items do the same). */
@@ -105,7 +105,7 @@ export function TemplateWorkspaceSettings({
           onChange={(value) => onCompletedGroupChange(value === 'none' ? null : value)}
           options={[{ value: 'none', label: 'None' }, ...content.groups.map((g) => ({ value: g.key, label: g.name }))]}
         />
-        <p className="px-1 text-xs text-slate-600">Notes that reach this group count as completed in the Diary.</p>
+        <p className="px-1 text-xs text-body">Notes that reach this group count as completed in the Diary.</p>
       </div>
 
       <button type="button" onClick={onDangerAction} className={DANGER_CHIP}>
@@ -145,9 +145,9 @@ export function TemplateGroupSettings({ content, group, onPatch, onMove, onAddNo
             if (e.key === 'Enter') e.currentTarget.blur()
           }}
           aria-label="Group name"
-          className="w-full bg-transparent font-display text-2xl font-bold text-ink outline-none"
+          className="w-full bg-transparent font-display text-2xl font-bold text-fg outline-none"
         />
-        <p className="text-slate-600">Group settings</p>
+        <p className="text-body">Group settings</p>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -253,7 +253,7 @@ export function TemplateNoteSettings({ note, group, onPatch, onDelete }: Templat
 
       {note.type === 'list' && (
         <div className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-slate-700">Items</span>
+          <span className="text-sm font-medium text-body">Items</span>
           <div className={`flex flex-col gap-4 rounded-card py-3 pr-4 shadow-card transition-colors duration-300 ${colorClass}`}>
             {note.listItems.map((item, i) => (
               <div key={i} className="flex items-start gap-2">
@@ -341,11 +341,11 @@ export function TemplateNoteSettings({ note, group, onPatch, onDelete }: Templat
       />
 
       <div className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-slate-700">Color</span>
+        <span className="text-sm font-medium text-body">Color</span>
         <SwatchPicker value={displayColor} onChange={(color) => onPatch({ color })} disabled={byPriority} />
         {byPriority && (
           <p
-            className={`mt-2.5 rounded-card border-2 border-ink px-3.5 py-2.5 text-sm text-ink ${SWATCH_TINT_CLASSES[displayColor]}`}
+            className={`mt-2.5 rounded-card border-2 border-line px-3.5 py-2.5 text-sm text-fg ${SWATCH_TINT_CLASSES[displayColor]}`}
           >
             Color is set by priority for this group.
           </p>
@@ -379,13 +379,13 @@ export function TemplateNoteSettings({ note, group, onPatch, onDelete }: Templat
 export function SettingsPanelHeader({ children, onClose }: { children: ReactNode; onClose?: () => void }) {
   return (
     <div className="flex items-center justify-between gap-2">
-      <h2 className="min-w-0 truncate font-display text-sm font-bold text-ink">{children}</h2>
+      <h2 className="min-w-0 truncate font-display text-sm font-bold text-fg">{children}</h2>
       {onClose && (
         <button
           type="button"
           onClick={onClose}
           aria-label="Back to workspace settings"
-          className="shrink-0 text-ink hover:opacity-70"
+          className="shrink-0 text-fg hover:opacity-70"
         >
           <AnimatedIcon icon={CloseIcon} size={16} />
         </button>

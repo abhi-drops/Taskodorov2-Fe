@@ -39,7 +39,7 @@ export default function GroupSettingsPage() {
   if (status === 'loading') {
     return (
       <AppShell>
-        <p className="text-center text-slate-500">Loading…</p>
+        <p className="text-center text-muted">Loading…</p>
       </AppShell>
     )
   }
@@ -47,7 +47,7 @@ export default function GroupSettingsPage() {
   if (!group) {
     return (
       <AppShell>
-        <p className="text-center text-slate-500">This group no longer exists.</p>
+        <p className="text-center text-muted">This group no longer exists.</p>
       </AppShell>
     )
   }
@@ -101,7 +101,7 @@ export default function GroupSettingsPage() {
       aria-label="Group name"
       // An <input> doesn't inherit `text-align` from the mobile header's `text-center`
       // wrapper, so it needs its own.
-      className={`w-full bg-transparent font-display text-2xl font-bold text-ink outline-none ${
+      className={`w-full bg-transparent font-display text-2xl font-bold text-fg outline-none ${
         isMobile ? 'text-center' : ''
       }`}
     />
@@ -113,7 +113,7 @@ export default function GroupSettingsPage() {
         <div className="mx-auto flex w-full max-w-sm flex-1 flex-col gap-6">
           <div className="text-center">
             {nameField}
-            <p className="text-slate-600">Group settings</p>
+            <p className="text-body">Group settings</p>
           </div>
           {fields}
         </div>
@@ -123,7 +123,7 @@ export default function GroupSettingsPage() {
             <BackLink />
             <div>
               {nameField}
-              <p className="text-slate-600">Group settings</p>
+              <p className="text-body">Group settings</p>
             </div>
             <div className="flex flex-col gap-6">{fields}</div>
           </div>
