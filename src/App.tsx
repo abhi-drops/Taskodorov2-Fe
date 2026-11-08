@@ -6,12 +6,15 @@ import { AuthProvider } from './lib/auth/AuthContext'
 import { SyncProvider } from './lib/sync/SyncContext'
 import { WorkspaceProvider } from './lib/workspace/WorkspaceContext'
 import { AppUpdateProvider } from './lib/appUpdate/AppUpdateProvider'
+import { WhatsNewProvider } from './lib/whatsNew/WhatsNewProvider'
 import { useTapHaptics } from './lib/platform/useTapHaptics'
 import { isNative } from './lib/platform/isNative'
 import { GOOGLE_CLIENT_ID_WEB, isGoogleWebConfigured } from './lib/google/googleAuthWeb'
 import { MobileWebNotice } from './components/MobileWebNotice'
 import { SyncStrategyDialog } from './components/SyncStrategyDialog'
 import { AppUpdateBanner } from './components/AppUpdateBanner'
+import { WebUpdateBanner } from './components/WebUpdateBanner'
+import { WhatsNewDialog } from './components/WhatsNewDialog'
 import { FeedbackPrompt } from './components/FeedbackPrompt'
 
 function App() {
@@ -19,20 +22,24 @@ function App() {
 
   const tree = (
     <AppUpdateProvider>
-      <AuthProvider>
-        <SyncProvider>
-          <WorkspaceProvider>
-            <RouterProvider router={router} />
-            <MobileWebNotice />
-            <SyncStrategyDialog />
-            <AppUpdateBanner />
-            <FeedbackPrompt />
-            {/* Web only — native bundles its JS locally, so there's no Vercel-hosted
-                /_vercel/insights endpoint for the Android WebView to report to. */}
-            {!isNative() && <Analytics />}
-          </WorkspaceProvider>
-        </SyncProvider>
-      </AuthProvider>
+      <WhatsNewProvider>
+        <AuthProvider>
+          <SyncProvider>
+            <WorkspaceProvider>
+              <RouterProvider router={router} />
+              <MobileWebNotice />
+              <SyncStrategyDialog />
+              <AppUpdateBanner />
+              <WebUpdateBanner />
+              <WhatsNewDialog />
+              <FeedbackPrompt />
+              {/* Web only — native bundles its JS locally, so there's no Vercel-hosted
+                  /_vercel/insights endpoint for the Android WebView to report to. */}
+              {!isNative() && <Analytics />}
+            </WorkspaceProvider>
+          </SyncProvider>
+        </AuthProvider>
+      </WhatsNewProvider>
     </AppUpdateProvider>
   )
 

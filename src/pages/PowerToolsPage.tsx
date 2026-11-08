@@ -9,6 +9,7 @@ import { BackLink } from '../components/ui/BackLink'
 import { useAuth } from '../lib/auth/useAuth'
 import { useSync } from '../lib/sync/useSync'
 import { useAppUpdate } from '../lib/appUpdate/useAppUpdate'
+import { useWhatsNew } from '../lib/whatsNew/useWhatsNew'
 import { useGoogleSignIn } from '../common_logics/useGoogleSignIn'
 import { useWorkspace } from '../lib/workspace/useWorkspace'
 import { usePlatform } from '../lib/platform/usePlatform'
@@ -29,6 +30,7 @@ import {
   UpdateIcon,
   WebsiteIcon,
   WebVersionIcon,
+  WhatsNewIcon,
 } from '../components/ui/icons'
 import taskodoroLogo from '../assets/logo.png'
 import mavntLogo from '../assets/MAVNT_LOGO_TRANSPARENT.png'
@@ -522,6 +524,38 @@ function UpdateChip() {
   )
 }
 
+/** Both platforms: reopens the release notes (latest few, newest first) after the
+ * one-time "What's new" dialog has been dismissed. See `docs/feat-release-notes-from-be.md`
+ * §4.D. */
+function WhatsNewChip() {
+  const { browseStatus, openLatest } = useWhatsNew()
+  const busy = browseStatus === 'loading'
+
+  return (
+    <button
+      type="button"
+      onClick={openLatest}
+      disabled={busy}
+      className={`${CHIP} w-full justify-between text-left disabled:cursor-not-allowed disabled:opacity-50`}
+    >
+      <span className="flex items-center gap-3">
+        <AnimatedIcon icon={WhatsNewIcon} size={20} className="text-ink" />
+        <span className="flex flex-col">
+          <span className="font-medium text-ink">What's New</span>
+          <span className="text-sm text-slate-600">
+            {browseStatus === 'error' ? "Couldn't load release notes." : 'See what changed in recent versions.'}
+          </span>
+        </span>
+      </span>
+      {busy ? (
+        <Spinner size={16} />
+      ) : (
+        <span className="shrink-0 font-display text-sm font-bold uppercase text-ink">View</span>
+      )}
+    </button>
+  )
+}
+
 function AccountSection({
   auth,
   onResetRequest,
@@ -573,9 +607,9 @@ const HERO_CARD =
 const LINK_TILE =
   'flex flex-col items-center justify-center gap-2 rounded-card border-[3px] border-ink bg-white p-5 text-center shadow-card transition hover:opacity-90'
 
-// Mirrors `android/app/build.gradle`'s `versionName` — shown on web (which has no
-// native build to read) and as the native fallback before `useAppUpdate`'s
-// `currentVersionName` resolves from `getNativeAppInfo()`.
+// Mirrors `android/app/build.gradle`'s `versionName` — the native fallback before
+// `useAppUpdate`'s `currentVersionName` resolves from `getNativeAppInfo()`. Web doesn't
+// need it: it shows the version baked in from `web-version.json`.
 const APP_VERSION_FALLBACK = '0.1 beta'
 
 /** App identity, the MAVNT parent-org link and the native-only update check — grouped
@@ -584,7 +618,7 @@ function AboutSection({ showHeading = true }: { showHeading?: boolean }) {
   const { isNative } = usePlatform()
   const { currentVersionName } = useAppUpdate()
   const [feedbackOpen, setFeedbackOpen] = useState(false)
-  const version = currentVersionName ?? APP_VERSION_FALLBACK
+  const version = isNative ? (currentVersionName ?? APP_VERSION_FALLBACK) : __APP_VERSION__
   // Cross-link to the other platform's build — on native that's the web app, on web
   // that's the Android app — rather than linking back to the version already in use.
   const otherPlatformUrl = isNative ? WEB_VERSION_URL : ANDROID_VERSION_URL
@@ -616,6 +650,8 @@ function AboutSection({ showHeading = true }: { showHeading?: boolean }) {
       </div>
 
       <UpdateChip />
+
+      <WhatsNewChip />
 
       <button type="button" onClick={() => setFeedbackOpen(true)} className={`${CHIP} w-full justify-between text-left`}>
         <span className="flex items-center gap-3">

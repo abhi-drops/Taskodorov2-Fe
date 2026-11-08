@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { FeedbackDialog } from './FeedbackDialog'
 import { useAppForeground } from '../lib/platform/useAppForeground'
 import { useAppUpdate } from '../lib/appUpdate/useAppUpdate'
+import { useWhatsNew } from '../lib/whatsNew/useWhatsNew'
 import {
   getOrCreateInstalledAt,
   loadFeedbackPromptState,
@@ -25,6 +26,7 @@ async function isPromptDue(): Promise<boolean> {
 export function FeedbackPrompt() {
   const [open, setOpen] = useState(false)
   const { result } = useAppUpdate()
+  const { pending: whatsNewPending } = useWhatsNew()
   const updateRequired = result?.updateAvailable === true && result.forceUpdate
 
   useEffect(() => {
@@ -51,8 +53,9 @@ export function FeedbackPrompt() {
     )
   }
 
-  // A mandatory update modal has the screen; the prompt waits for the next evaluation.
-  // Mounted only while open so each ask starts with a blank form.
-  if (!open || updateRequired) return null
+  // A mandatory update modal has the screen, and so does "What's new" (or its launch
+  // check, which may be about to open it); the prompt waits and appears once they're
+  // out of the way. Mounted only while open so each ask starts with a blank form.
+  if (!open || updateRequired || whatsNewPending) return null
   return <FeedbackDialog isOpen mode="prompt" onClose={handleClose} />
 }

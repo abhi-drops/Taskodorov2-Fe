@@ -228,3 +228,20 @@ export async function getOrCreateDeviceId(): Promise<string> {
   await Preferences.set({ key: DEVICE_ID_KEY, value: id })
   return id
 }
+
+const LAST_SEEN_VERSION_CODE_KEY = 'taskodoro.app.lastSeenVersionCode'
+
+/**
+ * The newest `versionCode` whose release notes this install has been through ("What's
+ * new", `lib/whatsNew/`). `null` means never recorded: a fresh install, which stores the
+ * current code without showing anything. Not tied to any account.
+ */
+export async function loadLastSeenVersionCode(): Promise<number | null> {
+  const { value } = await Preferences.get({ key: LAST_SEEN_VERSION_CODE_KEY })
+  const parsed = value === null ? NaN : Number(value)
+  return Number.isInteger(parsed) ? parsed : null
+}
+
+export async function saveLastSeenVersionCode(versionCode: number): Promise<void> {
+  await Preferences.set({ key: LAST_SEEN_VERSION_CODE_KEY, value: String(versionCode) })
+}

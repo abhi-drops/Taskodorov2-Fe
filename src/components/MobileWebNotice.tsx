@@ -3,6 +3,7 @@ import { Button } from './ui/Button'
 import { Modal } from './ui/Modal'
 import { DIALOG_OVERLAY, DIALOG_PRIMARY_BUTTON, DIALOG_SHADOW } from './ui/dialogStyles'
 import { useIsPhoneWidth } from '../lib/platform/mobileLayout'
+import { setMobileWebNoticeOpen } from '../lib/platform/mobileWebNoticeState'
 import { usePlatform } from '../lib/platform/usePlatform'
 import { loadHideMobileWebNotice, saveHideMobileWebNotice } from '../lib/storage/preferences'
 
@@ -40,9 +41,16 @@ export function MobileWebNotice() {
     setDismissed(true)
   }
 
+  const isOpen = !isNative && isPhoneWidth && hiddenForGood === false && !dismissed
+  // Tell "What's new" to wait while this is up (see `WhatsNewDialog`).
+  useEffect(() => {
+    setMobileWebNoticeOpen(isOpen)
+    return () => setMobileWebNoticeOpen(false)
+  }, [isOpen])
+
   return (
     <Modal
-      isOpen={!isNative && isPhoneWidth && hiddenForGood === false && !dismissed}
+      isOpen={isOpen}
       onClose={close}
       title="Taskodoro works best in the Android app"
       variant="center"

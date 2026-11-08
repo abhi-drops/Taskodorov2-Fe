@@ -34,6 +34,7 @@ export {
   LayoutTemplateIcon as TemplatesIcon,
   Loading02Icon as SyncingIcon,
   Menu01Icon as MenuIcon,
+  Megaphone01Icon as WhatsNewIcon,
   Message01Icon as FeedbackIcon,
   MinusSignIcon as MinusIcon,
   PauseIcon,

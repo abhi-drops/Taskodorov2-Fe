@@ -126,11 +126,14 @@ retry-on-foreground, since a release only ships every so often.
 - `AppUpdateProvider.tsx` calls `appVersionApi.check(...)` exactly **once per app
   launch** — a `useRef` guard inside a mount-only effect, not tied to
   `useAppForeground` (which re-fires on every foreground, the wrong granularity here).
-  Native only (`isNative()`); on web `status` stays `'disabled'` and nothing runs, per
-  §4's guidance. `checkNow()` is exposed for a manual re-check and is what both the
+  *(Updated 2026-11-08: it now runs on web too, with the web build's own `versionCode`, and
+  on web additionally re-checks when the tab regains focus, at most every 30 minutes — see
+  `feat-release-notes-from-be.md`. Native is unchanged, and `status` no longer has a
+  `'disabled'` value.)* `checkNow()` is exposed for a manual re-check and is what both the
   auto-check and Settings' chip (below) call.
 - `appUpdateContext.ts` / `useAppUpdate.ts` — the context object and consumer hook.
-- No "don't show again" persistence: a dismissed banner reappears if `checkNow()` runs
+- No "don't show again" persistence *(a background web re-check that finds the same
+  release keeps it dismissed)*: a dismissed banner reappears if `checkNow()` runs
   again (app relaunch, or the user taps "Check for Update" in Settings) and the same
   update is still outstanding. Deliberate — see the "Dismiss persistence" decision
   recorded in this doc's history; nothing here depends on `lib/storage/preferences.ts`.
@@ -138,7 +141,9 @@ retry-on-foreground, since a release only ships every so often.
   guidance. The manual Settings chip does surface a `status === 'error'` message,
   since the user explicitly asked for that check and silence would look broken.
 
-**Surfacing an update** — `components/AppUpdateBanner.tsx`, rendered from `App.tsx`
+**Surfacing an update** — `components/AppUpdateBanner.tsx` (Android; web uses
+`WebUpdateBanner.tsx`, and both now show the release notes — see
+`feat-release-notes-from-be.md`), rendered from `App.tsx`
 itself (alongside `SyncStrategyDialog`, same precedent: an always-mounted component
 reading its own context rather than something routed to). `forceUpdate: true` gets a
 non-dismissible `Modal` (see below); anything else gets a dismissible bottom pill with

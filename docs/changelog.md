@@ -4,6 +4,28 @@ All notable changes to Taskodoro-Fe. Newest first. Entries are a log of *what ch
 and when* — for *how a feature works*, see the relevant `docs/feat-*.md` file linked
 from each entry. See `CLAUDE.md` for the rule on keeping this updated.
 
+## 2026-11-08 — Release notes: update alert, "What's new" and web update banner
+
+- **What.** Release notes (markdown, from the backend's new `notes` / `/app/release-notes`)
+  now reach users in four places: the Android update pill and forced-update modal show every
+  missed version's notes (latest open, older ones under "Show earlier versions"); a one-time
+  **What's new** dialog opens after the app updates (Android and web); the **web** build now
+  checks for updates too and shows a slim "new version available — Reload" banner (never
+  reloads by itself); and Settings → About has a **What's New** row to reopen the notes.
+- **How.** `web-version.json` (repo root, bumped by hand per web release) is baked into the
+  bundle by `vite.config.ts` as `__APP_VERSION__` / `__APP_VERSION_CODE__`;
+  `getAppInfo()` returns this build's platform + version on either platform.
+  `AppUpdateProvider` runs on web and re-checks on tab focus, at most every 30 minutes.
+  `lib/whatsNew/` stores `taskodoro.app.lastSeenVersionCode` (saved when the dialog closes;
+  a fresh install just records the current code). Notes render through our own small
+  `components/ui/Markdown.tsx` (no dependency; raw HTML is shown as text, only `http(s)`
+  links) rather than `react-markdown`. Dialog priority: forced update > "works best in the
+  Android app" notice > What's new > feedback prompt, so no two stack.
+- Details and the release checklist: `docs/feat-release-notes-from-be.md`;
+  `docs/feat-app-update-check-from-be.md` updated where it said native-only. Browser-tested
+  against a mock backend; the Android paths (native `getAppInfo()`, update pill) are not
+  tested on a device. Templates AI Guide: not affected.
+
 ## 2026-11-05 — Tape backdrop now follows horizontal board scrolling
 
 - **What.** The blurred "peek" behind the scrolled header / mobile tab strip only tracked
